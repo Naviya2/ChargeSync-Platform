@@ -1,0 +1,24 @@
+﻿# .NET
+backend/**/bin/
+backend/**/obj/
+backend/**/appsettings.Development.json
+
+# Node/React
+web-react/node_modules/
+web-react/dist/
+web-react/.env
+
+# Flutter
+mobile-flutter/build/
+mobile-flutter/.dart_tool/
+mobile-flutter/**/*.g.dart
+
+# Python
+agentic-ai/venv/
+agentic-ai/__pycache__/
+agentic-ai/.env
+
+# General
+.DS_Store
+*.log
+.vscode/
