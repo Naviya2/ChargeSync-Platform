@@ -1,24 +1,71 @@
-﻿# .NET
+﻿# =========================
+# .NET / ASP.NET Core
+# =========================
 backend/**/bin/
 backend/**/obj/
+
+# Local development configuration / secrets
 backend/**/appsettings.Development.json
 
-# Node/React
+
+# =========================
+# Node.js / React
+# =========================
 web-react/node_modules/
 web-react/dist/
-web-react/.env
 
-# Flutter
+# Environment files
+web-react/.env
+web-react/.env.local
+web-react/.env.*.local
+
+
+# =========================
+# Flutter / Dart
+# =========================
 mobile-flutter/build/
 mobile-flutter/.dart_tool/
 mobile-flutter/**/*.g.dart
 
-# Python
-agentic-ai/venv/
-agentic-ai/__pycache__/
-agentic-ai/.env
+# Flutter generated local files
+mobile-flutter/.flutter-plugins
+mobile-flutter/.flutter-plugins-dependencies
 
-# General
-.DS_Store
+
+# =========================
+# Python / Agentic AI
+# =========================
+agentic-ai/venv/
+agentic-ai/.env
+agentic-ai/__pycache__/
+agentic-ai/**/__pycache__/
+
+# Python compiled/cache files
+*.py[cod]
+
+
+# =========================
+# Environment / Secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+
+# =========================
+# Logs
+# =========================
 *.log
+
+
+# =========================
+# IDE / Editor
+# =========================
 .vscode/
+
+
+# =========================
+# Operating System
+# =========================
+.DS_Store
+Thumbs.db
