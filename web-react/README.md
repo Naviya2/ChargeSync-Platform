@@ -33,6 +33,7 @@ src/
     layout/                 # AppLayout, Sidebar, Topbar
     shared/                 # Cross-feature pieces (PageHeader, PlaceholderPage, NotificationHost)
   features/
+    landing/                 # Public marketing page shown at "/" (section components + page)
     auth|stations|reservations|analytics|approvals|support|users/
       components/ hooks/ pages/
   hooks/                    # App-wide hooks (useAuth, useNotify)
@@ -44,6 +45,28 @@ src/
   store/                    # Zustand stores (authStore, notificationStore)
   styles/                   # Tailwind entry + component layer
 ```
+
+## Navigation flow
+
+`/` renders the public **landing page** ([`features/landing/`](src/features/landing/)). Its
+CTAs link to `/login`, where a dev role picker seeds a session and forwards to that
+role's dashboard. All `/dashboard`, `/stations`, … routes are behind `ProtectedRoute`.
+
+Each role lands on its own workspace after login (see `DEFAULT_ROUTE` in
+[`routes/roleRoutes.js`](src/routes/roleRoutes.js)):
+
+| Role | Lands on | Page |
+| --- | --- | --- |
+| Admin | `/dashboard` | [`AdminDashboardPage`](src/features/dashboard/pages/AdminDashboardPage.jsx) — metrics, AI grid queue, telemetry, reservations table, dev-only state dock |
+| StationOwner | `/stations` | [`MyStationsPage`](src/features/stations/pages/MyStationsPage.jsx) — KPI strip, station cards, and a per-station console (Overview / Chargers / Operating Hours / Maintenance tabs) |
+| SupportManager | `/support` | placeholder |
+| Driver | `/reservations` | placeholder |
+
+`/dashboard` ([`DashboardPage.jsx`](src/features/dashboard/pages/DashboardPage.jsx)) and
+`/stations` ([`StationsPage.jsx`](src/features/stations/pages/StationsPage.jsx)) are
+role-aware entry points — they render the rich view for the owning role and a placeholder
+otherwise. The shared shell ([`components/layout/`](src/components/layout/)) is a
+Material 3 sidebar (section label + nav adapt to role) + topbar.
 
 ## Auth & roles
 
@@ -68,3 +91,8 @@ for lightweight global UI state (auth session, notifications).
 
 Tailwind exposes a custom `brand` color (teal `#0EA5A0` → green `#22C55E`) plus a
 `bg-brand-gradient` utility and a `.btn-brand` component class.
+
+The landing page uses a Material 3 token set also declared in
+[`tailwind.config.js`](tailwind.config.js) (`primary`, `surface`, `inverse-surface`,
+`space-*` spacing, `display-lg` / `body-md` type scale, …). Fonts (Inter + Material
+Symbols) load from Google Fonts in [`index.html`](index.html).

@@ -5,12 +5,14 @@ import NotificationHost from '../shared/NotificationHost'
 
 export default function AppLayout() {
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface-container-low font-sans text-on-surface">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-screen flex-col lg:pl-sidebar-width">
         <Topbar />
-        <main className="flex-1 p-6">
-          <Outlet />
+        <main className="flex-1 p-gutter-mobile lg:p-gutter-desktop">
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
+          </div>
         </main>
       </div>
       <NotificationHost />

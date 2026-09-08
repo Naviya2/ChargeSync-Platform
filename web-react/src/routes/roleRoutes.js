@@ -35,7 +35,18 @@ export function isRouteAllowedForRole(role, pathname) {
   return allowed.some((route) => pathname === route || pathname.startsWith(`${route}/`))
 }
 
+/**
+ * Landing route per role after login. Each role goes to its primary workspace:
+ * Admin -> platform dashboard, StationOwner -> My Stations, etc.
+ */
+const DEFAULT_ROUTE = {
+  [ROLES.ADMIN]: ROUTES.DASHBOARD,
+  [ROLES.STATION_OWNER]: ROUTES.STATIONS,
+  [ROLES.SUPPORT_MANAGER]: ROUTES.SUPPORT,
+  [ROLES.DRIVER]: ROUTES.RESERVATIONS,
+}
+
 /** First route a role should land on after login. */
 export function defaultRouteForRole(role) {
-  return roleRoutes[role]?.[0] ?? ROUTES.LOGIN
+  return DEFAULT_ROUTE[role] ?? roleRoutes[role]?.[0] ?? ROUTES.LOGIN
 }

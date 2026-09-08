@@ -1,8 +1,9 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 import AppLayout from '../components/layout/AppLayout'
 import { ROLES, ROUTES } from '../lib/constants'
 
+import LandingPage from '../features/landing/pages/LandingPage'
 import LoginPage from '../features/auth/pages/LoginPage'
 import DashboardPage from '../features/dashboard/pages/DashboardPage'
 import StationsPage from '../features/stations/pages/StationsPage'
@@ -17,6 +18,7 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path={ROUTES.LANDING} element={<LandingPage />} />
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
 
         {/* Authenticated shell */}
@@ -77,7 +79,6 @@ export default function AppRouter() {
           />
         </Route>
 
-        <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
