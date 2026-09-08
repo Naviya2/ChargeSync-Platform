@@ -1,75 +1,70 @@
-# React + TypeScript + Vite
+# chargesync-web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Admin portal for the **ChargeSync** EV charging platform.
 
-Currently, two official plugins are available:
+React (plain JavaScript + JSX) · Vite · React Router v6 · TanStack Query · Zustand · Axios · Tailwind CSS · Recharts · lucide-react
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Getting started
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+cp .env.example .env   # set VITE_API_BASE_URL
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+| Script            | Purpose                     |
+| ----------------- | --------------------------- |
+| `npm run dev`     | Start the Vite dev server   |
+| `npm run build`   | Production build            |
+| `npm run preview` | Preview the production build |
+| `npm run lint`    | Run ESLint                  |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Project structure
 
 ```
+src/
+  api/
+    client.js              # Axios instance + JWT request / 401 response interceptors
+    endpoints/              # One module per resource (vehicles, stations, reservations,
+                            #   chargingPlans, sessions, payments, loyalty, support,
+                            #   agentWorkflows)
+  components/
+    ui/                     # Presentational primitives (Button, Card, Spinner)
+    layout/                 # AppLayout, Sidebar, Topbar
+    shared/                 # Cross-feature pieces (PageHeader, PlaceholderPage, NotificationHost)
+  features/
+    auth|stations|reservations|analytics|approvals|support|users/
+      components/ hooks/ pages/
+  hooks/                    # App-wide hooks (useAuth, useNotify)
+  lib/                      # queryClient, constants, cn
+  routes/
+    AppRouter.jsx           # Route table + placeholder routes
+    ProtectedRoute.jsx      # Auth + role-based guard
+    roleRoutes.js           # Role -> allowed routes map
+  store/                    # Zustand stores (authStore, notificationStore)
+  styles/                   # Tailwind entry + component layer
+```
+
+## Auth & roles
+
+Roles: `Driver`, `StationOwner`, `Admin`, `SupportManager`.
+
+`ProtectedRoute` reads `token` / `user.role` from `store/authStore` (persisted to
+`localStorage`). It redirects unauthenticated users to `/login` and users without
+access to their default route. Per-route access is defined in
+[`src/routes/roleRoutes.js`](src/routes/roleRoutes.js) or via an explicit
+`allowedRoles` prop.
+
+The Axios client attaches `Authorization: Bearer <token>` on every request and,
+on a `401`, clears the session and redirects to `/login`.
+
+## Server state
+
+All data fetching goes through **TanStack Query**. API calls live in
+`src/api/endpoints/*` and return unwrapped `response.data`. Zustand is reserved
+for lightweight global UI state (auth session, notifications).
+
+## Theming
+
+Tailwind exposes a custom `brand` color (teal `#0EA5A0` → green `#22C55E`) plus a
+`bg-brand-gradient` utility and a `.btn-brand` component class.
