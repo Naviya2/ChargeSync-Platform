@@ -5,6 +5,7 @@ import { ROLES, ROUTES } from '../lib/constants'
 
 import LandingPage from '../features/landing/pages/LandingPage'
 import LoginPage from '../features/auth/pages/LoginPage'
+import SignUpPage from '../features/auth/pages/SignUpPage'
 import DashboardPage from '../features/dashboard/pages/DashboardPage'
 import StationsPage from '../features/stations/pages/StationsPage'
 import ReservationsPage from '../features/reservations/pages/ReservationsPage'
@@ -20,6 +21,7 @@ export default function AppRouter() {
       <Routes>
         <Route path={ROUTES.LANDING} element={<LandingPage />} />
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+        <Route path={ROUTES.SIGNUP} element={<SignUpPage />} />
 
         {/* Authenticated shell */}
         <Route
