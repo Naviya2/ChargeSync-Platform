@@ -14,7 +14,6 @@ export const ALL_ROLES = Object.values(ROLES)
 export const ROUTES = {
   LANDING: '/',
   LOGIN: '/login',
-  SIGNUP: '/signup',
   DASHBOARD: '/dashboard',
   STATIONS: '/stations',
   RESERVATIONS: '/reservations',

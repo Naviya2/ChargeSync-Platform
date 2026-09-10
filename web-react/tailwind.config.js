@@ -24,19 +24,6 @@ export default {
           900: '#123f3f',
         },
 
-        // Dark "charcoal" surfaces — used by the auth / sign-in atmosphere panel
-        ink: {
-          DEFAULT: '#0F1115',
-          950: '#0B0D10',
-          900: '#0F1115',
-          800: '#131720',
-          700: '#161920',
-          600: '#1F2430',
-          500: '#232936',
-          400: '#2D333F',
-          300: '#3A4150',
-        },
-
         // Material 3 design tokens (used by the marketing / landing page)
         background: '#f9f9ff',
         'on-background': '#1a1c20',
@@ -135,22 +122,6 @@ export default {
       },
       ringColor: {
         brand: '#0EA5A0',
-      },
-      animation: {
-        'pulse-slow': 'pulse 5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'float-slow': 'float 7s ease-in-out infinite',
-        'spin-slow': 'spin 24s linear infinite',
-        glow: 'glow 4s ease-in-out infinite alternate',
-      },
-      keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
-        },
-        glow: {
-          '0%': { opacity: '0.4', transform: 'scale(0.98)' },
-          '100%': { opacity: '0.75', transform: 'scale(1.05)' },
-        },
       },
     },
   },
