@@ -14,6 +14,10 @@ public static class DependencyInjection
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IResourceGuard, ResourceGuard>();
 
+        services.AddScoped<Application.Stations.IStationService, Application.Stations.StationService>();
+        services.AddScoped<Application.Stations.IAvailabilityService, Application.Stations.AvailabilityService>();
+        services.AddScoped<Application.Admin.IAdminStationService, Application.Admin.AdminStationService>();
+
         return services;
     }
 }
