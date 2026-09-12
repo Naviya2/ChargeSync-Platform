@@ -2,6 +2,8 @@ using System.Reflection;
 using Application.Common.Interfaces;
 using Domain.Common;
 using Domain.Users;
+using Domain.Entities;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
@@ -21,6 +23,14 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<User> Users => Set<User>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    public DbSet<Station> Stations => Set<Station>();
+
+    public DbSet<Charger> Chargers => Set<Charger>();
+
+    public DbSet<OperatingHour> OperatingHours => Set<OperatingHour>();
+
+    public DbSet<MaintenanceWindow> MaintenanceWindows => Set<MaintenanceWindow>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
