@@ -22,5 +22,7 @@ public interface IAppDbContext
 
     DbSet<MaintenanceWindow> MaintenanceWindows { get; }
 
+    DbSet<Vehicle> Vehicles { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

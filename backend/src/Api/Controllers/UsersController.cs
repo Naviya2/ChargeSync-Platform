@@ -17,6 +17,7 @@ public sealed class UsersController : ControllerBase
     public UsersController(IUserService userService) => _userService = userService;
 
     /// <summary>Creates an account with any role. Administrator only.</summary>
+    /// 
     [HttpPost]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
