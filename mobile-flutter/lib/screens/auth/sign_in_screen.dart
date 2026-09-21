@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/api/auth_service.dart';
+import '../../core/api/auth_models.dart';
 import 'sign_up_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -132,14 +134,41 @@ class _SignInScreenState extends State<SignInScreen>
     await _btnController.reverse();
 
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1200));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    _showToastMessage(
-      _ToastType.success,
-      'Authenticated Successfully',
-      'Handshake verified. Launching charging telemetry...',
-    );
+    try {
+      await AuthService.instance.login(
+        email: email,
+        password: password,
+      );
+      if (!mounted) return;
+      // ✅ Success — show toast then pop back to home
+      _showToastMessage(
+        _ToastType.success,
+        'Authenticated Successfully',
+        'Welcome back, ${AuthService.instance.currentUser?.fullName ?? ''}!',
+      );
+      await Future.delayed(const Duration(milliseconds: 1400));
+      if (mounted) Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      // Map error to the right field
+      if (e.statusCode == 401) {
+        setState(() {
+          _passwordHasError = true;
+          _passwordErrorText = e.userMessage;
+        });
+      } else {
+        _showToastMessage(_ToastType.error, 'Sign In Failed', e.userMessage);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showToastMessage(
+        _ToastType.error,
+        'Connection Error',
+        'Cannot reach the server. Is the backend running?',
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _fillDemo() {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/api/auth_service.dart';
+import '../../core/api/auth_models.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -169,14 +171,65 @@ class _SignUpScreenState extends State<SignUpScreen>
   Future<void> _handleSubmit() async {
     if (!_validateCurrentStep()) return;
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-    setState(() {
-      _isLoading = false;
-      _isSuccess = true;
-    });
-    await Future.delayed(const Duration(milliseconds: 1800));
-    if (mounted) Navigator.of(context).pop(); // go back to sign-in
+
+    try {
+      final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
+      await AuthService.instance.register(
+        fullName:    fullName,
+        email:       _emailController.text.trim(),
+        password:    _passwordController.text,
+        role:        'Driver',
+        phoneNumber: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+      );
+      if (!mounted) return;
+      // ✅ Show success screen, then pop back to sign-in
+      setState(() {
+        _isLoading = false;
+        _isSuccess = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 2000));
+      if (mounted) Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      if (e.statusCode == 409) {
+        // Email already registered — go back to step 1 and highlight email field
+        setState(() {
+          _errors['email'] = 'This email is already registered. Sign in instead.';
+          _currentStep = 0;
+          _progressAnim = Tween<double>(begin: 0, end: 1 / _totalSteps)
+              .animate(CurvedAnimation(parent: _progressController, curve: Curves.easeOut));
+          _progressController.forward(from: 0);
+        });
+        _pageController.animateToPage(0,
+            duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+      } else if (e.statusCode == 400) {
+        setState(() => _errors['email'] = e.userMessage);
+      } else {
+        // Generic error — show a snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.errorContainer,
+            content: Text(e.userMessage,
+                style: const TextStyle(color: AppColors.onSurface)),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.errorContainer,
+          content: const Text('Cannot connect to server. Is the backend running?',
+              style: TextStyle(color: AppColors.onSurface)),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 
   // ── Password strength ────────────────────────────────────────────────────────

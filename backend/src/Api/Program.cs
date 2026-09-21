@@ -61,6 +61,18 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// Allow Flutter web (Chrome) and any local dev origin to reach the API.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FlutterDev", policy =>
+    {
+        policy
+            .AllowAnyOrigin()   // tighten to specific origins in production
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -86,6 +98,8 @@ var app = builder.Build();
 await app.Services.InitialiseDatabaseAsync();
 
 app.UseExceptionHandler();
+
+app.UseCors("FlutterDev");  // must be before Auth middleware
 
 if (app.Environment.IsDevelopment())
 {
