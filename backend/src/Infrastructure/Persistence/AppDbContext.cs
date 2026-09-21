@@ -32,6 +32,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<MaintenanceWindow> MaintenanceWindows => Set<MaintenanceWindow>();
 
+    public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());

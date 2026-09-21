@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddScoped<Application.Stations.IStationService, Application.Stations.StationService>();
         services.AddScoped<Application.Stations.IAvailabilityService, Application.Stations.AvailabilityService>();
         services.AddScoped<Application.Admin.IAdminStationService, Application.Admin.AdminStationService>();
+        services.AddScoped<Application.Vehicles.IVehicleService, Application.Vehicles.VehicleService>();
 
         return services;
     }
