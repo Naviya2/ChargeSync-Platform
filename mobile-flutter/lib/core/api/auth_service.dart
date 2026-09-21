@@ -1,0 +1,109 @@
+import 'package:flutter/foundation.dart';
+import 'auth_api_client.dart';
+import 'auth_models.dart';
+
+/// App-level auth state — holds current user and session.
+/// Use [AuthService.instance] everywhere.
+class AuthService extends ChangeNotifier {
+  AuthService._();
+  static final AuthService instance = AuthService._();
+
+  final _api = AuthApiClient.instance;
+
+  AuthUser? _currentUser;
+  bool _isLoading = false;
+  bool _isInitialized = false;
+
+  AuthUser? get currentUser  => _currentUser;
+  bool get isLoading         => _isLoading;
+  bool get isAuthenticated   => _currentUser != null;
+  bool get isInitialized     => _isInitialized;
+  bool get isDriver          => _currentUser?.role == 'Driver';
+
+  // ── Bootstrap (call once at app start) ───────────────────────────────────────
+
+  Future<void> initialize() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final cached = await _api.getCachedUser();
+      if (cached != null) {
+        // Validate the stored token is still good, auto-refresh if needed
+        final user = await _api.me();
+        _currentUser = user;
+      }
+    } catch (_) {
+      // Token expired / no stored session — stay logged out
+      _currentUser = null;
+      await _api.clearTokens();
+    } finally {
+      _isLoading = false;
+      _isInitialized = true;
+      notifyListeners();
+    }
+  }
+
+  // ── Login ────────────────────────────────────────────────────────────────────
+
+  /// Throws [ApiException] on failure — caller handles UI error display.
+  Future<AuthResult> login({
+    required String email,
+    required String password,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final result = await _api.login(LoginRequest(email: email, password: password));
+      _currentUser = result.user;
+      notifyListeners();
+      return result;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Register ─────────────────────────────────────────────────────────────────
+
+  Future<AuthResult> register({
+    required String fullName,
+    required String email,
+    required String password,
+    String role = 'Driver',
+    String? phoneNumber,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final result = await _api.register(RegisterRequest(
+        fullName:    fullName,
+        email:       email,
+        password:    password,
+        role:        role,
+        phoneNumber: phoneNumber,
+      ));
+      _currentUser = result.user;
+      notifyListeners();
+      return result;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Logout ───────────────────────────────────────────────────────────────────
+
+  Future<void> logout() async {
+    final refreshToken = await _api.getRefreshToken();
+    if (refreshToken != null) {
+      await _api.logout(refreshToken);
+    } else {
+      await _api.clearTokens();
+    }
+    _currentUser = null;
+    notifyListeners();
+  }
+}
