@@ -34,6 +34,12 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
 
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+
+    public DbSet<ReservationStatusHistory> ReservationStatusHistories => Set<ReservationStatusHistory>();
+
+    public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
