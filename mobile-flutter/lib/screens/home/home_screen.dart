@@ -8,6 +8,7 @@ import 'widgets/smart_recommendation_card.dart';
 import 'widgets/upcoming_reservation_card.dart';
 import 'widgets/rewards_card.dart';
 import '../auth/sign_in_screen.dart';
+import '../../features/reservations/screens/reservation_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,38 +45,40 @@ class _HomeScreenState extends State<HomeScreen>
       body: Stack(
         children: [
           // ---------- Main scrollable content ----------
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              // Top offset for app bar
-              SliverToBoxAdapter(
-                child: SizedBox(height: topPadding + 112),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildGreetingSection(),
-                    const SizedBox(height: 16),
-                    const VehicleCard(),
-                    const SizedBox(height: 16),
-                    const FindChargerCard(),
-                    const SizedBox(height: 16),
-                    const QuickActionsRow(),
-                    const SizedBox(height: 16),
-                    const SmartRecommendationCard(),
-                    const SizedBox(height: 16),
-                    const UpcomingReservationCard(),
-                    const SizedBox(height: 16),
-                    const RewardsCard(),
-                    const SizedBox(height: 32),
-                  ]),
-                ),
-              ),
-              // Bottom offset for nav bar
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
-            ],
-          ),
+          _currentTab == 2
+              ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 112, bottom: 80), child: const ReservationListScreen()))
+              : CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        // Top offset for app bar
+                        SliverToBoxAdapter(
+                          child: SizedBox(height: topPadding + 112),
+                        ),
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                          sliver: SliverList(
+                            delegate: SliverChildListDelegate([
+                              _buildGreetingSection(),
+                              const SizedBox(height: 16),
+                              const VehicleCard(),
+                              const SizedBox(height: 16),
+                              const FindChargerCard(),
+                              const SizedBox(height: 16),
+                              const QuickActionsRow(),
+                              const SizedBox(height: 16),
+                              const SmartRecommendationCard(),
+                              const SizedBox(height: 16),
+                              const UpcomingReservationCard(),
+                              const SizedBox(height: 16),
+                              const RewardsCard(),
+                              const SizedBox(height: 32),
+                            ]),
+                          ),
+                        ),
+                        // Bottom offset for nav bar
+                        const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                      ],
+                    ),
           // ---------- Fixed App Bar ----------
           _buildAppBar(topPadding),
           // ---------- Fixed Bottom Nav ----------

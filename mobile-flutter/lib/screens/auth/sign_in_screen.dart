@@ -5,6 +5,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/api/auth_service.dart';
 import '../../core/api/auth_models.dart';
 import 'sign_up_screen.dart';
+import '../home/home_screen.dart';
+import '../../features/reservations/screens/staff_dashboard_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -140,14 +142,21 @@ class _SignInScreenState extends State<SignInScreen>
         password: password,
       );
       if (!mounted) return;
-      // ✅ Success — show toast then pop back to home
+      // ✅ Success — navigate to role-based dashboard
       _showToastMessage(
         _ToastType.success,
         'Authenticated Successfully',
         'Welcome back, ${AuthService.instance.currentUser?.fullName ?? ''}!',
       );
       await Future.delayed(const Duration(milliseconds: 1400));
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      final auth = AuthService.instance;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => auth.isStaff ? const StaffDashboardScreen() : const HomeScreen(),
+        ),
+        (route) => false, // Clear the whole stack
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       // Map error to the right field

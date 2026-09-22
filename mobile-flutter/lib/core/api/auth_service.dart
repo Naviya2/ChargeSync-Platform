@@ -19,6 +19,7 @@ class AuthService extends ChangeNotifier {
   bool get isAuthenticated   => _currentUser != null;
   bool get isInitialized     => _isInitialized;
   bool get isDriver          => _currentUser?.role == 'Driver';
+  bool get isStaff           => _currentUser?.role == 'StationStaff' || _currentUser?.role == 'StationOwner';
 
   // ── Bootstrap (call once at app start) ───────────────────────────────────────
 
