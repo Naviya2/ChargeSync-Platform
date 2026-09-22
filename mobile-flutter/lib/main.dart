@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'core/theme/app_theme.dart';
 import 'core/api/auth_service.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/auth/sign_in_screen.dart';
+import 'features/reservations/screens/staff_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,13 +29,25 @@ class ChargeSyncApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = AuthService.instance;
+
+    // Determine the initial screen based on role
+    Widget home;
+    if (!auth.isAuthenticated) {
+      home = const SignInScreen();
+    } else if (auth.isStaff) {
+      home = const StaffDashboardScreen();
+    } else {
+      home = const HomeScreen(); // Driver dashboard
+    }
+
     return MaterialApp(
       title: 'ChargeSync',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
-      home: const HomeScreen(),
+      home: home,
     );
   }
 }
