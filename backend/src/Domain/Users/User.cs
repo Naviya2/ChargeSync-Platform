@@ -1,3 +1,4 @@
+
 using Domain.Common;
 
 namespace Domain.Users;
@@ -40,6 +41,9 @@ public class User : AuditableEntity
 
     /// <summary>Account active/suspended flag. Suspended accounts cannot authenticate.</summary>
     public bool IsActive { get; private set; }
+
+    /// <summary>Prepaid wallet balance used for advance reservation deposits.</summary>
+    public decimal WalletBalance { get; private set; }
 
     /// <summary>
     /// Creates a new active user. <paramref name="passwordHash"/> must already be hashed.
@@ -90,6 +94,28 @@ public class User : AuditableEntity
     public void Activate() => IsActive = true;
 
     public void Deactivate() => IsActive = false;
+
+    /// <summary>
+    /// Deducts the specified amount from the wallet balance.
+    /// Throws if the balance would go negative.
+    /// </summary>
+    public void DeductBalance(decimal amount)
+    {
+        if (amount < 0)
+            throw new ArgumentException("Deduction amount cannot be negative.", nameof(amount));
+        if (WalletBalance < amount)
+            throw new InvalidOperationException(
+                $"Insufficient wallet balance. Available: {WalletBalance:C}, required: {amount:C}.");
+        WalletBalance -= amount;
+    }
+
+    /// <summary>Credits the specified amount to the wallet balance (e.g. cancellation refund).</summary>
+    public void CreditBalance(decimal amount)
+    {
+        if (amount < 0)
+            throw new ArgumentException("Credit amount cannot be negative.", nameof(amount));
+        WalletBalance += amount;
+    }
 
     private static string NormaliseEmail(string email) => email.Trim().ToLowerInvariant();
 

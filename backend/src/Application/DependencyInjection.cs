@@ -19,6 +19,9 @@ public static class DependencyInjection
         services.AddScoped<Application.Admin.IAdminStationService, Application.Admin.AdminStationService>();
         services.AddScoped<Application.Vehicles.IVehicleService, Application.Vehicles.VehicleService>();
 
+        services.AddScoped<Application.ReservationPlanning.IReservationService, Application.ReservationPlanning.ReservationService>();
+        services.AddScoped<Application.ReservationPlanning.IWaitlistService, Application.ReservationPlanning.WaitlistService>();
+
         return services;
     }
 }

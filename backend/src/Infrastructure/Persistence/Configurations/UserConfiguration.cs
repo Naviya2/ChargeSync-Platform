@@ -1,3 +1,4 @@
+
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -47,6 +48,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.IsActive)
             .IsRequired()
             .HasDefaultValue(true);
+
+        builder.Property(u => u.WalletBalance)
+            .IsRequired()
+            .HasPrecision(10, 2)
+            .HasDefaultValue(0m);
 
         builder.Property(u => u.CreatedAt)
             .IsRequired()
