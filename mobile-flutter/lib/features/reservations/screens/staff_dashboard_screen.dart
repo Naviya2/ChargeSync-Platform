@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import 'qr_scanner_screen.dart';
 import 'walk_in_booking_screen.dart';
 import 'kwh_override_screen.dart';
+import '../../stations/screens/station_management_screen.dart';
 import '../../../screens/auth/sign_in_screen.dart';
 
 class StaffDashboardScreen extends StatefulWidget {
@@ -61,6 +62,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
             children: const [
               _StaffHomeTab(),
               QrScannerScreen(),
+              StationManagementScreen(),
               WalkInBookingScreen(),
               KwhOverrideScreen(),
             ],
@@ -208,16 +210,22 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
                         onTap: () => setState(() => _currentTab = 1),
                       ),
                       _NavItem(
-                        icon: Icons.directions_walk_rounded,
-                        label: 'Walk-In',
+                        icon: Icons.ev_station_rounded,
+                        label: 'Stations',
                         isActive: _currentTab == 2,
                         onTap: () => setState(() => _currentTab = 2),
                       ),
                       _NavItem(
-                        icon: Icons.electric_meter_rounded,
-                        label: 'kWh Override',
+                        icon: Icons.directions_walk_rounded,
+                        label: 'Walk-In',
                         isActive: _currentTab == 3,
                         onTap: () => setState(() => _currentTab = 3),
+                      ),
+                      _NavItem(
+                        icon: Icons.electric_meter_rounded,
+                        label: 'kWh Override',
+                        isActive: _currentTab == 4,
+                        onTap: () => setState(() => _currentTab = 4),
                       ),
                     ],
                   ),
