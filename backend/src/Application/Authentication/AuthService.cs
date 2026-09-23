@@ -3,6 +3,7 @@ using Application.Common;
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Domain.Users;
+using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Authentication;
@@ -65,6 +66,41 @@ public sealed class AuthService : IAuthService
 
         if (user is null || !user.IsActive
             || !_passwordHasher.Verify(request.Password, user.PasswordHash))
+        {
+            throw new InvalidCredentialsException();
+        }
+
+        return await IssueSessionAsync(user, cancellationToken);
+    }
+
+    public async Task<AuthResult> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default)
+    {
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken);
+        }
+        catch (InvalidJwtException)
+        {
+            throw new InvalidCredentialsException();
+        }
+
+        var email = NormaliseEmail(payload.Email);
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+
+        if (user is null)
+        {
+            if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
+                role = UserRole.Driver;
+
+            user = User.CreateGoogleUser(payload.Name ?? email, email, role);
+            _db.Users.Add(user);
+            // Must save changes so user gets an ID before issuing session
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        else if (!user.IsActive)
         {
             throw new InvalidCredentialsException();
         }

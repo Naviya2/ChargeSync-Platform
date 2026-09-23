@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "579925484739",
+    "project_id": "chargesync-2f698",
+    "storage_bucket": "chargesync-2f698.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:579925484739:android:b806f01c143ef44503ee76",
+        "android_client_info": {
+          "package_name": "com.chargesync.chargesync"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "579925484739-q05cfaf1hiuj5ug2c6b4n9gqb8degksl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApitiax49InFGcdGxxgXTYU-xH_Wju8qs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "579925484739-q05cfaf1hiuj5ug2c6b4n9gqb8degksl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

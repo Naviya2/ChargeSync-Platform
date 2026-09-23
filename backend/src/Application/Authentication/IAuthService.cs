@@ -10,6 +10,9 @@ public interface IAuthService
     /// <summary>Authenticates an existing account by email and password.</summary>
     Task<AuthResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Authenticates via Google ID token.</summary>
+    Task<AuthResult> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Exchanges a valid refresh token for a new session, rotating the refresh token.</summary>
     Task<AuthResult> RefreshAsync(RefreshRequest request, CancellationToken cancellationToken = default);
 

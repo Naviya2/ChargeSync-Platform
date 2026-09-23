@@ -59,12 +59,12 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
           // ── Content ──────────────────────────────────────────────
           IndexedStack(
             index: _currentTab,
-            children: const [
-              _StaffHomeTab(),
-              QrScannerScreen(),
-              StationManagementScreen(),
-              WalkInBookingScreen(),
-              KwhOverrideScreen(),
+            children: [
+              _StaffHomeTab(onTabSelected: (idx) => setState(() => _currentTab = idx)),
+              const QrScannerScreen(),
+              const StationManagementScreen(),
+              const WalkInBookingScreen(),
+              const KwhOverrideScreen(),
             ],
           ),
           // ── App Bar ──────────────────────────────────────────────
@@ -241,7 +241,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
 
 // ── Staff Home Tab ────────────────────────────────────────────────────────────
 class _StaffHomeTab extends StatelessWidget {
-  const _StaffHomeTab();
+  final ValueChanged<int> onTabSelected;
+  const _StaffHomeTab({required this.onTabSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -279,20 +280,26 @@ class _StaffHomeTab extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          // Quick action cards
+          const SizedBox(height: 16),
           _ActionCard(
             icon: Icons.qr_code_scanner_rounded,
             title: 'Scan QR Check-in',
             subtitle: 'Scan a driver\'s reservation QR code to start their session.',
-            onTap: () {},
+            onTap: () => onTabSelected(1),
           ),
           const SizedBox(height: 16),
           _ActionCard(
             icon: Icons.directions_walk_rounded,
             title: 'Admit Walk-In',
             subtitle: 'Lock an available charger for an unregistered customer.',
-            onTap: () {},
+            onTap: () => onTabSelected(3),
+          ),
+          const SizedBox(height: 16),
+          _ActionCard(
+            icon: Icons.electric_meter_rounded,
+            title: 'kWh Override',
+            subtitle: 'Manually correct system-calculated energy consumption.',
+            onTap: () => onTabSelected(4),
           ),
         ],
       ),

@@ -34,8 +34,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique();
 
         builder.Property(u => u.PasswordHash)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(255);
+
+        builder.Property(u => u.AuthProvider)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasDefaultValue("Local");
 
         builder.Property(u => u.Role)
             .IsRequired()
