@@ -1,0 +1,41 @@
+name: Web Portal CI
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'web-react/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'web-react/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: web-react
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+        cache-dependency-path: 'web-react/package-lock.json'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run Linter
+      run: npm run lint --if-present
+
+    - name: Run Tests
+      run: npm test --if-present
+
+    - name: Build
+      run: npm run build
