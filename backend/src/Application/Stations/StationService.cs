@@ -50,6 +50,25 @@ public class StationService : IStationService
         return MapToDto(station);
     }
 
+    public async Task<StationDto> UpdateStationAsync(Guid stationId, Guid ownerId, UpdateStationRequest request, CancellationToken cancellationToken = default)
+    {
+        var station = await _context.Stations
+            .Include(s => s.Chargers)
+                .ThenInclude(c => c.MaintenanceWindows)
+            .Include(s => s.OperatingHours)
+            .FirstOrDefaultAsync(s => s.Id == stationId && s.OwnerId == ownerId, cancellationToken);
+
+        if (station == null)
+            throw new UnauthorizedAccessException("Station not found or you are not the owner.");
+
+        station.UpdateDetails(request.Name, request.Address, request.Latitude, request.Longitude);
+        
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(station);
+    }
+
+
     public async Task<ChargerDto> AddChargerAsync(Guid stationId, Guid ownerId, AddChargerRequest request, CancellationToken cancellationToken = default)
     {
         var station = await _context.Stations
@@ -93,7 +112,7 @@ public class StationService : IStationService
         if (charger == null)
             throw new UnauthorizedAccessException("Charger not found or you are not the owner.");
 
-        var maintenance = MaintenanceWindow.Create(charger.Id, request.Title, request.Reason, request.StartTime, request.EndTime);
+        var maintenance = MaintenanceWindow.Create(charger.Id, request.Reason, request.StartTime, request.EndTime);
         
         _context.MaintenanceWindows.Add(maintenance);
         await _context.SaveChangesAsync(cancellationToken);
@@ -101,7 +120,29 @@ public class StationService : IStationService
         return new MaintenanceWindowDto
         {
             Id = maintenance.Id,
-            Title = maintenance.Title,
+            Reason = maintenance.Reason,
+            StartTime = maintenance.StartTime,
+            EndTime = maintenance.EndTime
+        };
+    }
+
+    public async Task<MaintenanceWindowDto> UpdateMaintenanceWindowAsync(Guid maintenanceId, Guid ownerId, MaintenanceWindowDto request, CancellationToken cancellationToken = default)
+    {
+        var maintenance = await _context.MaintenanceWindows
+            .Include(m => m.Charger)
+                .ThenInclude(c => c.Station)
+            .FirstOrDefaultAsync(m => m.Id == maintenanceId && m.Charger.Station.OwnerId == ownerId, cancellationToken);
+
+        if (maintenance == null)
+            throw new UnauthorizedAccessException("Maintenance window not found or you are not the owner.");
+
+        maintenance.Update(request.Reason, request.StartTime, request.EndTime);
+        
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new MaintenanceWindowDto
+        {
+            Id = maintenance.Id,
             Reason = maintenance.Reason,
             StartTime = maintenance.StartTime,
             EndTime = maintenance.EndTime
@@ -148,7 +189,6 @@ public class StationService : IStationService
             MaintenanceWindows = charger.MaintenanceWindows?.Select(m => new MaintenanceWindowDto
             {
                 Id = m.Id,
-                Title = m.Title,
                 Reason = m.Reason,
                 StartTime = m.StartTime,
                 EndTime = m.EndTime
