@@ -27,10 +27,10 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Restore dependencies
-      run: dotnet restore ChargeSync.sln
+      run: dotnet restore ChargeSync.Backend.sln
 
     - name: Build
-      run: dotnet build ChargeSync.sln --no-restore --configuration Release
+      run: dotnet build ChargeSync.Backend.sln --no-restore --configuration Release
 
     - name: Test
-      run: dotnet test ChargeSync.sln --no-build --verbosity normal --configuration Release
+      run: dotnet test ChargeSync.Backend.sln --no-build --verbosity normal --configuration Release
