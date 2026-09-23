@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom'
+import { ROUTES } from '../../../lib/constants'
+
 export default function StationsHeader() {
   return (
     <div className="flex flex-col justify-between gap-space-md md:flex-row md:items-center">
@@ -25,13 +28,13 @@ export default function StationsHeader() {
           <span className="material-symbols-outlined text-base">file_download</span>
           Export Network Data
         </button>
-        <button
-          type="button"
+        <Link
+          to={ROUTES.STATIONS + '/new'}
           className="inline-flex items-center gap-space-xs rounded-xl bg-primary px-space-lg py-space-xs font-headline-sm text-headline-sm text-on-primary shadow-sm transition-all hover:bg-primary-container"
         >
           <span className="material-symbols-outlined text-base">add_circle</span>
           Add Station
-        </button>
+        </Link>
       </div>
     </div>
   )
