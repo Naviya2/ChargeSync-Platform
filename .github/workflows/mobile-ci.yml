@@ -2,11 +2,11 @@ name: Mobile CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "dev" ]
     paths:
       - 'mobile-flutter/**'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "dev" ]
     paths:
       - 'mobile-flutter/**'
 

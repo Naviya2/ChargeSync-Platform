@@ -2,11 +2,11 @@ name: Web Portal CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "dev" ]
     paths:
       - 'web-react/**'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "dev" ]
     paths:
       - 'web-react/**'
 
