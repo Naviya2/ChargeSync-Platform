@@ -21,6 +21,15 @@ public sealed class CreateReservationRequest
 }
 
 /// <summary>
+/// Payload to update an existing reservation time window.
+/// </summary>
+public sealed class UpdateReservationRequest
+{
+    public DateTimeOffset StartTime { get; set; }
+    public DateTimeOffset EndTime { get; set; }
+}
+
+/// <summary>
 /// Payload station staff submits to admit an unregistered walk-in customer.
 /// No driver account or advance payment is required.
 /// </summary>

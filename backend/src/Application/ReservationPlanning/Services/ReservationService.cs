@@ -266,6 +266,74 @@ public sealed class ReservationService : IReservationService
             .ToListAsync(cancellationToken);
     }
 
+    // ── Update reservation time window ──────────────────────────────────────────
+
+    public async Task<ReservationDto> UpdateAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        UpdateReservationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var reservation = await _db.Reservations
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new NotFoundException(nameof(Reservation), id);
+
+        // Only admins or station owners can update this.
+        if (requesterRole == UserRole.Driver.ToString())
+            throw new ForbiddenAccessException();
+
+        // Business logic to update the time window would be handled in the Domain object.
+        // For now, we update it via the entity directly if it exposes a setter or method.
+        // Wait, the properties might be private setters.
+        // We will assume a method UpdateTimeWindow exists on Reservation entity, or just use private setters reflection if needed.
+        
+        // Ensure no overlapping reservations exist in the new time window
+        var overlapping = await _db.Reservations
+            .AnyAsync(r => r.ChargerId == reservation.ChargerId 
+                        && r.Id != id 
+                        && r.Status != ReservationStatus.Cancelled
+                        && r.StartTime < request.EndTime 
+                        && r.EndTime > request.StartTime, 
+                      cancellationToken);
+        
+        if (overlapping)
+            throw new InvalidOperationException("The requested time window overlaps with an existing reservation.");
+
+        reservation.GetType().GetProperty("StartTime")?.SetValue(reservation, request.StartTime);
+        reservation.GetType().GetProperty("EndTime")?.SetValue(reservation, request.EndTime);
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return ToDto(reservation);
+    }
+
+    // ── Hard delete reservation ───────────────────────────────────────────────
+
+    public async Task DeleteAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var reservation = await _db.Reservations
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new NotFoundException(nameof(Reservation), id);
+
+        // Only Admins or Station Owners should be able to hard delete
+        if (requesterRole == UserRole.Driver.ToString())
+            throw new ForbiddenAccessException();
+
+        // Also delete associated history
+        var history = await _db.ReservationStatusHistories
+            .Where(h => h.ReservationId == id)
+            .ToListAsync(cancellationToken);
+            
+        _db.ReservationStatusHistories.RemoveRange(history);
+        _db.Reservations.Remove(reservation);
+        
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /// <summary>

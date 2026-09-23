@@ -69,6 +69,29 @@ public sealed class ReservationsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StationOwner)]
+    public async Task<ActionResult<ReservationDto>> Update(Guid id, [FromBody] UpdateReservationRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var reservation = await _reservationService.UpdateAsync(RequesterId, RequesterRole, id, request, cancellationToken);
+            return Ok(reservation);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.StationOwner)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await _reservationService.DeleteAsync(RequesterId, RequesterRole, id, cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("staff-checkin")]
     [Authorize(Policy = AuthorizationPolicies.StationOwner)]
     public async Task<ActionResult<ReservationDto>> StaffCheckin([FromBody] StaffCheckinRequest request, CancellationToken cancellationToken)
