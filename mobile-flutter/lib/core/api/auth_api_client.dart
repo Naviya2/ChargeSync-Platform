@@ -55,6 +55,18 @@ class AuthApiClient {
     return authResult;
   }
 
+  /// POST /api/auth/google
+  Future<AuthResult> googleLogin(String idToken, {String role = 'Driver'}) async {
+    final result = await _post(
+      ApiConfig.googleLogin,
+      {'idToken': idToken, 'role': role},
+      requireAuth: false,
+    );
+    final authResult = AuthResult.fromJson(result);
+    await _saveTokens(authResult);
+    return authResult;
+  }
+
   /// POST /api/auth/register
   Future<AuthResult> register(RegisterRequest request) async {
     final result = await _post(ApiConfig.register, request.toJson(), requireAuth: false);

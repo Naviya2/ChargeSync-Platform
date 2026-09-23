@@ -22,8 +22,9 @@ class ApiConfig {
   }
 
   // ── Auth endpoints ──────────────────────────────────────────────────────────
-  static String get login    => '$baseUrl/api/auth/login';
-  static String get register => '$baseUrl/api/auth/register';
+  static String get login       => '$baseUrl/api/auth/login';
+  static String get googleLogin => '$baseUrl/api/auth/google';
+  static String get register    => '$baseUrl/api/auth/register';
   static String get refresh  => '$baseUrl/api/auth/refresh';
   static String get logout   => '$baseUrl/api/auth/logout';
   static String get me       => '$baseUrl/api/auth/me';

@@ -14,11 +14,12 @@ public class User : AuditableEntity
         // Required by EF Core.
     }
 
-    private User(string fullName, string email, string passwordHash, UserRole role, string? phoneNumber)
+    private User(string fullName, string email, string? passwordHash, string authProvider, UserRole role, string? phoneNumber)
     {
         FullName = fullName;
         Email = email;
         PasswordHash = passwordHash;
+        AuthProvider = authProvider;
         Role = role;
         PhoneNumber = phoneNumber;
         IsActive = true;
@@ -32,8 +33,11 @@ public class User : AuditableEntity
     /// <summary>Login email address. Stored normalised (trimmed, lower-cased); unique.</summary>
     public string Email { get; private set; } = null!;
 
-    /// <summary>Secure (bcrypt) password hash. Never the plain-text password.</summary>
-    public string PasswordHash { get; private set; } = null!;
+    /// <summary>Secure (bcrypt) password hash. Null if using third-party auth.</summary>
+    public string? PasswordHash { get; private set; }
+
+    /// <summary>Authentication provider (e.g., "Local", "Google").</summary>
+    public string AuthProvider { get; private set; } = "Local";
 
     public UserRole Role { get; private set; }
 
@@ -66,8 +70,31 @@ public class User : AuditableEntity
             fullName.Trim(),
             NormaliseEmail(email),
             passwordHash,
+            "Local",
             role,
             NormalisePhone(phoneNumber));
+    }
+
+    /// <summary>
+    /// Creates a new user authenticated via Google (no password).
+    /// </summary>
+    public static User CreateGoogleUser(
+        string fullName,
+        string email,
+        UserRole role = UserRole.Driver)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            throw new ArgumentException("Full name is required.", nameof(fullName));
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required.", nameof(email));
+
+        return new User(
+            fullName.Trim(),
+            NormaliseEmail(email),
+            null,
+            "Google",
+            role,
+            null);
     }
 
     /// <summary>Replaces the stored password hash (already-hashed value).</summary>

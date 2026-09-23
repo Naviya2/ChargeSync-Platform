@@ -180,6 +180,29 @@ class _SignInScreenState extends State<SignInScreen>
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final auth = AuthService.instance;
+      await auth.loginWithGoogle();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => auth.isStaff ? const StaffDashboardScreen() : const HomeScreen(),
+        ),
+        (route) => false,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showToastMessage(_ToastType.error, 'Sign In Failed', e.userMessage);
+    } catch (e) {
+      if (!mounted) return;
+      _showToastMessage(_ToastType.error, 'Google Sign-in Error', 'Could not complete Google Sign-in.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _fillDemo() {
     _emailController.text = 'driver@chargesync.network';
     _passwordController.text = 'QuantumDrive2025!';
@@ -236,9 +259,6 @@ class _SignInScreenState extends State<SignInScreen>
             ),
             child: Column(
               children: [
-                // Status bar row
-                _buildStatusBar(),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -277,13 +297,6 @@ class _SignInScreenState extends State<SignInScreen>
                       // Register link
                       _buildRegisterRow(),
                       const SizedBox(height: 16),
-
-                      // Security badge
-                      _buildSecurityBadge(),
-                      const SizedBox(height: 20),
-
-                      // Dev demo panel
-                      _buildDemoPanel(),
                     ],
                   ),
                 ),
@@ -812,7 +825,7 @@ class _SignInScreenState extends State<SignInScreen>
   // ── Google button ────────────────────────────────────────────────────────────
   Widget _buildGoogleButton() {
     return GestureDetector(
-      onTap: () {},
+      onTap: _isLoading ? null : _handleGoogleSignIn,
       child: Container(
         height: 52,
         decoration: BoxDecoration(

@@ -232,6 +232,30 @@ class _SignUpScreenState extends State<SignUpScreen>
     }
   }
 
+  Future<void> _handleGoogleSignUp() async {
+    setState(() => _isLoading = true);
+    try {
+      final auth = AuthService.instance;
+      await auth.loginWithGoogle();
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoading = false;
+        _isSuccess = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 2000));
+      if (mounted) Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.userMessage)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google Sign-up failed')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   // ── Password strength ────────────────────────────────────────────────────────
   double _passwordStrength(String pwd) {
     if (pwd.isEmpty) return 0;
@@ -328,25 +352,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                       size: 18, color: AppColors.onSurface),
                 ),
               ),
-              Text(
-                '09:41',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onSurface,
-                  letterSpacing: 0.06,
-                ),
-              ),
-              Row(children: const [
-                Icon(Icons.signal_cellular_alt_rounded,
-                    size: 16, color: AppColors.onSurfaceVariant),
-                SizedBox(width: 4),
-                Icon(Icons.wifi_rounded,
-                    size: 16, color: AppColors.onSurfaceVariant),
-                SizedBox(width: 4),
-                Icon(Icons.battery_charging_full,
-                    size: 18, color: AppColors.primary),
-              ]),
+              const SizedBox(width: 36), // Balance placeholder
             ],
           ),
           const SizedBox(height: 16),
@@ -1416,7 +1422,7 @@ class _SignUpScreenState extends State<SignUpScreen>
 
   Widget _buildSocialOption() {
     return GestureDetector(
-      onTap: () {},
+      onTap: _isLoading ? null : _handleGoogleSignUp,
       child: Container(
         height: 52,
         decoration: BoxDecoration(
