@@ -12,9 +12,6 @@ public class MaintenanceWindowConfiguration : IEntityTypeConfiguration<Maintenan
         builder.Property(m => m.Id)
             .HasDefaultValueSql("gen_random_uuid()");
 
-        builder.Property(m => m.Title)
-            .HasMaxLength(200)
-            .IsRequired();
 
         builder.Property(m => m.Reason)
             .HasMaxLength(1000);

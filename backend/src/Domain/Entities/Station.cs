@@ -30,8 +30,8 @@ public class Station : AuditableEntity
     public StationStatus Status { get; private set; }
     public string? RejectionReason { get; private set; }
 
-    public ICollection<Charger> Chargers { get; private set; } = null!;
-    public ICollection<OperatingHour> OperatingHours { get; private set; } = null!;
+    public ICollection<Charger> Chargers { get; private set; } = new List<Charger>();
+    public ICollection<OperatingHour> OperatingHours { get; private set; } = new List<OperatingHour>();
 
     public User Owner { get; private set; } = null!;
 

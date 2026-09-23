@@ -44,6 +44,20 @@ public class StationsController : ControllerBase
         return CreatedAtAction(nameof(GetStationById), new { id = station.Id }, station);
     }
 
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateStation(Guid id, [FromBody] UpdateStationRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var station = await _stationService.UpdateStationAsync(id, OwnerId, request, cancellationToken);
+            return Ok(station);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
     [HttpPost("{id:guid}/chargers")]
     public async Task<IActionResult> AddCharger(Guid id, [FromBody] AddChargerRequest request, CancellationToken cancellationToken)
     {
@@ -82,6 +96,20 @@ public class StationsController : ControllerBase
         try
         {
             var mw = await _stationService.AddMaintenanceWindowAsync(chargerId, OwnerId, request, cancellationToken);
+            return Ok(mw);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpPut("maintenance/{maintenanceId:guid}")]
+    public async Task<IActionResult> UpdateMaintenanceWindow(Guid maintenanceId, [FromBody] MaintenanceWindowDto request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var mw = await _stationService.UpdateMaintenanceWindowAsync(maintenanceId, OwnerId, request, cancellationToken);
             return Ok(mw);
         }
         catch (UnauthorizedAccessException)
