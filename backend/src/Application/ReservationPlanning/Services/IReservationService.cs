@@ -77,4 +77,24 @@ public interface IReservationService
         string requesterRole,
         Guid id,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates the time window of an existing reservation.
+    /// </summary>
+    Task<ReservationDto> UpdateAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        UpdateReservationRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Hard deletes a reservation from the database.
+    /// Primarily for admin use or data cleanup.
+    /// </summary>
+    Task DeleteAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        CancellationToken cancellationToken = default);
 }

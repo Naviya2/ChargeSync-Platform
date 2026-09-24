@@ -29,6 +29,14 @@ public class StationsController : ControllerBase
         return Ok(stations);
     }
 
+    [HttpGet("all")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAllStations(CancellationToken cancellationToken)
+    {
+        var stations = await _stationService.GetAllStationsAsync(cancellationToken);
+        return Ok(stations);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetStationById(Guid id, CancellationToken cancellationToken)
     {

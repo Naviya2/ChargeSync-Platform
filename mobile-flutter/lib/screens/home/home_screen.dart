@@ -7,8 +7,11 @@ import 'widgets/quick_actions_row.dart';
 import 'widgets/smart_recommendation_card.dart';
 import 'widgets/upcoming_reservation_card.dart';
 import 'widgets/rewards_card.dart';
+import '../../features/station_search/screens/station_map_screen.dart';
 import '../auth/sign_in_screen.dart';
 import '../../features/reservations/screens/reservation_list_screen.dart';
+import '../../core/api/auth_service.dart';
+import '../profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -45,40 +48,44 @@ class _HomeScreenState extends State<HomeScreen>
       body: Stack(
         children: [
           // ---------- Main scrollable content ----------
-          _currentTab == 2
-              ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 112, bottom: 80), child: const ReservationListScreen()))
-              : CustomScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      slivers: [
-                        // Top offset for app bar
-                        SliverToBoxAdapter(
-                          child: SizedBox(height: topPadding + 112),
+          _currentTab == 1
+              ? Positioned.fill(child: const StationMapScreen())
+              : _currentTab == 2
+                  ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 112, bottom: 80), child: const ReservationListScreen()))
+                  : _currentTab == 4
+                      ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 112, bottom: 80), child: const ProfileScreen()))
+                      : CustomScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          slivers: [
+                            // Top offset for app bar
+                            SliverToBoxAdapter(
+                              child: SizedBox(height: topPadding + 112),
+                            ),
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                              sliver: SliverList(
+                                delegate: SliverChildListDelegate([
+                                  _buildGreetingSection(),
+                                  const SizedBox(height: 16),
+                                  const VehicleCard(),
+                                  const SizedBox(height: 16),
+                                  const FindChargerCard(),
+                                  const SizedBox(height: 16),
+                                  const QuickActionsRow(),
+                                  const SizedBox(height: 16),
+                                  const SmartRecommendationCard(),
+                                  const SizedBox(height: 16),
+                                  const UpcomingReservationCard(),
+                                  const SizedBox(height: 16),
+                                  const RewardsCard(),
+                                  const SizedBox(height: 32),
+                                ]),
+                              ),
+                            ),
+                            // Bottom offset for nav bar
+                            const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                          ],
                         ),
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                          sliver: SliverList(
-                            delegate: SliverChildListDelegate([
-                              _buildGreetingSection(),
-                              const SizedBox(height: 16),
-                              const VehicleCard(),
-                              const SizedBox(height: 16),
-                              const FindChargerCard(),
-                              const SizedBox(height: 16),
-                              const QuickActionsRow(),
-                              const SizedBox(height: 16),
-                              const SmartRecommendationCard(),
-                              const SizedBox(height: 16),
-                              const UpcomingReservationCard(),
-                              const SizedBox(height: 16),
-                              const RewardsCard(),
-                              const SizedBox(height: 32),
-                            ]),
-                          ),
-                        ),
-                        // Bottom offset for nav bar
-                        const SliverToBoxAdapter(child: SizedBox(height: 80)),
-                      ],
-                    ),
           // ---------- Fixed App Bar ----------
           _buildAppBar(topPadding),
           // ---------- Fixed Bottom Nav ----------
@@ -95,6 +102,9 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ---- Greeting Section ----
   Widget _buildGreetingSection() {
+    final user = AuthService.instance.currentUser;
+    final name = user?.fullName.split(' ').first ?? 'Driver';
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -102,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Good morning, Maya',
+              'Good morning, $name',
               style: GoogleFonts.inter(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -111,21 +121,6 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
             const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.eco_rounded, size: 14, color: AppColors.primary),
-                const SizedBox(width: 4),
-                Text(
-                  'San Francisco, CA • Clean Grid 78%',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.onSurfaceVariant,
-                    letterSpacing: 0.02,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
         Row(
@@ -172,25 +167,35 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(width: 8),
             // Avatar
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.25),
-                    blurRadius: 12,
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Container(
-                  color: AppColors.primaryContainer,
-                  child: const Icon(
-                    Icons.person_rounded,
-                    size: 24,
-                    color: AppColors.onPrimaryContainer,
+            GestureDetector(
+              onTap: () {
+                setState(() => _currentTab = 4);
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.25),
+                      blurRadius: 12,
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Container(
+                    color: AppColors.primaryContainer,
+                    child: Center(
+                      child: Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onPrimaryContainer,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -221,45 +226,10 @@ class _HomeScreenState extends State<HomeScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Status bar area
             SizedBox(height: topPadding),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '09:41',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.wifi_rounded, size: 15, color: AppColors.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.signal_cellular_alt_rounded, size: 15, color: AppColors.onSurfaceVariant),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.battery_charging_full, size: 16, color: AppColors.primary),
-                      const SizedBox(width: 2),
-                      Text(
-                        '84%',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
             // App logo + identity row
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -296,60 +266,9 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                             ],
                           ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              AnimatedBuilder(
-                                animation: _pulseController,
-                                builder: (_, __) => Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Tesla Model Y • 68%',
-                                style: GoogleFonts.inter(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSurfaceVariant,
-                                  letterSpacing: 0.06,
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ],
-                  ),
-                  // Profile avatar (header) — taps to sign-in
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const SignInScreen()),
-                    ),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primaryContainer,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.20),
-                            blurRadius: 12,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        size: 18,
-                        color: AppColors.onPrimaryContainer,
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -411,9 +330,6 @@ class _HomeScreenState extends State<HomeScreen>
                 isActive: _currentTab == 4,
                 onTap: () {
                   setState(() => _currentTab = 4);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SignInScreen()),
-                  );
                 },
               ),
             ],

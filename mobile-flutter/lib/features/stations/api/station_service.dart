@@ -75,6 +75,12 @@ class StationService {
     return (response as List).map((e) => Station.fromJson(e)).toList();
   }
 
+  Future<List<Station>> getAllStations() async {
+    final response = await _get('/api/Stations/all');
+    if (response == null) return [];
+    return (response as List).map((e) => Station.fromJson(e)).toList();
+  }
+
   Future<Station> getStationById(String id) async {
     final response = await _get('/api/Stations/$id');
     return Station.fromJson(response);

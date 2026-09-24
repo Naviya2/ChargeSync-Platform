@@ -27,6 +27,18 @@ public class StationService : IStationService
         return stations.Select(MapToDto).ToList();
     }
 
+    public async Task<List<StationDto>> GetAllStationsAsync(CancellationToken cancellationToken = default)
+    {
+        var stations = await _context.Stations
+            .Include(s => s.Chargers)
+                .ThenInclude(c => c.MaintenanceWindows)
+            .Include(s => s.OperatingHours)
+            .OrderBy(s => s.Id)
+            .ToListAsync(cancellationToken);
+
+        return stations.Select(MapToDto).ToList();
+    }
+
     public async Task<StationDto?> GetStationByIdAsync(Guid stationId, Guid ownerId, CancellationToken cancellationToken = default)
     {
         var station = await _context.Stations
