@@ -45,6 +45,9 @@ public sealed class CompatibleChargerDto
     public ConnectorType Connector { get; set; }
     public decimal PowerKw { get; set; }
     public bool IsCompatible { get; set; }
+    public decimal EffectiveChargingPowerKw { get; set; }
+    public double? EstimatedChargeTimeMinutes { get; set; }
+    public string? EstimatedChargeTimeFormatted { get; set; }
 }
 
 public sealed class NearbyStationsRequest
