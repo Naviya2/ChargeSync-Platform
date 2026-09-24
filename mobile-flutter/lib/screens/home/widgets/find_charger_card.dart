@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../stations/stations_screen.dart';
+import '../../../features/station_search/screens/station_map_screen.dart';
 
 class FindChargerCard extends StatefulWidget {
   const FindChargerCard({super.key});
@@ -39,7 +39,7 @@ class _FindChargerCardState extends State<FindChargerCard>
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => const StationsScreen(),
+              builder: (_) => const StationMapScreen(),
             ),
           );
         },

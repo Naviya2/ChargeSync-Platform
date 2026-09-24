@@ -5,6 +5,7 @@ namespace Application.Stations;
 public interface IStationService
 {
     Task<List<StationDto>> GetMyStationsAsync(Guid ownerId, CancellationToken cancellationToken = default);
+    Task<List<StationDto>> GetAllStationsAsync(CancellationToken cancellationToken = default);
     Task<StationDto?> GetStationByIdAsync(Guid stationId, Guid ownerId, CancellationToken cancellationToken = default);
     Task<StationDto> RegisterStationAsync(Guid ownerId, RegisterStationRequest request, CancellationToken cancellationToken = default);
     Task<StationDto> UpdateStationAsync(Guid stationId, Guid ownerId, UpdateStationRequest request, CancellationToken cancellationToken = default);
