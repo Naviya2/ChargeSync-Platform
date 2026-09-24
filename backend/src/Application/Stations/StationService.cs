@@ -39,6 +39,48 @@ public class StationService : IStationService
         return stations.Select(MapToDto).ToList();
     }
 
+    public async Task<List<StationDto>> SearchStationsAsync(double? latitude, double? longitude, double radiusKm, ConnectorType? connector, string? query, CancellationToken cancellationToken = default)
+    {
+        var queryable = _context.Stations
+            .Include(s => s.Chargers)
+                .ThenInclude(c => c.MaintenanceWindows)
+            .Include(s => s.OperatingHours)
+            .Where(s => s.Status == StationStatus.Active);
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var q = query.Trim().ToLower();
+            queryable = queryable.Where(s => s.Name.ToLower().Contains(q) || s.Address.ToLower().Contains(q));
+        }
+
+        if (connector.HasValue)
+        {
+            queryable = queryable.Where(s => s.Chargers.Any(c => c.Connector == connector.Value));
+        }
+
+        var list = await queryable.ToListAsync(cancellationToken);
+
+        if (latitude.HasValue && longitude.HasValue)
+        {
+            list = list.Where(s => DistanceKm(latitude.Value, longitude.Value, s.Latitude, s.Longitude) <= radiusKm)
+                       .OrderBy(s => DistanceKm(latitude.Value, longitude.Value, s.Latitude, s.Longitude))
+                       .ToList();
+        }
+
+        return list.Select(MapToDto).ToList();
+    }
+
+    private static double DistanceKm(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double r = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        return r * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    }
+
     public async Task<StationDto?> GetStationByIdAsync(Guid stationId, Guid ownerId, CancellationToken cancellationToken = default)
     {
         var station = await _context.Stations

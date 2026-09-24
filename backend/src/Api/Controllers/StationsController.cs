@@ -37,6 +37,20 @@ public class StationsController : ControllerBase
         return Ok(stations);
     }
 
+    [HttpGet("search")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SearchStations(
+        [FromQuery] double? latitude,
+        [FromQuery] double? longitude,
+        [FromQuery] double radiusKm = 25,
+        [FromQuery] Domain.Enums.ConnectorType? connector = null,
+        [FromQuery] string? query = null,
+        CancellationToken cancellationToken = default)
+    {
+        var stations = await _stationService.SearchStationsAsync(latitude, longitude, radiusKm, connector, query, cancellationToken);
+        return Ok(stations);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetStationById(Guid id, CancellationToken cancellationToken)
     {
