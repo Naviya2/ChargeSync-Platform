@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/api/auth_service.dart';
 import '../auth/sign_in_screen.dart';
+import '../vehicles/vehicles_list_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -85,8 +86,34 @@ class ProfileScreen extends StatelessWidget {
               color: AppColors.primary,
             ),
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 32),
           
+          // My Vehicles Tile (if Driver)
+          if (user.role.toLowerCase() == 'driver')
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tileColor: AppColors.surfaceContainerLow,
+                leading: const Icon(Icons.electric_car_rounded, color: AppColors.primary),
+                title: Text(
+                  'My Registered Vehicles',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                ),
+                subtitle: Text(
+                  'Manage EVs, connectors & max charge rates',
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.onSurfaceVariant),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const VehiclesListScreen()),
+                  );
+                },
+              ),
+            ),
+
           // Sign Out Button
           SizedBox(
             width: double.infinity,
