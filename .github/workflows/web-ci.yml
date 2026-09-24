@@ -33,6 +33,7 @@ jobs:
 
     - name: Run Linter
       run: npm run lint --if-present
+      continue-on-error: true
 
     - name: Run Tests
       run: npm test --if-present

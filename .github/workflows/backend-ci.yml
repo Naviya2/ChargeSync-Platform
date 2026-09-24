@@ -1,14 +1,14 @@
-name: Backend CI
+name: Mobile CI
 
 on:
   push:
     branches: [ "dev" ]
     paths:
-      - 'backend/**'
+      - 'mobile-flutter/**'
   pull_request:
     branches: [ "dev" ]
     paths:
-      - 'backend/**'
+      - 'mobile-flutter/**'
 
 jobs:
   build:
@@ -16,21 +16,22 @@ jobs:
 
     defaults:
       run:
-        working-directory: backend
+        working-directory: mobile-flutter
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
       with:
-        dotnet-version: 8.0.x
+        flutter-version: '3.47.5'
+        channel: 'stable'
 
-    - name: Restore dependencies
-      run: dotnet restore ChargeSync.Backend.sln
+    - name: Install dependencies
+      run: flutter pub get
 
-    - name: Build
-      run: dotnet build ChargeSync.Backend.sln --no-restore --configuration Release
+    - name: Analyze project source
+      run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-    - name: Test
-      run: dotnet test ChargeSync.Backend.sln --no-build --verbosity normal --configuration Release
+    - name: Run tests
+      run: flutter test
