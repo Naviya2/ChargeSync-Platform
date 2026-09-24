@@ -11,7 +11,7 @@ void main() {
   testWidgets('App launches and renders home screen', (WidgetTester tester) async {
     // Build the app and trigger a frame.
     await tester.pumpWidget(const ChargeSyncApp());
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     // Verify the app renders without crashing.
     expect(find.byType(MaterialApp), findsOneWidget);
@@ -19,7 +19,7 @@ void main() {
 
   testWidgets('Home screen has a Scaffold', (WidgetTester tester) async {
     await tester.pumpWidget(const ChargeSyncApp());
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     // Verify basic scaffold structure exists.
     expect(find.byType(Scaffold), findsWidgets);
