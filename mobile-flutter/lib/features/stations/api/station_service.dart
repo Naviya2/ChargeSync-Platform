@@ -81,6 +81,35 @@ class StationService {
     return (response as List).map((e) => Station.fromJson(e)).toList();
   }
 
+  Future<List<Station>> searchStations({
+    double? latitude,
+    double? longitude,
+    double radiusKm = 25,
+    int? connector,
+    String? query,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'radiusKm': radiusKm.toString(),
+        if (latitude != null) 'latitude': latitude.toString(),
+        if (longitude != null) 'longitude': longitude.toString(),
+        if (connector != null) 'connector': connector.toString(),
+        if (query != null && query.isNotEmpty) 'query': query,
+      };
+
+      final Uri uri = Uri.parse('${ApiConfig.baseUrl}/api/Stations/search').replace(queryParameters: queryParams);
+      final token = await _getAccessToken();
+      final response = await _client.get(uri, headers: _headers(token));
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (response.body.isEmpty) return [];
+        final List list = jsonDecode(response.body);
+        return list.map((e) => Station.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return getAllStations();
+  }
+
   Future<Station> getStationById(String id) async {
     final response = await _get('/api/Stations/$id');
     return Station.fromJson(response);
