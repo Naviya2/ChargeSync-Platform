@@ -8,7 +8,7 @@ public class Station : AuditableEntity
 {
     private Station() { }
 
-    private Station(string name, string address, double latitude, double longitude, Guid ownerId)
+    private Station(string name, string address, double latitude, double longitude, Guid ownerId, List<string>? documentUrls = null)
     {
         Name = name;
         Address = address;
@@ -16,6 +16,7 @@ public class Station : AuditableEntity
         Longitude = longitude;
         OwnerId = ownerId;
         Status = StationStatus.Pending;
+        DocumentUrls = documentUrls ?? new List<string>();
         Chargers = new List<Charger>();
         OperatingHours = new List<OperatingHour>();
     }
@@ -26,6 +27,7 @@ public class Station : AuditableEntity
     public double Latitude { get; private set; }
     public double Longitude { get; private set; }
     public Guid OwnerId { get; private set; }
+    public List<string> DocumentUrls { get; private set; } = new();
     
     public StationStatus Status { get; private set; }
     public string? RejectionReason { get; private set; }
@@ -35,14 +37,14 @@ public class Station : AuditableEntity
 
     public User Owner { get; private set; } = null!;
 
-    public static Station Create(string name, string address, double latitude, double longitude, Guid ownerId)
+    public static Station Create(string name, string address, double latitude, double longitude, Guid ownerId, List<string>? documentUrls = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Station name is required.", nameof(name));
         if (string.IsNullOrWhiteSpace(address))
             throw new ArgumentException("Station address is required.", nameof(address));
 
-        return new Station(name.Trim(), address.Trim(), latitude, longitude, ownerId);
+        return new Station(name.Trim(), address.Trim(), latitude, longitude, ownerId, documentUrls);
     }
 
     public void Approve()
