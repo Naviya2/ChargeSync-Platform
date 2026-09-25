@@ -22,20 +22,20 @@ class ReservationApiClient {
     };
   }
 
-  Future<Map<String, dynamic>> _get(String path) async {
+  Future<dynamic> _get(String path) async {
     final token = await _getAccessToken();
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
     final response = await _client.get(url, headers: _headers(token));
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) return {};
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      return jsonDecode(response.body);
     } else {
       throw HttpException('HTTP ${response.statusCode}: ${response.body}');
     }
   }
 
-  Future<Map<String, dynamic>> _post(String path, Map<String, dynamic>? body) async {
+  Future<dynamic> _post(String path, Map<String, dynamic>? body) async {
     final token = await _getAccessToken();
     final url = Uri.parse('${ApiConfig.baseUrl}$path');
     final response = await _client.post(
@@ -46,7 +46,7 @@ class ReservationApiClient {
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) return {};
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      return jsonDecode(response.body);
     } else {
       throw HttpException('HTTP ${response.statusCode}: ${response.body}');
     }
@@ -97,6 +97,16 @@ class ReservationApiClient {
   Future<WaitlistEntryDto> joinWaitlist(JoinWaitlistRequest request) async {
     final result = await _post('/api/waitlist', request.toJson());
     return WaitlistEntryDto.fromJson(result);
+  }
+
+  Future<List<TimeSlotDto>> getAvailability(String chargerId, DateTime date, int durationMinutes) async {
+    final formattedDate = date.toIso8601String().split('T')[0];
+    final result = await _get('/api/reservations/availability?chargerId=$chargerId&date=$formattedDate&durationMinutes=$durationMinutes');
+    final list = result is List ? result : (result['value'] ?? result); // Handle raw list or wrapped result
+    if (list is List) {
+      return list.map((e) => TimeSlotDto.fromJson(e)).toList();
+    }
+    return [];
   }
 
   Future<List<WaitlistEntryDto>> getMyWaitlist() async {

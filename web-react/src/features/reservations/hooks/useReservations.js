@@ -8,10 +8,11 @@ export const RESERVATION_KEYS = {
     history: (id) => ['reservation', id, 'history'],
 }
 
-export const useReservationsList = (filters = {}) => {
+export const useReservationsList = (filters = {}, options = {}) => {
     return useQuery({
         queryKey: RESERVATION_KEYS.list(filters),
         queryFn: () => reservationsApi.list(filters),
+        ...options,
     })
 }
 

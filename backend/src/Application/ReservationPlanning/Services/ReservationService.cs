@@ -358,6 +358,50 @@ public sealed class ReservationService : IReservationService
         _db.ReservationStatusHistories.Add(entry);
     }
 
+    public async Task<IReadOnlyList<TimeSlotDto>> GetAvailableTimeSlotsAsync(
+        Guid chargerId,
+        DateTime date,
+        int durationMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        var startOfDay = new DateTimeOffset(date.Date, TimeSpan.Zero);
+        var endOfDay = startOfDay.AddDays(1);
+
+        var reservations = await _db.Reservations
+            .Where(r => r.ChargerId == chargerId &&
+                        r.Status != ReservationStatus.Cancelled &&
+                        r.StartTime < endOfDay &&
+                        r.EndTime > startOfDay)
+            .OrderBy(r => r.StartTime)
+            .ToListAsync(cancellationToken);
+
+        var availableSlots = new List<TimeSlotDto>();
+        var currentTime = DateTimeOffset.UtcNow;
+        var searchStart = startOfDay > currentTime ? startOfDay : currentTime;
+
+        var minute = searchStart.Minute;
+        var diff = 15 - (minute % 15);
+        if (diff < 15)
+        {
+            searchStart = searchStart.AddMinutes(diff).AddSeconds(-searchStart.Second).AddMilliseconds(-searchStart.Millisecond);
+        }
+
+        while (searchStart.AddMinutes(durationMinutes) <= endOfDay)
+        {
+            var searchEnd = searchStart.AddMinutes(durationMinutes);
+            bool isOverlap = reservations.Any(r => r.StartTime < searchEnd && r.EndTime > searchStart);
+
+            if (!isOverlap)
+            {
+                availableSlots.Add(new TimeSlotDto(searchStart, searchEnd));
+            }
+
+            searchStart = searchStart.AddMinutes(15);
+        }
+
+        return availableSlots;
+    }
+
     private static ReservationDto ToDto(Reservation r) => new()
     {
         Id = r.Id,

@@ -24,22 +24,10 @@ class StationsAppBar extends StatefulWidget {
   State<StationsAppBar> createState() => _StationsAppBarState();
 }
 
-class _StationsAppBarState extends State<StationsAppBar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pingController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pingController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
-  }
+class _StationsAppBarState extends State<StationsAppBar> {
 
   @override
   void dispose() {
-    _pingController.dispose();
     super.dispose();
   }
 
@@ -63,82 +51,7 @@ class _StationsAppBarState extends State<StationsAppBar>
         children: [
           SizedBox(height: topPad + 52), // space for status bar + back btn
 
-          // GPS Pill + Auto-Sync row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // GPS Pill
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    children: [
-                      AnimatedBuilder(
-                        animation: _pingController,
-                        builder: (_, __) => Opacity(
-                          opacity: (1.0 - _pingController.value).clamp(0.0, 1.0),
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(
-                                  (1.0 - _pingController.value).clamp(0.0, 1.0)),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Market St & 4th',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
-                        ),
-                      ),
-                      Text(
-                        ' • San Francisco, CA',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Auto-Sync badge
-                Row(
-                  children: [
-                    const Icon(Icons.bolt_rounded, color: AppColors.primary, size: 16),
-                    const SizedBox(width: 2),
-                    Text(
-                      'Auto-Sync Active',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+
 
           // Search row
           Padding(
