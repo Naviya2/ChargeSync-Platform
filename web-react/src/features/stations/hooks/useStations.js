@@ -51,6 +51,28 @@ export const useAddCharger = () => {
     })
 }
 
+export const useUpdateCharger = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ stationId, chargerId, data }) => stationsApi.updateCharger(stationId, chargerId, data),
+        onSuccess: (_, { stationId }) => {
+            queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.detail(stationId) })
+            queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.all })
+        },
+    })
+}
+
+export const useDeleteCharger = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ stationId, chargerId }) => stationsApi.deleteCharger(stationId, chargerId),
+        onSuccess: (_, { stationId }) => {
+            queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.detail(stationId) })
+            queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.all })
+        },
+    })
+}
+
 export const useUpdateOperatingHours = () => {
     const queryClient = useQueryClient()
     return useMutation({
@@ -76,6 +98,17 @@ export const useUpdateMaintenanceWindow = () => {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: ({ maintenanceId, data }) => stationsApi.updateMaintenanceWindow(maintenanceId, data),
+        onSuccess: (_, { stationId }) => {
+            if (stationId) queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.detail(stationId) })
+            queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.all })
+        },
+    })
+}
+
+export const useDeleteMaintenanceWindow = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ maintenanceId }) => stationsApi.deleteMaintenanceWindow(maintenanceId),
         onSuccess: (_, { stationId }) => {
             if (stationId) queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.detail(stationId) })
             queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.all })

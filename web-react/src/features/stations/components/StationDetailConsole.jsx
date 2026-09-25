@@ -6,6 +6,7 @@ import OperatingHoursTab from './tabs/OperatingHoursTab'
 import MaintenanceTab from './tabs/MaintenanceTab'
 import { cn } from '../../../lib/cn'
 import { useUpdateStation } from '../hooks/useStations'
+import MapLocationPicker from '../../../components/shared/MapLocationPicker'
 
 export default function StationDetailConsole({ station }) {
   const [activeTab, setActiveTab] = useState('chargers')
@@ -115,28 +116,14 @@ export default function StationDetailConsole({ station }) {
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
               />
             </div>
-            <div className="flex flex-col gap-space-2xs">
-              <label className="font-label-sm text-label-sm text-on-surface">Latitude</label>
-              <input
-                type="number"
-                step="any"
-                required
-                className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
-                value={form.latitude}
-                onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-space-2xs">
-              <label className="font-label-sm text-label-sm text-on-surface">Longitude</label>
-              <input
-                type="number"
-                step="any"
-                required
-                className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
-                value={form.longitude}
-                onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-              />
-            </div>
+          </div>
+          <div className="mt-space-md">
+            <MapLocationPicker
+              latitude={form.latitude}
+              longitude={form.longitude}
+              onLocationChange={(lat, lng) => setForm({ ...form, latitude: lat.toFixed(6), longitude: lng.toFixed(6) })}
+              onAddressFetched={(address) => setForm((prev) => ({ ...prev, address }))}
+            />
           </div>
           <div className="mt-space-lg flex justify-end">
             <button

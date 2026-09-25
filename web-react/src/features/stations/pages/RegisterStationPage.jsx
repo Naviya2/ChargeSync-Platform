@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../../lib/constants'
 import { useRegisterStation } from '../hooks/useStations'
+import MapLocationPicker from '../../../components/shared/MapLocationPicker'
+import ImageUploader from '../../../components/shared/ImageUploader'
 
 export default function RegisterStationPage() {
     const navigate = useNavigate()
@@ -12,6 +14,7 @@ export default function RegisterStationPage() {
         address: '',
         latitude: '',
         longitude: '',
+        documents: [],
     })
 
     const [error, setError] = useState(null)
@@ -39,6 +42,7 @@ export default function RegisterStationPage() {
                 address: form.address.trim(),
                 latitude: lat,
                 longitude: lng,
+                documentUrls: form.documents,
             },
             {
                 onSuccess: () => navigate(ROUTES.STATIONS),
@@ -91,32 +95,17 @@ export default function RegisterStationPage() {
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-space-lg">
-                    <div className="flex flex-col gap-space-2xs">
-                        <label className="font-label-md text-label-md text-on-surface">Latitude</label>
-                        <input
-                            type="number"
-                            step="any"
-                            className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
-                            placeholder="e.g. 6.9271"
-                            value={form.latitude}
-                            onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-                            required
-                        />
-                    </div>
-                    <div className="flex flex-col gap-space-2xs">
-                        <label className="font-label-md text-label-md text-on-surface">Longitude</label>
-                        <input
-                            type="number"
-                            step="any"
-                            className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
-                            placeholder="e.g. 79.8612"
-                            value={form.longitude}
-                            onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-                            required
-                        />
-                    </div>
-                </div>
+                <MapLocationPicker
+                    latitude={form.latitude}
+                    longitude={form.longitude}
+                    onLocationChange={(lat, lng) => setForm({ ...form, latitude: lat.toFixed(6), longitude: lng.toFixed(6) })}
+                    onAddressFetched={(address) => setForm((prev) => ({ ...prev, address }))}
+                />
+
+                <ImageUploader 
+                    urls={form.documents}
+                    onChange={(urls) => setForm({ ...form, documents: urls })}
+                />
 
                 <div className="mt-space-md flex gap-space-md">
                     <button

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../../../lib/cn'
-import { useAddCharger } from '../../hooks/useStations'
+import { useAddCharger, useUpdateCharger, useDeleteCharger } from '../../hooks/useStations'
 
 const STATE_STYLE = {
   dispensing: { cls: 'bg-secondary/10 text-secondary', dot: 'bg-secondary animate-pulse' },
@@ -25,7 +25,11 @@ function ChargerState({ state, label }) {
 
 export default function ChargersTab({ stationId, chargers }) {
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingChargerId, setEditingChargerId] = useState(null)
+  
   const addCharger = useAddCharger()
+  const updateCharger = useUpdateCharger()
+  const deleteCharger = useDeleteCharger()
 
   const [form, setForm] = useState({
     identifier: '',
@@ -46,18 +50,58 @@ export default function ChargersTab({ stationId, chargers }) {
       Tariff: form.pricePerKwh,
     }
     
-    addCharger.mutate(
-      { stationId, data: payload },
-      {
-        onSuccess: () => {
-          setShowAddForm(false)
-        },
-        onError: (err) => {
-          console.error(err)
-          alert('Failed to add charger')
+    if (editingChargerId) {
+      updateCharger.mutate(
+        { stationId, chargerId: editingChargerId, data: payload },
+        {
+          onSuccess: () => {
+            setShowAddForm(false)
+            setEditingChargerId(null)
+          },
+          onError: (err) => {
+            console.error(err)
+            alert('Failed to update charger')
+          }
         }
-      }
-    )
+      )
+    } else {
+      addCharger.mutate(
+        { stationId, data: payload },
+        {
+          onSuccess: () => {
+            setShowAddForm(false)
+          },
+          onError: (err) => {
+            console.error(err)
+            alert('Failed to add charger')
+          }
+        }
+      )
+    }
+  }
+
+  const handleEdit = (ch) => {
+    setForm({
+      identifier: ch.identifier || '',
+      bayLabel: ch.bayLabel || '',
+      connectorTypeId: ch.connectorTypeId || ch.connector || 'CCS2',
+      maxOutputKw: ch.powerKw || ch.maxOutputKw || ch.power || 150,
+      pricePerKwh: ch.tariff || ch.pricePerKwh || 0.50,
+      status: ch.status || 'available'
+    })
+    setEditingChargerId(ch.id)
+    setShowAddForm(true)
+  }
+
+  const handleDelete = (ch) => {
+    if (window.confirm(`Are you sure you want to delete charger ${ch.identifier}?`)) {
+      deleteCharger.mutate(
+        { stationId, chargerId: ch.id },
+        {
+          onError: () => alert('Failed to delete charger')
+        }
+      )
+    }
   }
 
   return (
@@ -73,7 +117,23 @@ export default function ChargersTab({ stationId, chargers }) {
         </div>
         <button
           type="button"
-          onClick={() => setShowAddForm(!showAddForm)}
+          onClick={() => {
+            if (showAddForm) {
+              setShowAddForm(false)
+              setEditingChargerId(null)
+            } else {
+              setForm({
+                identifier: '',
+                bayLabel: '',
+                connectorTypeId: 'CCS2',
+                maxOutputKw: 150,
+                pricePerKwh: 0.50,
+                status: 'available'
+              })
+              setEditingChargerId(null)
+              setShowAddForm(true)
+            }
+          }}
           className="inline-flex items-center gap-space-2xs self-start rounded-lg bg-primary px-space-md py-space-2xs font-headline-sm text-headline-sm text-on-primary shadow-sm transition-all hover:bg-primary-container"
         >
           <span className="material-symbols-outlined text-sm">{showAddForm ? 'close' : 'add'}</span> 
@@ -83,7 +143,9 @@ export default function ChargersTab({ stationId, chargers }) {
 
       {showAddForm && (
         <form onSubmit={handleSubmit} className="bg-surface-container-low p-space-lg rounded-xl shadow-sm mb-space-md">
-          <h4 className="font-headline-sm text-headline-sm text-on-surface mb-space-md">Register New Charger</h4>
+          <h4 className="font-headline-sm text-headline-sm text-on-surface mb-space-md">
+            {editingChargerId ? 'Edit Charger' : 'Register New Charger'}
+          </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
             <div className="flex flex-col gap-space-2xs">
               <label className="font-label-sm text-label-sm text-on-surface">Identifier (e.g. CH-01)</label>
@@ -155,10 +217,10 @@ export default function ChargersTab({ stationId, chargers }) {
           <div className="mt-space-lg flex justify-end">
             <button
               type="submit"
-              disabled={addCharger.isPending}
+              disabled={addCharger.isPending || updateCharger.isPending}
               className="rounded-lg bg-primary px-space-lg py-space-sm font-label-md text-label-md text-on-primary transition-colors hover:bg-primary/90"
             >
-              {addCharger.isPending ? 'Saving...' : 'Save Charger'}
+              {addCharger.isPending || updateCharger.isPending ? 'Saving...' : 'Save Charger'}
             </button>
           </div>
         </form>
@@ -173,13 +235,14 @@ export default function ChargersTab({ stationId, chargers }) {
               <th className="px-space-md py-space-sm">Max Output</th>
               <th className="px-space-md py-space-sm">Tariff</th>
               <th className="px-space-md py-space-sm">Current State</th>
+              <th className="px-space-md py-space-sm text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="text-on-surface">
             {chargers.map((ch) => (
               <tr key={ch.id} className="transition-colors hover:bg-surface-container-low/70">
                 <td className="px-space-md py-space-sm font-headline-sm text-headline-sm font-semibold">
-                  {ch.id}
+                  {ch.identifier || ch.id}
                 </td>
                 <td className="px-space-md py-space-sm">
                   <span className="inline-flex items-center rounded bg-surface-container px-space-xs py-space-2xs font-label-md text-label-md font-semibold text-on-surface">
@@ -187,19 +250,40 @@ export default function ChargersTab({ stationId, chargers }) {
                   </span>
                 </td>
                 <td className="px-space-md py-space-sm font-headline-sm text-headline-sm font-semibold">
-                  {ch.maxOutputKw || ch.power} kW
+                  {ch.powerKw || ch.maxOutputKw || ch.power} kW
                 </td>
                 <td className="px-space-md py-space-sm font-body-sm text-body-sm">
-                  <span className="font-semibold text-on-surface">${ch.pricePerKwh || '0.00'} / kWh</span>
+                  <span className="font-semibold text-on-surface">${ch.tariff || ch.pricePerKwh || '0.00'} / kWh</span>
                 </td>
                 <td className="px-space-md py-space-sm">
                   <ChargerState state={ch.status?.toLowerCase() || ch.state} label={ch.status || ch.stateLabel || 'Available'} />
+                </td>
+                <td className="px-space-md py-space-sm text-right">
+                  <div className="flex justify-end gap-space-md">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(ch)}
+                      className="rounded p-space-2xs text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors"
+                      title="Edit Charger"
+                    >
+                      <span className="material-symbols-outlined text-xl">edit</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(ch)}
+                      disabled={deleteCharger.isPending}
+                      className="rounded p-space-2xs text-on-surface-variant hover:bg-error-container hover:text-error transition-colors disabled:opacity-50"
+                      title="Delete Charger"
+                    >
+                      <span className="material-symbols-outlined text-xl">delete</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
             {chargers.length === 0 && (
               <tr>
-                <td colSpan="5" className="p-space-lg text-center text-on-surface-variant">No chargers registered yet.</td>
+                <td colSpan="6" className="p-space-lg text-center text-on-surface-variant">No chargers registered yet.</td>
               </tr>
             )}
           </tbody>
