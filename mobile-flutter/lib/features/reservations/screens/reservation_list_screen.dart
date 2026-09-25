@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/api/reservation_api_client.dart';
 import '../../../../core/api/reservation_models.dart';
@@ -204,12 +205,34 @@ class _ReservationListScreenState extends State<ReservationListScreen>
                 ),
                 if (isActive) ...[
                   const SizedBox(height: 12),
+                  if (res.reservationQRCode != null && res.reservationQRCode!.isNotEmpty) ...[
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Column(
+                        children: [
+                          Text('Scan at Station', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            color: Colors.white,
+                            child: QrImageView(
+                              data: res.reservationQRCode!,
+                              version: QrVersions.auto,
+                              size: 150.0,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () => _cancelReservation(res.id),
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      child: const Text('Cancel'),
+                      child: const Text('Cancel Reservation'),
                     ),
                   ),
                 ],

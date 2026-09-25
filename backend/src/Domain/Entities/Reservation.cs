@@ -200,7 +200,12 @@ public class Reservation : AuditableEntity
         if (startTime >= endTime)
             throw new ArgumentException("Start time must be earlier than end time.");
 
-        if (startTime < DateTimeOffset.UtcNow.AddMinutes(-1))
+        if (startTime < DateTimeOffset.UtcNow.AddMinutes(-5)) // Allow up to 5 mins clock skew
             throw new ArgumentException("Reservation cannot be scheduled in the past.");
+
+        var today = DateTimeOffset.UtcNow.Date;
+        var maxAllowedDate = today.AddDays(2); // Start time must be before midnight the day after tomorrow
+        if (startTime >= maxAllowedDate)
+            throw new ArgumentException("Reservations can only be made for today or tomorrow.");
     }
 }
