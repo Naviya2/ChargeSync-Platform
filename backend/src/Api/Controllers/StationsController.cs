@@ -98,6 +98,34 @@ public class StationsController : ControllerBase
         }
     }
 
+    [HttpPut("{id:guid}/chargers/{chargerId:guid}")]
+    public async Task<IActionResult> UpdateCharger(Guid id, Guid chargerId, [FromBody] UpdateChargerRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var charger = await _stationService.UpdateChargerAsync(id, chargerId, OwnerId, request, cancellationToken);
+            return Ok(charger);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpDelete("{id:guid}/chargers/{chargerId:guid}")]
+    public async Task<IActionResult> DeleteCharger(Guid id, Guid chargerId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _stationService.DeleteChargerAsync(id, chargerId, OwnerId, cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
     [HttpPut("{id:guid}/operating-hours")]
     public async Task<IActionResult> UpdateOperatingHours(Guid id, [FromBody] List<OperatingHourDto> hours, CancellationToken cancellationToken)
     {
@@ -133,6 +161,20 @@ public class StationsController : ControllerBase
         {
             var mw = await _stationService.UpdateMaintenanceWindowAsync(maintenanceId, OwnerId, request, cancellationToken);
             return Ok(mw);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpDelete("maintenance/{maintenanceId:guid}")]
+    public async Task<IActionResult> DeleteMaintenanceWindow(Guid maintenanceId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _stationService.DeleteMaintenanceWindowAsync(maintenanceId, OwnerId, cancellationToken);
+            return NoContent();
         }
         catch (UnauthorizedAccessException)
         {

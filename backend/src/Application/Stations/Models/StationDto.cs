@@ -12,6 +12,8 @@ public class StationDto
     public StationStatus Status { get; set; }
     public string? RejectionReason { get; set; }
     public Guid OwnerId { get; set; }
+    public OwnerDto? Owner { get; set; }
+    public List<string> DocumentUrls { get; set; } = new();
     public DateTimeOffset CreatedAt { get; set; }
     
     public List<ChargerDto> Chargers { get; set; } = new();
@@ -27,12 +29,21 @@ public class OperatingHourDto
     public TimeSpan CloseTime { get; set; }
 }
 
+public class OwnerDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string Email { get; set; } = null!;
+    public string? Phone { get; set; }
+}
+
 public class RegisterStationRequest
 {
     public string Name { get; set; } = null!;
     public string Address { get; set; } = null!;
     public double Latitude { get; set; }
     public double Longitude { get; set; }
+    public List<string>? DocumentUrls { get; set; }
 }
 
 public class UpdateStationRequest

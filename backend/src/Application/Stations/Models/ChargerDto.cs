@@ -31,3 +31,12 @@ public class AddChargerRequest
     public decimal PowerKw { get; set; }
     public decimal Tariff { get; set; }
 }
+
+public class UpdateChargerRequest
+{
+    public string Identifier { get; set; } = null!;
+    public string BayLabel { get; set; } = null!;
+    public ConnectorType Connector { get; set; }
+    public decimal PowerKw { get; set; }
+    public decimal Tariff { get; set; }
+}
