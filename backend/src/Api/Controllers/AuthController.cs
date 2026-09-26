@@ -33,6 +33,14 @@ public sealed class AuthController : ControllerBase
     public async Task<ActionResult<AuthResult>> Login(LoginRequest request, CancellationToken cancellationToken)
         => Ok(await _authService.LoginAsync(request, cancellationToken));
 
+    /// <summary>Authenticates using a Google ID Token.</summary>
+    [HttpPost("google")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<AuthResult>> GoogleLogin(GoogleLoginRequest request, CancellationToken cancellationToken)
+        => Ok(await _authService.GoogleLoginAsync(request, cancellationToken));
+
     /// <summary>Exchanges a refresh token for a new session. The old refresh token is rotated out.</summary>
     [HttpPost("refresh")]
     [AllowAnonymous]

@@ -1,13 +1,118 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../core/api/reservation_api_client.dart';
+import '../../../core/api/reservation_models.dart';
 import '../../../core/theme/app_colors.dart';
 
-class UpcomingReservationCard extends StatelessWidget {
+class UpcomingReservationCard extends StatefulWidget {
   const UpcomingReservationCard({super.key});
 
   @override
+  State<UpcomingReservationCard> createState() => _UpcomingReservationCardState();
+}
+
+class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
+  bool _isLoading = true;
+  ReservationDto? _upcomingReservation;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUpcomingReservation();
+  }
+
+  Future<void> _fetchUpcomingReservation() async {
+    try {
+      final result = await ReservationApiClient.instance.getMyReservations();
+      // Find the first reservation that is Confirmed or Pending
+      final active = result.items.where((r) => r.status == 'Confirmed' || r.status == 'Pending').toList();
+      
+      if (active.isNotEmpty) {
+        // Sort by start time ascending
+        active.sort((a, b) => a.startTime.compareTo(b.startTime));
+        setState(() {
+          _upcomingReservation = active.first;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _upcomingReservation = null;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showQrDialog() {
+    if (_upcomingReservation?.reservationQRCode == null) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceContainer,
+          title: Text(
+            'Your QR Pass',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.onSurface),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.qr_code_2, size: 200, color: Colors.black),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Show this to the station staff.',
+                style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Token: ${_upcomingReservation!.reservationQRCode!.substring(0, 8)}...',
+                style: GoogleFonts.inter(fontSize: 10, color: AppColors.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage != null) {
+      return Text('Failed to load reservations', style: TextStyle(color: Colors.red));
+    }
+
+    if (_upcomingReservation == null) {
+      return const SizedBox.shrink(); // Hide the card if no upcoming reservations
+    }
+
+    final res = _upcomingReservation!;
+    final diff = res.startTime.difference(DateTime.now());
+    final isSoon = diff.inMinutes > 0 && diff.inMinutes < 60;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -54,7 +159,7 @@ class UpcomingReservationCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'Confirmed',
+                  res.status,
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
@@ -80,7 +185,7 @@ class UpcomingReservationCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Electrify Metro Hub • Bay 02',
+                        'Charger ID: ${res.chargerId.substring(0, 8)}',
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -98,15 +203,18 @@ class UpcomingReservationCard extends StatelessWidget {
                             color: AppColors.onSurfaceVariant,
                             letterSpacing: 0.005,
                           ),
-                          children: const [
-                            TextSpan(text: 'Today, Oct 24 • 4:00 PM '),
+                          children: [
                             TextSpan(
-                              text: '(in 38 mins)',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              text: '${res.startTime.month}/${res.startTime.day} • ${res.startTime.hour}:${res.startTime.minute.toString().padLeft(2, '0')} ',
                             ),
+                            if (diff.inHours < 24 && diff.inMinutes > 0)
+                              TextSpan(
+                                text: '(in ${diff.inHours > 0 ? '${diff.inHours}h ' : ''}${diff.inMinutes % 60}m)',
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -122,30 +230,32 @@ class UpcomingReservationCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Material(
-                  color: AppColors.primary,
+                  color: res.reservationQRCode != null ? AppColors.primary : AppColors.surfaceContainer,
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () {},
+                    onTap: res.reservationQRCode != null ? _showQrDialog : null,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.20),
-                            blurRadius: 16,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        boxShadow: res.reservationQRCode != null
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.20),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.qr_code_rounded,
                             size: 18,
-                            color: AppColors.onPrimary,
+                            color: res.reservationQRCode != null ? AppColors.onPrimary : AppColors.onSurfaceVariant,
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -153,7 +263,7 @@ class UpcomingReservationCard extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.onPrimary,
+                              color: res.reservationQRCode != null ? AppColors.onPrimary : AppColors.onSurfaceVariant,
                               letterSpacing: 0.01,
                             ),
                           ),

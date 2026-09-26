@@ -65,13 +65,36 @@ public sealed class VehicleService : IVehicleService
         return stations.Select(station =>
         {
             var distance = DistanceKm(request.Latitude, request.Longitude, station.Latitude, station.Longitude);
-            var chargers = station.Chargers.Select(charger => new CompatibleChargerDto
+            var chargers = station.Chargers.Select(charger =>
             {
-                ChargerId = charger.Id,
-                Identifier = charger.Identifier,
-                Connector = charger.Connector,
-                PowerKw = charger.PowerKw,
-                IsCompatible = charger.Connector == vehicle.Connector
+                var isCompatible = charger.Connector == vehicle.Connector;
+                var effectivePower = Math.Min(charger.PowerKw, vehicle.MaxChargeRateKw);
+                double? estimatedMins = null;
+                string? estimatedFormatted = null;
+
+                if (effectivePower > 0 && vehicle.BatteryCapacityKwh > 0)
+                {
+                    var mins = (double)(vehicle.BatteryCapacityKwh * 0.7m / effectivePower) * 60.0;
+                    estimatedMins = Math.Round(mins, 1);
+                    var totalMins = (int)Math.Round(mins);
+                    var hours = totalMins / 60;
+                    var remMins = totalMins % 60;
+                    estimatedFormatted = hours > 0
+                        ? $"{hours}h {remMins}m (10-80%)"
+                        : $"{totalMins} mins (10-80%)";
+                }
+
+                return new CompatibleChargerDto
+                {
+                    ChargerId = charger.Id,
+                    Identifier = charger.Identifier,
+                    Connector = charger.Connector,
+                    PowerKw = charger.PowerKw,
+                    IsCompatible = isCompatible,
+                    EffectiveChargingPowerKw = effectivePower,
+                    EstimatedChargeTimeMinutes = estimatedMins,
+                    EstimatedChargeTimeFormatted = estimatedFormatted
+                };
             }).ToList();
             var compatibleCount = chargers.Count(c => c.IsCompatible);
             var bestPowerFit = chargers.Where(c => c.IsCompatible).Select(c => Math.Min(20, (double)c.PowerKw / (double)vehicle.MaxChargeRateKw * 20)).DefaultIfEmpty(0).Max();

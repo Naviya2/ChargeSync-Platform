@@ -1,0 +1,36 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ "dev" ]
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches: [ "dev" ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore ChargeSync.Backend.sln
+
+    - name: Build
+      run: dotnet build ChargeSync.Backend.sln --no-restore --configuration Release
+
+    - name: Test
+      run: dotnet test ChargeSync.Backend.sln --no-build --verbosity normal --configuration Release

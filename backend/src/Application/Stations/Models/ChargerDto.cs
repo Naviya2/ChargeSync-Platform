@@ -18,8 +18,7 @@ public class ChargerDto
 public class MaintenanceWindowDto
 {
     public Guid Id { get; set; }
-    public string Title { get; set; } = null!;
-    public string Reason { get; set; } = null!;
+    public string? Reason { get; set; }
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset EndTime { get; set; }
 }

@@ -5,10 +5,15 @@ const base = '/stations'
 
 export const stationsApi = {
   ...createResourceApi(base),
-  /** @param {string|number} id */
-  connectors: (id) => unwrap(apiClient.get(`${base}/${id}/connectors`)),
-  /** @param {string|number} id @param {'online'|'offline'|'maintenance'} status */
-  setStatus: (id, status) => unwrap(apiClient.patch(`${base}/${id}/status`, { status })),
+
+  // station owner operations
+  getMyStations: () => unwrap(apiClient.get(base)),
+  getById: (id) => unwrap(apiClient.get(`${base}/${id}`)),
+  register: (data) => unwrap(apiClient.post(base, data)),
+  addCharger: (stationId, data) => unwrap(apiClient.post(`${base}/${stationId}/chargers`, data)),
+  updateOperatingHours: (stationId, data) => unwrap(apiClient.put(`${base}/${stationId}/operating-hours`, data)),
+  addMaintenanceWindow: (chargerId, data) => unwrap(apiClient.post(`${base}/chargers/${chargerId}/maintenance`, data)),
+  updateMaintenanceWindow: (maintenanceId, data) => unwrap(apiClient.put(`${base}/maintenance/${maintenanceId}`, data)),
 }
 
 export default stationsApi

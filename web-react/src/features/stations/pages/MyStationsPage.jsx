@@ -3,24 +3,59 @@ import StationsHeader from '../components/StationsHeader'
 import StationKpiStrip from '../components/StationKpiStrip'
 import StationFilterBar from '../components/StationFilterBar'
 import StationCardGrid from '../components/StationCardGrid'
-import StationDetailConsole from '../components/StationDetailConsole'
-import { STATIONS } from '../data/stationsData'
+import { useNavigate } from 'react-router-dom'
+import { ROUTES } from '../../../lib/constants'
+import { useMyStations } from '../hooks/useStations'
 
-/**
- * Station Owner "My Stations" workspace — asset orchestration, live bays,
- * pricing rules, and maintenance windows for the owner's fleet.
- */
 export default function MyStationsPage() {
+  const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState('all')
-  const [selectedId, setSelectedId] = useState(STATIONS[0].id)
+  const { data: stationsDto = [], isLoading } = useMyStations()
+
+  const stations = useMemo(() => {
+    return stationsDto.map(dto => ({
+      id: dto.id,
+      name: dto.name,
+      address: dto.address,
+      status: {
+        key: dto.status?.toLowerCase() ?? 'pending',
+        label: dto.status === 'Active' ? 'Active' : (dto.status === 'Pending' ? 'Pending Approval' : dto.status),
+        tone: dto.status === 'Active' ? 'tertiary' : 'secondary',
+        pulse: dto.status === 'Active'
+      },
+      filterKey: dto.status?.toLowerCase() ?? 'pending',
+      capacity: `${dto.chargers?.length ?? 0} Chargers`,
+      bayLabel: 'Live Bay State',
+      bayValue: `${dto.chargers?.filter(c => c.status === 'Occupied').length ?? 0} in use`,
+      load: 0,
+      trendLabel: 'Status',
+      trendValue: dto.status,
+      footerLabel: 'Coordinates',
+      footerValue: `${dto.latitude}, ${dto.longitude}`,
+      sparkTone: 'text-primary',
+      detailData: dto
+    }))
+  }, [stationsDto])
 
   const visibleStations = useMemo(() => {
-    if (activeFilter === 'all') return STATIONS
-    return STATIONS.filter((s) => s.filterKey === activeFilter)
-  }, [activeFilter])
+    if (activeFilter === 'all') return stations
+    return stations.filter((s) => s.filterKey === activeFilter)
+  }, [activeFilter, stations])
 
-  const selectedStation =
-    STATIONS.find((s) => s.id === selectedId) ?? visibleStations[0] ?? STATIONS[0]
+  const handleSelectStation = (id) => {
+    const station = stations.find((s) => s.id === id)
+    if (station) {
+      if (station.status.key === 'active') {
+        navigate(`${ROUTES.STATIONS}/${id}`)
+      } else {
+        navigate(`${ROUTES.STATIONS}/${id}/pending`)
+      }
+    }
+  }
+
+  if (isLoading) {
+    return <div className="p-space-xl text-center">Loading stations...</div>
+  }
 
   return (
     <div className="flex w-full flex-col gap-space-xl">
@@ -29,10 +64,8 @@ export default function MyStationsPage() {
       <StationFilterBar active={activeFilter} onChange={setActiveFilter} />
       <StationCardGrid
         stations={visibleStations}
-        selectedId={selectedStation.id}
-        onSelect={setSelectedId}
+        onSelect={handleSelectStation}
       />
-      <StationDetailConsole station={selectedStation} />
     </div>
   )
 }

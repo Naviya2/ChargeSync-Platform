@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -30,37 +30,61 @@ const _actions = [
     label: 'Bookings',
     color: AppColors.tertiary,
   ),
-  _QuickAction(
-    icon: Icons.qr_code_scanner_rounded,
-    label: 'Scan QR',
-    color: AppColors.primary,
-  ),
 ];
 
 class QuickActionsRow extends StatelessWidget {
-  const QuickActionsRow({super.key});
+  final VoidCallback? onFindHub;
+  final VoidCallback? onPlanRoute;
+  final VoidCallback? onBookings;
+
+  const QuickActionsRow({
+    super.key,
+    this.onFindHub,
+    this.onPlanRoute,
+    this.onBookings,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: _actions
-          .map(
-            (action) => Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: _QuickActionItem(action: action),
-              ),
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: _QuickActionItem(
+              action: _actions[0],
+              onTap: onFindHub,
             ),
-          )
-          .toList(),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: _QuickActionItem(
+              action: _actions[1],
+              onTap: onPlanRoute,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: _QuickActionItem(
+              action: _actions[2],
+              onTap: onBookings,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
 class _QuickActionItem extends StatelessWidget {
-  const _QuickActionItem({required this.action});
+  const _QuickActionItem({required this.action, this.onTap});
   final _QuickAction action;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +93,7 @@ class _QuickActionItem extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {},
+        onTap: onTap ?? () {},
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
           child: Column(
@@ -83,7 +107,7 @@ class _QuickActionItem extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
+                      color: Colors.black.withOpacity(0.15),
                       blurRadius: 4,
                     ),
                   ],

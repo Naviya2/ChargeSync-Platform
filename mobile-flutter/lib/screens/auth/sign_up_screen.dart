@@ -17,8 +17,7 @@ class _SignUpScreenState extends State<SignUpScreen>
   // Page controller for multi-step form
   final PageController _pageController = PageController();
   int _currentStep = 0;
-  static const int _totalSteps = 3;
-
+  static const int _totalSteps = 2;
   // ── Step 1: Account Info ────────────────────────────────────────────────────
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -232,6 +231,30 @@ class _SignUpScreenState extends State<SignUpScreen>
     }
   }
 
+  Future<void> _handleGoogleSignUp() async {
+    setState(() => _isLoading = true);
+    try {
+      final auth = AuthService.instance;
+      await auth.loginWithGoogle();
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoading = false;
+        _isSuccess = true;
+      });
+      await Future.delayed(const Duration(milliseconds: 2000));
+      if (mounted) Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.userMessage)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google Sign-up failed')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   // ── Password strength ────────────────────────────────────────────────────────
   double _passwordStrength(String pwd) {
     if (pwd.isEmpty) return 0;
@@ -285,7 +308,6 @@ class _SignUpScreenState extends State<SignUpScreen>
                 children: [
                   _buildStep1(),
                   _buildStep2(),
-                  _buildStep3(),
                 ],
               ),
             ),
@@ -299,11 +321,10 @@ class _SignUpScreenState extends State<SignUpScreen>
 
   // ── Header ───────────────────────────────────────────────────────────────────
   Widget _buildHeader(double topPad) {
-    final stepTitles = ['Account Info', 'Security Setup', 'Your EV Profile'];
+    final stepTitles = ['Account Info', 'Security Setup'];
     final stepSubs = [
       'Tell us who you are',
       'Create a secure password',
-      'Add your electric vehicle',
     ];
 
     return Container(
@@ -328,25 +349,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                       size: 18, color: AppColors.onSurface),
                 ),
               ),
-              Text(
-                '09:41',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onSurface,
-                  letterSpacing: 0.06,
-                ),
-              ),
-              Row(children: const [
-                Icon(Icons.signal_cellular_alt_rounded,
-                    size: 16, color: AppColors.onSurfaceVariant),
-                SizedBox(width: 4),
-                Icon(Icons.wifi_rounded,
-                    size: 16, color: AppColors.onSurfaceVariant),
-                SizedBox(width: 4),
-                Icon(Icons.battery_charging_full,
-                    size: 18, color: AppColors.primary),
-              ]),
+              const SizedBox(width: 36), // Balance placeholder
             ],
           ),
           const SizedBox(height: 16),
@@ -516,6 +519,28 @@ class _SignUpScreenState extends State<SignUpScreen>
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Column(
         children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryContainer.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Only drivers can register here. If you are a station owner or staff member, please use the web portal to register.',
+                    style: GoogleFonts.inter(fontSize: 13, color: AppColors.onSurface),
+                  ),
+                ),
+              ],
+            ),
+          ),
           // Name row
           Row(
             children: [
@@ -1416,7 +1441,7 @@ class _SignUpScreenState extends State<SignUpScreen>
 
   Widget _buildSocialOption() {
     return GestureDetector(
-      onTap: () {},
+      onTap: _isLoading ? null : _handleGoogleSignUp,
       child: Container(
         height: 52,
         decoration: BoxDecoration(

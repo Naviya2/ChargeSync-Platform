@@ -24,5 +24,11 @@ public interface IAppDbContext
 
     DbSet<Vehicle> Vehicles { get; }
 
+    DbSet<Reservation> Reservations { get; }
+
+    DbSet<ReservationStatusHistory> ReservationStatusHistories { get; }
+
+    DbSet<WaitlistEntry> WaitlistEntries { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

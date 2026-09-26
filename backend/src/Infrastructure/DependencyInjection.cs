@@ -38,6 +38,17 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenIssuer, RefreshTokenIssuer>();
         services.AddScoped<DbSeeder>();
 
+        // Register OpenRouteService HTTP Client
+        services.AddHttpClient<Application.ReservationPlanning.Services.IRoutingService, Infrastructure.ExternalServices.OpenRouteService>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.heigit.org/");
+            var apiKey = configuration["OpenRouteService:ApiKey"];
+            if (!string.IsNullOrEmpty(apiKey))
+            {
+                client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", apiKey);
+            }
+        });
+
         return services;
     }
 

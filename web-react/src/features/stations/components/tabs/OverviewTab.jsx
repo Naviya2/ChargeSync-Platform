@@ -50,11 +50,49 @@ function BayCard({ bay }) {
   )
 }
 
-export default function OverviewTab({ overview }) {
+export default function OverviewTab({ chargers = [], stationName }) {
+  const totalPower = chargers.reduce((sum, ch) => sum + (ch.maxOutputKw || ch.power || 0), 0)
+  const availableChargers = chargers.filter(ch => ch.status === 'available' || ch.status === 'Available').length
+  
+  const stats = [
+    {
+      label: 'Active Chargers',
+      value: availableChargers,
+      sub: `/ ${chargers.length}`,
+      progress: chargers.length > 0 ? (availableChargers / chargers.length) * 100 : 0
+    },
+    {
+      label: 'Total Power Capacity',
+      value: totalPower,
+      sub: 'kW',
+      note: 'Across all registered bays',
+    },
+    {
+      label: 'Current Energy Draw',
+      value: '0',
+      sub: 'kW',
+      note: 'Real-time telemetry'
+    },
+    {
+      label: 'Total Revenue (Today)',
+      value: '$0.00',
+      note: 'Updated just now'
+    }
+  ]
+
+  const bays = chargers.map((ch, idx) => ({
+    name: `Bay ${idx + 1}`,
+    state: ch.status?.toLowerCase() === 'available' ? 'available' : 'queued',
+    stateLabel: ch.status || 'Available',
+    spec: `${ch.maxOutputKw || ch.power}kW • ${ch.connectorTypeId || ch.connector}`,
+    who: 'No active session',
+    meta: ch.id
+  }))
+
   return (
     <div className="flex flex-col gap-space-lg">
       <div className="grid grid-cols-1 gap-space-md sm:grid-cols-2 lg:grid-cols-4">
-        {overview.stats.map((stat) => (
+        {stats.map((stat) => (
           <OverviewStat key={stat.label} stat={stat} />
         ))}
       </div>
@@ -63,10 +101,10 @@ export default function OverviewTab({ overview }) {
         <div className="flex flex-col justify-between gap-space-sm sm:flex-row sm:items-center">
           <div>
             <h3 className="font-headline-sm text-headline-sm text-on-surface">
-              Live Bay Allocation &amp; Current Flow
+              Live Bay Allocation for {stationName}
             </h3>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Real-time status across {overview.bays.length} charging positions.
+              Real-time status across {chargers.length} charging positions.
             </p>
           </div>
           <div className="flex items-center gap-space-md font-label-sm text-label-sm">
@@ -83,9 +121,15 @@ export default function OverviewTab({ overview }) {
         </div>
 
         <div className="grid grid-cols-2 gap-space-md md:grid-cols-4">
-          {overview.bays.map((bay) => (
-            <BayCard key={bay.name} bay={bay} />
-          ))}
+          {bays.length > 0 ? (
+            bays.map((bay) => (
+              <BayCard key={bay.name} bay={bay} />
+            ))
+          ) : (
+            <div className="col-span-full text-center text-on-surface-variant py-space-xl">
+              No chargers registered yet.
+            </div>
+          )}
         </div>
       </div>
     </div>

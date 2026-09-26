@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'auth_api_client.dart';
 import 'auth_models.dart';
 
@@ -19,6 +20,8 @@ class AuthService extends ChangeNotifier {
   bool get isAuthenticated   => _currentUser != null;
   bool get isInitialized     => _isInitialized;
   bool get isDriver          => _currentUser?.role == 'Driver';
+  bool get isStaff           => _currentUser?.role == 'StationStaff' || _currentUser?.role == 'StationOwner';
+  Future<String?> get token  => _api.getAccessToken();
 
   // ── Bootstrap (call once at app start) ───────────────────────────────────────
 
@@ -59,6 +62,39 @@ class AuthService extends ChangeNotifier {
       _currentUser = result.user;
       notifyListeners();
       return result;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Triggers the native Google Sign-in flow and sends the ID token to the backend.
+  Future<AuthResult> loginWithGoogle({String role = 'Driver'}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final googleSignIn = GoogleSignIn();
+      final googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        throw ApiException(400, 'Sign in aborted');
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw ApiException(400, 'Failed to get Google ID token');
+      }
+
+      final result = await _api.googleLogin(idToken, role: role);
+      _currentUser = result.user;
+      notifyListeners();
+      return result;
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(500, 'Google Sign-in failed: ${e.toString()}');
     } finally {
       _isLoading = false;
       notifyListeners();

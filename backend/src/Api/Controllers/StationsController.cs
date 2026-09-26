@@ -29,6 +29,28 @@ public class StationsController : ControllerBase
         return Ok(stations);
     }
 
+    [HttpGet("all")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetAllStations(CancellationToken cancellationToken)
+    {
+        var stations = await _stationService.GetAllStationsAsync(cancellationToken);
+        return Ok(stations);
+    }
+
+    [HttpGet("search")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SearchStations(
+        [FromQuery] double? latitude,
+        [FromQuery] double? longitude,
+        [FromQuery] double radiusKm = 25,
+        [FromQuery] Domain.Enums.ConnectorType? connector = null,
+        [FromQuery] string? query = null,
+        CancellationToken cancellationToken = default)
+    {
+        var stations = await _stationService.SearchStationsAsync(latitude, longitude, radiusKm, connector, query, cancellationToken);
+        return Ok(stations);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetStationById(Guid id, CancellationToken cancellationToken)
     {
@@ -42,6 +64,20 @@ public class StationsController : ControllerBase
     {
         var station = await _stationService.RegisterStationAsync(OwnerId, request, cancellationToken);
         return CreatedAtAction(nameof(GetStationById), new { id = station.Id }, station);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateStation(Guid id, [FromBody] UpdateStationRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var station = await _stationService.UpdateStationAsync(id, OwnerId, request, cancellationToken);
+            return Ok(station);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 
     [HttpPost("{id:guid}/chargers")]
@@ -82,6 +118,20 @@ public class StationsController : ControllerBase
         try
         {
             var mw = await _stationService.AddMaintenanceWindowAsync(chargerId, OwnerId, request, cancellationToken);
+            return Ok(mw);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpPut("maintenance/{maintenanceId:guid}")]
+    public async Task<IActionResult> UpdateMaintenanceWindow(Guid maintenanceId, [FromBody] MaintenanceWindowDto request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var mw = await _stationService.UpdateMaintenanceWindowAsync(maintenanceId, OwnerId, request, cancellationToken);
             return Ok(mw);
         }
         catch (UnauthorizedAccessException)

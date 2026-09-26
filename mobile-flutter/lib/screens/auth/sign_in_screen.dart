@@ -5,6 +5,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/api/auth_service.dart';
 import '../../core/api/auth_models.dart';
 import 'sign_up_screen.dart';
+import '../home/home_screen.dart';
+import '../../features/reservations/screens/staff_dashboard_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -140,14 +142,21 @@ class _SignInScreenState extends State<SignInScreen>
         password: password,
       );
       if (!mounted) return;
-      // ✅ Success — show toast then pop back to home
+      // ✅ Success — navigate to role-based dashboard
       _showToastMessage(
         _ToastType.success,
         'Authenticated Successfully',
         'Welcome back, ${AuthService.instance.currentUser?.fullName ?? ''}!',
       );
       await Future.delayed(const Duration(milliseconds: 1400));
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      final auth = AuthService.instance;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => auth.isStaff ? const StaffDashboardScreen() : const HomeScreen(),
+        ),
+        (route) => false, // Clear the whole stack
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       // Map error to the right field
@@ -166,6 +175,29 @@ class _SignInScreenState extends State<SignInScreen>
         'Connection Error',
         'Cannot reach the server. Is the backend running?',
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final auth = AuthService.instance;
+      await auth.loginWithGoogle();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => auth.isStaff ? const StaffDashboardScreen() : const HomeScreen(),
+        ),
+        (route) => false,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showToastMessage(_ToastType.error, 'Sign In Failed', e.userMessage);
+    } catch (e) {
+      if (!mounted) return;
+      _showToastMessage(_ToastType.error, 'Google Sign-in Error', 'Could not complete Google Sign-in.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -227,9 +259,6 @@ class _SignInScreenState extends State<SignInScreen>
             ),
             child: Column(
               children: [
-                // Status bar row
-                _buildStatusBar(),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
@@ -268,13 +297,6 @@ class _SignInScreenState extends State<SignInScreen>
                       // Register link
                       _buildRegisterRow(),
                       const SizedBox(height: 16),
-
-                      // Security badge
-                      _buildSecurityBadge(),
-                      const SizedBox(height: 20),
-
-                      // Dev demo panel
-                      _buildDemoPanel(),
                     ],
                   ),
                 ),
@@ -803,7 +825,7 @@ class _SignInScreenState extends State<SignInScreen>
   // ── Google button ────────────────────────────────────────────────────────────
   Widget _buildGoogleButton() {
     return GestureDetector(
-      onTap: () {},
+      onTap: _isLoading ? null : _handleGoogleSignIn,
       child: Container(
         height: 52,
         decoration: BoxDecoration(
