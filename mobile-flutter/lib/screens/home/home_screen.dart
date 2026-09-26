@@ -132,10 +132,10 @@ class _HomeScreenState extends State<HomeScreen>
       right: 0,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.85),
+          color: AppColors.surface.withValues(alpha: 0.85),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.25),
+              color: Colors.black.withValues(alpha: 0.25),
               blurRadius: 8,
               offset: const Offset(0, 1),
             ),
@@ -196,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.15),
+                                    color: Colors.black.withValues(alpha: 0.15),
                                     blurRadius: 4,
                                   ),
                                 ],
@@ -212,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen>
                               right: 6,
                               child: AnimatedBuilder(
                                 animation: _pulseController,
-                                builder: (_, __) => Container(
+                                builder: (_, _) => Container(
                                   width: 8,
                                   height: 8,
                                   decoration: BoxDecoration(
@@ -239,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withOpacity(0.25),
+                                color: AppColors.primary.withValues(alpha: 0.25),
                                 blurRadius: 12,
                               ),
                             ],
@@ -277,10 +277,10 @@ class _HomeScreenState extends State<HomeScreen>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.90),
+        color: AppColors.surface.withValues(alpha: 0.90),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.35),
+            color: Colors.black.withValues(alpha: 0.35),
             blurRadius: 16,
             offset: const Offset(0, -2),
           ),

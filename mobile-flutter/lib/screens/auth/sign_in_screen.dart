@@ -370,7 +370,7 @@ class _SignInScreenState extends State<SignInScreen>
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.15),
+                color: AppColors.primary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(24),
               ),
             ),
@@ -382,7 +382,7 @@ class _SignInScreenState extends State<SignInScreen>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -415,7 +415,7 @@ class _SignInScreenState extends State<SignInScreen>
               padding:
                   const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.12),
+                color: AppColors.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -461,17 +461,17 @@ class _SignInScreenState extends State<SignInScreen>
     IconData icon;
     switch (_toastType) {
       case _ToastType.success:
-        bgColor = AppColors.secondaryContainer.withOpacity(0.2);
+        bgColor = AppColors.secondaryContainer.withValues(alpha: 0.2);
         textColor = AppColors.primary;
         icon = Icons.check_circle_rounded;
         break;
       case _ToastType.info:
-        bgColor = AppColors.tertiaryContainer.withOpacity(0.2);
+        bgColor = AppColors.tertiaryContainer.withValues(alpha: 0.2);
         textColor = AppColors.tertiary;
         icon = Icons.info_rounded;
         break;
       default:
-        bgColor = AppColors.errorContainer.withOpacity(0.3);
+        bgColor = AppColors.errorContainer.withValues(alpha: 0.3);
         textColor = AppColors.error;
         icon = Icons.warning_rounded;
     }
@@ -504,7 +504,7 @@ class _SignInScreenState extends State<SignInScreen>
                   _toastBody,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: textColor.withOpacity(0.85),
+                    color: textColor.withValues(alpha: 0.85),
                   ),
                 ),
               ],
@@ -596,11 +596,11 @@ class _SignInScreenState extends State<SignInScreen>
       height: 54,
       decoration: BoxDecoration(
         color: _emailHasError
-            ? AppColors.errorContainer.withOpacity(0.12)
+            ? AppColors.errorContainer.withValues(alpha: 0.12)
             : AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(14),
         border: _emailHasError
-            ? Border.all(color: AppColors.error.withOpacity(0.4), width: 1)
+            ? Border.all(color: AppColors.error.withValues(alpha: 0.4), width: 1)
             : Border.all(color: Colors.transparent),
       ),
       child: Row(
@@ -657,11 +657,11 @@ class _SignInScreenState extends State<SignInScreen>
       height: 54,
       decoration: BoxDecoration(
         color: _passwordHasError
-            ? AppColors.errorContainer.withOpacity(0.12)
+            ? AppColors.errorContainer.withValues(alpha: 0.12)
             : AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(14),
         border: _passwordHasError
-            ? Border.all(color: AppColors.error.withOpacity(0.4), width: 1)
+            ? Border.all(color: AppColors.error.withValues(alpha: 0.4), width: 1)
             : Border.all(color: Colors.transparent),
       ),
       child: Row(
@@ -740,7 +740,7 @@ class _SignInScreenState extends State<SignInScreen>
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -833,7 +833,7 @@ class _SignInScreenState extends State<SignInScreen>
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -945,7 +945,7 @@ class _SignInScreenState extends State<SignInScreen>
                 children: [
                   AnimatedBuilder(
                     animation: _pulseController,
-                    builder: (_, __) => Opacity(
+                    builder: (_, _) => Opacity(
                       opacity:
                           (1.0 - _pulseController.value).clamp(0.0, 1.0),
                       child: Container(

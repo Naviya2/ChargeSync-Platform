@@ -142,7 +142,7 @@ class _StationBottomSheetState extends State<StationBottomSheet>
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: AppColors.primary
-                            .withOpacity(_glowController.value * 0.4),
+                            .withValues(alpha: _glowController.value * 0.4),
                         width: 1.5,
                       ),
                     ),
@@ -264,8 +264,8 @@ class _ActiveStationCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: station.isCompatible
-                  ? AppColors.primaryContainer.withOpacity(0.15)
-                  : AppColors.tertiaryContainer.withOpacity(0.2),
+                  ? AppColors.primaryContainer.withValues(alpha: 0.15)
+                  : AppColors.tertiaryContainer.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -368,7 +368,7 @@ class _ActiveStationCard extends StatelessWidget {
                     boxShadow: isFree
                         ? [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.4),
+                              color: AppColors.primary.withValues(alpha: 0.4),
                               blurRadius: 6,
                             )
                           ]
@@ -432,7 +432,7 @@ class _ActiveStationCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: AppColors.primary.withValues(alpha: 0.3),
                           blurRadius: 16,
                           offset: const Offset(0, 4),
                         )
@@ -597,9 +597,9 @@ class _StationListCard extends StatelessWidget {
                                     ? AppColors.surfaceVariant
                                     : station.badge == 'Eco Solar'
                                         ? AppColors.tertiaryContainer
-                                            .withOpacity(0.2)
+                                            .withValues(alpha: 0.2)
                                         : AppColors.primaryContainer
-                                            .withOpacity(0.2),
+                                            .withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(

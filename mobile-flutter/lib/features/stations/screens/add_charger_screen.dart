@@ -81,7 +81,7 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                value: _selectedConnector,
+                initialValue: _selectedConnector,
                 decoration: const InputDecoration(labelText: 'Connector Type'),
                 items: const [
                   DropdownMenuItem(value: 0, child: Text('Type 2')),

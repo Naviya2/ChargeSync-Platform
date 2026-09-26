@@ -258,7 +258,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer.withOpacity(0.92),
+                  color: AppColors.surfaceContainer.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(

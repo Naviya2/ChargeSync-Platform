@@ -195,7 +195,7 @@ class _VehiclesListScreenState extends State<VehiclesListScreen> {
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 96),
               itemCount: _vehicleService.vehicles.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              separatorBuilder: (_, _) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final vehicle = _vehicleService.vehicles[index];
                 final isActive = _vehicleService.activeVehicle?.id == vehicle.id;

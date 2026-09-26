@@ -385,7 +385,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.12),
+                          color: AppColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text('EV',
@@ -466,7 +466,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       alignment: Alignment.centerLeft,
       child: AnimatedBuilder(
         animation: _progressAnim,
-        builder: (_, __) => FractionallySizedBox(
+        builder: (_, _) => FractionallySizedBox(
           widthFactor: _progressAnim.value,
           child: Container(
             decoration: BoxDecoration(
@@ -497,7 +497,7 @@ class _SignUpScreenState extends State<SignUpScreen>
             height: 8,
             decoration: BoxDecoration(
               color: isDone
-                  ? AppColors.primary.withOpacity(0.5)
+                  ? AppColors.primary.withValues(alpha: 0.5)
                   : isActive
                       ? AppColors.primary
                       : AppColors.surfaceContainerHigh,
@@ -523,9 +523,9 @@ class _SignUpScreenState extends State<SignUpScreen>
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: AppColors.primaryContainer.withOpacity(0.3),
+              color: AppColors.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -835,8 +835,9 @@ class _SignUpScreenState extends State<SignUpScreen>
                 _selectedMake = v!;
                 _selectedModel = _carModels[v]!.first;
                 // Auto-set connector
-                if (v == 'Tesla') _selectedConnector = 'NACS (Tesla)';
-                else if (v == 'Rivian') _selectedConnector = 'NACS (Tesla)';
+                if (v == 'Tesla') {
+                  _selectedConnector = 'NACS (Tesla)';
+                } else if (v == 'Rivian') _selectedConnector = 'NACS (Tesla)';
                 else _selectedConnector = 'CCS1';
               });
             },
@@ -926,7 +927,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryContainer.withOpacity(0.25),
+            AppColors.primaryContainer.withValues(alpha: 0.25),
             AppColors.surfaceContainer,
           ],
           begin: Alignment.topLeft,
@@ -934,7 +935,7 @@ class _SignUpScreenState extends State<SignUpScreen>
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: AppColors.primary.withOpacity(0.15), width: 1),
+            color: AppColors.primary.withValues(alpha: 0.15), width: 1),
       ),
       child: Row(
         children: [
@@ -972,7 +973,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                   children: [
                     AnimatedBuilder(
                       animation: _pulseController,
-                      builder: (_, __) => Opacity(
+                      builder: (_, _) => Opacity(
                         opacity:
                             (1 - _pulseController.value).clamp(0.0, 1.0),
                         child: Container(
@@ -1002,7 +1003,7 @@ class _SignUpScreenState extends State<SignUpScreen>
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.electric_car_rounded,
@@ -1022,7 +1023,7 @@ class _SignUpScreenState extends State<SignUpScreen>
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -1059,7 +1060,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.35),
+                      color: AppColors.primary.withValues(alpha: 0.35),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -1140,7 +1141,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -1148,7 +1149,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -1191,7 +1192,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                 children: [
                   AnimatedBuilder(
                     animation: _pulseController,
-                    builder: (_, __) => Opacity(
+                    builder: (_, _) => Opacity(
                       opacity: (1 - _pulseController.value).clamp(0, 1.0),
                       child: Container(
                         width: 7,
@@ -1244,12 +1245,12 @@ class _SignUpScreenState extends State<SignUpScreen>
           height: 52,
           decoration: BoxDecoration(
             color: hasError
-                ? AppColors.errorContainer.withOpacity(0.1)
+                ? AppColors.errorContainer.withValues(alpha: 0.1)
                 : AppColors.surfaceContainer,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: hasError
-                  ? AppColors.error.withOpacity(0.5)
+                  ? AppColors.error.withValues(alpha: 0.5)
                   : Colors.transparent,
             ),
           ),
@@ -1306,12 +1307,12 @@ class _SignUpScreenState extends State<SignUpScreen>
       height: 52,
       decoration: BoxDecoration(
         color: hasError
-            ? AppColors.errorContainer.withOpacity(0.1)
+            ? AppColors.errorContainer.withValues(alpha: 0.1)
             : AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: hasError
-              ? AppColors.error.withOpacity(0.5)
+              ? AppColors.error.withValues(alpha: 0.5)
               : Colors.transparent,
         ),
       ),
