@@ -45,7 +45,7 @@ class _StationsAppBarState extends State<StationsAppBar> {
     final topPad = MediaQuery.of(context).padding.top;
 
     return Container(
-      color: AppColors.surface.withOpacity(0.95),
+      color: AppColors.surface.withValues(alpha: 0.95),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -156,7 +156,7 @@ class _StationsAppBarState extends State<StationsAppBar> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               scrollDirection: Axis.horizontal,
               itemCount: _filters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 final f = _filters[i];
                 final isActive = widget.activeFilters.contains(f.key);
@@ -168,12 +168,12 @@ class _StationsAppBarState extends State<StationsAppBar> {
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: isActive
-                          ? AppColors.primaryContainer.withOpacity(0.2)
+                          ? AppColors.primaryContainer.withValues(alpha: 0.2)
                           : AppColors.surfaceContainer,
                       borderRadius: BorderRadius.circular(999),
                       border: isActive
                           ? Border.all(
-                              color: AppColors.primary.withOpacity(0.4),
+                              color: AppColors.primary.withValues(alpha: 0.4),
                               width: 1)
                           : null,
                     ),

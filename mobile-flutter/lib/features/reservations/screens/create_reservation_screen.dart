@@ -179,7 +179,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                     const Text('No chargers available')
                   else
                     DropdownButtonFormField<Charger>(
-                      value: _selectedCharger,
+                      initialValue: _selectedCharger,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,
@@ -205,7 +205,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                     const Text('No vehicles registered. Please add a vehicle first.')
                   else
                     DropdownButtonFormField<Vehicle>(
-                      value: _selectedVehicle,
+                      initialValue: _selectedVehicle,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         filled: true,
@@ -227,7 +227,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
-                        'Estimated Charge Time: ${_calculatedDurationMinutes} mins',
+                        'Estimated Charge Time: $_calculatedDurationMinutes mins',
                         style: GoogleFonts.inter(color: AppColors.primary, fontWeight: FontWeight.w600),
                       ),
                     ),

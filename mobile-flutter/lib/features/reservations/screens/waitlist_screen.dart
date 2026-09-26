@@ -82,7 +82,7 @@ class _WaitlistScreenState extends State<WaitlistScreen> {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _entries.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        separatorBuilder: (_, _) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
           final entry = _entries[index];
           final isWaiting = entry.status == 'Waiting';
