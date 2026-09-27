@@ -29,8 +29,11 @@ public sealed class ReservationSummaryDto
     public Guid Id { get; set; }
     public Guid? DriverId { get; set; }
     public Guid ChargerId { get; set; }
+    public Guid? VehicleId { get; set; }
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset EndTime { get; set; }
+    public string? ReservationQRCode { get; set; }
+    public decimal AdvanceDepositAmount { get; set; }
     public ReservationStatus Status { get; set; }
     public bool IsWalkIn { get; set; }
 }

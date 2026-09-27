@@ -53,19 +53,19 @@ public sealed class ReservationEndpointsTests : IClassFixture<ChargeSyncApiFacto
         var auth = await register.Content.ReadFromJsonAsync<AuthResponse>();
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth!.AccessToken);
 
-        // 2. Try to create reservation requiring 10.0m deposit
+        // 2. Try to create reservation requiring 100.0m deposit (exceeds 50.0 starting balance)
         var request = new CreateReservationRequest
         {
             ChargerId = Guid.NewGuid(),
             VehicleId = Guid.NewGuid(),
             StartTime = DateTimeOffset.UtcNow.AddHours(1),
             EndTime = DateTimeOffset.UtcNow.AddHours(2),
-            AdvanceDepositAmount = 10.0m
+            AdvanceDepositAmount = 100.0m
         };
 
         var response = await _client.PostAsJsonAsync("/api/reservations", request);
 
-        // Should be BadRequest because balance is 0
+        // Should be BadRequest because balance is insufficient
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 

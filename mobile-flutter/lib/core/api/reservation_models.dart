@@ -23,15 +23,15 @@ class ReservationDto {
 
   factory ReservationDto.fromJson(Map<String, dynamic> json) {
     return ReservationDto(
-      id: json['id'],
-      driverId: json['driverId'],
-      chargerId: json['chargerId'],
-      vehicleId: json['vehicleId'],
-      startTime: DateTime.parse(json['startTime']),
-      endTime: DateTime.parse(json['endTime']),
+      id: json['id']?.toString() ?? '',
+      driverId: json['driverId']?.toString(),
+      chargerId: json['chargerId']?.toString() ?? '',
+      vehicleId: json['vehicleId']?.toString(),
+      startTime: json['startTime'] != null ? DateTime.parse(json['startTime']) : DateTime.now(),
+      endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : DateTime.now().add(const Duration(hours: 1)),
       reservationQRCode: json['reservationQRCode'],
-      advanceDepositAmount: (json['advanceDepositAmount'] as num).toDouble(),
-      status: json['status'],
+      advanceDepositAmount: (json['advanceDepositAmount'] as num?)?.toDouble() ?? 0.0,
+      status: json['status']?.toString() ?? 'Pending',
     );
   }
 }

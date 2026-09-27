@@ -61,12 +61,15 @@ public sealed class ReservationService : IReservationService
         var qrToken = GenerateQrToken();
         reservation.ConfirmWithQrCode(qrToken);
 
-        // 7. Persist both the reservation and the wallet update atomically.
+        // 7. Persist the reservation and wallet update first so the ID is guaranteed.
         _db.Reservations.Add(reservation);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        // 8. Record initial status history entries.
         RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.Pending, actorId: driverId);
         RecordHistory(reservation, oldStatus: ReservationStatus.Pending, newStatus: ReservationStatus.Confirmed, actorId: driverId);
-
         await _db.SaveChangesAsync(cancellationToken);
+
         return ToDto(reservation);
     }
 
@@ -88,9 +91,11 @@ public sealed class ReservationService : IReservationService
             request.EndTime);
 
         _db.Reservations.Add(reservation);
-        RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.CheckedIn, actorId: staffUserId);
-
         await _db.SaveChangesAsync(cancellationToken);
+
+        RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.CheckedIn, actorId: staffUserId);
+        await _db.SaveChangesAsync(cancellationToken);
+
         return ToDto(reservation);
     }
 
@@ -134,8 +139,11 @@ public sealed class ReservationService : IReservationService
                 Id = r.Id,
                 DriverId = r.DriverId,
                 ChargerId = r.ChargerId,
+                VehicleId = r.VehicleId,
                 StartTime = r.StartTime,
                 EndTime = r.EndTime,
+                ReservationQRCode = r.ReservationQRCode,
+                AdvanceDepositAmount = r.AdvanceDepositAmount,
                 Status = r.Status,
                 IsWalkIn = r.DriverId == null
             })

@@ -32,6 +32,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
   bool _isLoadingVehicles = true;
   bool _isLoadingSlots = false;
   bool _isSubmitting = false;
+  double? _walletBalance;
 
   @override
   void initState() {
@@ -40,6 +41,16 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
       _selectedCharger = widget.station.chargers!.first;
     }
     _loadVehicles();
+    _loadWallet();
+  }
+
+  Future<void> _loadWallet() async {
+    try {
+      final balance = await ReservationApiClient.instance.getWalletBalance();
+      if (mounted) {
+        setState(() => _walletBalance = balance);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadVehicles() async {
@@ -103,6 +114,77 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
     }
   }
 
+  Future<void> _showTopUpDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceContainerHigh,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 24),
+            const SizedBox(width: 8),
+            Text('Reload Wallet', style: GoogleFonts.inter(color: AppColors.onSurface, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Advance reservations require a \$5.00 deposit from your virtual wallet (refundable upon cancellation).',
+              style: GoogleFonts.inter(color: AppColors.onSurfaceVariant, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Would you like to top up \$50.00 to your ChargeSync virtual wallet now?',
+              style: GoogleFonts.inter(color: AppColors.onSurface, fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.onPrimary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Top Up +\$50.00'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final newBal = await ReservationApiClient.instance.topUpWallet(50.0);
+        if (mounted) {
+          setState(() => _walletBalance = newBal);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Wallet credited with \$50.00! New Balance: \$${newBal.toStringAsFixed(2)}'),
+              backgroundColor: AppColors.secondary,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          // Automatically retry reservation
+          _makeReservation();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to top up wallet: $e')),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _makeReservation() async {
     if (_selectedCharger == null || _selectedSlot == null || _selectedVehicle == null) return;
 
@@ -126,9 +208,13 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
       Navigator.pop(context); // Go back to map
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to make reservation: $e')),
-      );
+      if (e.toString().contains('Insufficient wallet balance') || e.toString().contains('400')) {
+        _showTopUpDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to make reservation: $e')),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -316,7 +402,72 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                       ),
                     ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
+
+                  // Wallet Deposit Strip (SRS FR-3.1 & ADR-05)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: (_walletBalance != null && _walletBalance! < 5.0)
+                            ? AppColors.error.withValues(alpha: 0.5)
+                            : AppColors.primary.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Advance Deposit: \$5.00',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.onSurface,
+                                  ),
+                                ),
+                                Text(
+                                  _walletBalance != null
+                                      ? 'Wallet Balance: \$${_walletBalance!.toStringAsFixed(2)}'
+                                      : 'Wallet Balance: Loading...',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: (_walletBalance != null && _walletBalance! < 5.0)
+                                        ? AppColors.error
+                                        : AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.15),
+                            foregroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: _showTopUpDialog,
+                          icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
+                          label: Text(
+                            '+ Top Up',
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
 
                   // Submit Button
                   SizedBox(

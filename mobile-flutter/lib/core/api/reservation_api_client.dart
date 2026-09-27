@@ -109,13 +109,6 @@ class ReservationApiClient {
     return [];
   }
 
-  Future<List<WaitlistEntryDto>> getMyWaitlist() async {
-    final result = await _get('/api/waitlist/mine');
-    // The endpoint returns a list, not a PagedResult for waitlist mine? Let's check backend WaitlistController.
-    // Yes, GetMine returns Task<ActionResult<IReadOnlyList<WaitlistEntryDto>>>
-    throw UnimplementedError('We will handle lists in another helper if needed.');
-  }
-
   Future<List<WaitlistEntryDto>> getMyWaitlistList() async {
     final token = await _getAccessToken();
     final url = Uri.parse('${ApiConfig.baseUrl}/api/waitlist/mine');
@@ -127,5 +120,15 @@ class ReservationApiClient {
     } else {
       throw HttpException('HTTP ${response.statusCode}: ${response.body}');
     }
+  }
+
+  Future<double> getWalletBalance() async {
+    final result = await _get('/api/wallet/balance');
+    return (result['balance'] as num?)?.toDouble() ?? 0.0;
+  }
+
+  Future<double> topUpWallet([double amount = 50.0]) async {
+    final result = await _post('/api/wallet/topup', {'amount': amount});
+    return (result['balance'] as num?)?.toDouble() ?? amount;
   }
 }

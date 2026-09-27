@@ -23,6 +23,7 @@ public class User : AuditableEntity
         Role = role;
         PhoneNumber = phoneNumber;
         IsActive = true;
+        WalletBalance = role == UserRole.Driver ? 50.00m : 0.00m;
     }
 
     /// <summary>Unique user identifier. Assigned by the database (<c>gen_random_uuid()</c>).</summary>
