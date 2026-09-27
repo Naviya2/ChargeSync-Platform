@@ -60,10 +60,21 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
 
         using var stopForm = new MultipartFormDataContent();
         stopForm.Add(new StringContent("8.25"), "staffOverriddenKwh");
+        var photoBytes = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=");
+        stopForm.Add(new ByteArrayContent(photoBytes), "meterPhoto", "meter.png");
         var stop = await client.PutAsync($"/api/sessions/{session.Id}/stop", stopForm);
         stop.EnsureSuccessStatusCode();
         var completion = await stop.Content.ReadFromJsonAsync<SessionCompletionDto>(JsonOptions);
         Assert.Null(completion!.Invoice.DriverId);
+        Assert.True(completion.Session.HasMeterPhoto);
+        var storedPhoto = await client.GetAsync($"/api/sessions/{session.Id}/meter-photo");
+        storedPhoto.EnsureSuccessStatusCode();
+        Assert.Equal(photoBytes, await storedPhoto.Content.ReadAsByteArrayAsync());
+        Assert.Equal("image/png", storedPhoto.Content.Headers.ContentType!.MediaType);
+        var otherClient = _factory.CreateClient();
+        await RegisterOwnerAsync(otherClient);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await otherClient.GetAsync($"/api/sessions/{session.Id}/meter-photo")).StatusCode);
 
         var cashPayment = await client.PostAsJsonAsync(
             $"/api/payments/invoices/{completion.Invoice.Id}/settle",
@@ -241,6 +252,15 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
 
         var read = await otherOwnerClient.GetAsync($"/api/sessions/{sessionId}");
         Assert.Equal(HttpStatusCode.NotFound, read.StatusCode);
+        var otherSessions = await otherOwnerClient.GetFromJsonAsync<List<ChargingSessionDto>>("/api/sessions", JsonOptions);
+        Assert.DoesNotContain(otherSessions!, s => s.Id == sessionId);
+
+        using var invalidPhotoForm = new MultipartFormDataContent();
+        invalidPhotoForm.Add(new ByteArrayContent("not an image"u8.ToArray()), "meterPhoto", "fake.png");
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await ownerClient.PutAsync($"/api/sessions/{sessionId}/stop", invalidPhotoForm)).StatusCode);
+        var stillActive = await ownerClient.GetFromJsonAsync<ChargingSessionDto>($"/api/sessions/{sessionId}", JsonOptions);
+        Assert.Equal(ChargingSessionStatus.InProgress, stillActive!.Status);
 
         using var form = new MultipartFormDataContent();
         form.Add(new StringContent("10"), "staffOverriddenKwh");

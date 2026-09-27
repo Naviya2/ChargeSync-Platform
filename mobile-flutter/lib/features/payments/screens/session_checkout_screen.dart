@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,7 +12,8 @@ import '../api/payment_api_client.dart';
 import '../models/payment_models.dart';
 
 class SessionCheckoutScreen extends StatefulWidget {
-  const SessionCheckoutScreen({super.key});
+  const SessionCheckoutScreen({super.key, this.active = true});
+  final bool active;
 
   @override
   State<SessionCheckoutScreen> createState() => _SessionCheckoutScreenState();
@@ -27,6 +30,37 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
   bool _useOverride = false;
   String _paymentMethod = 'Cash';
   String? _error;
+  Uint8List? _meterPhoto;
+  String? _completionNotice;
+
+  @override
+  void didUpdateWidget(covariant SessionCheckoutScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active &&
+        !oldWidget.active &&
+        _invoice == null &&
+        !_submitting) {
+      _loadSessions();
+    }
+  }
+
+  Future<void> _pickMeterPhoto() async {
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (picked == null) return;
+      if (await picked.length() > 5 * 1024 * 1024) {
+        throw Exception('Choose a photo smaller than 5 MB.');
+      }
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _meterPhoto = bytes;
+        _error = null;
+      });
+    } catch (error) {
+      if (mounted) setState(() => _error = _cleanError(error));
+    }
+  }
 
   @override
   void initState() {
@@ -45,6 +79,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
   }
 
   Future<void> _loadSessions() async {
+    if (_submitting) return;
     setState(() {
       _loadingSessions = true;
       _error = null;
@@ -55,6 +90,8 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       setState(() {
         _sessions = sessions;
         _selected = sessions.isEmpty ? null : sessions.first;
+        _meterPhoto = null;
+        _overrideController.clear();
         _loadingSessions = false;
       });
     } catch (error) {
@@ -83,7 +120,10 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
   Future<void> _completeSession() async {
     final session = _selected;
     if (session == null) return;
-    if (_useOverride && (_overrideValue == null || _overrideValue! < 0)) {
+    if (_useOverride &&
+        (_overrideValue == null ||
+            !_overrideValue!.isFinite ||
+            _overrideValue! <= 0)) {
       setState(() => _error = 'Enter a valid physical meter reading.');
       return;
     }
@@ -95,10 +135,17 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       final completion = await SessionApiClient.instance.stopSession(
         sessionId: session.id,
         staffOverriddenKwh: _overrideValue,
+        meterPhoto: _meterPhoto,
       );
       if (!mounted) return;
       setState(() {
         _invoice = completion.invoice;
+        _completionNotice = completion.session.status == 'DiscrepancyFlagged'
+            ? 'Session completed. Energy difference flagged for review.'
+            : 'Session completed.';
+        if (_meterPhoto != null) {
+          _completionNotice = '$_completionNotice Meter photo saved.';
+        }
         _paymentMethod = completion.invoice.isWalkIn ? 'Cash' : 'Wallet';
         _submitting = false;
       });
@@ -142,6 +189,8 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       _invoice = null;
       _overrideController.clear();
       _useOverride = false;
+      _meterPhoto = null;
+      _completionNotice = null;
     });
     await _loadSessions();
   }
@@ -173,11 +222,49 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
           else if (_sessions.isEmpty)
             _EmptyState(onRefresh: _loadSessions)
           else ...[
-            _buildSessionPicker(),
+            AbsorbPointer(absorbing: _submitting, child: _buildSessionPicker()),
             const SizedBox(height: 14),
             if (_selected != null) _buildEnergyCard(_selected!),
             const SizedBox(height: 14),
-            _buildOverrideCard(),
+            AbsorbPointer(absorbing: _submitting, child: _buildOverrideCard()),
+            const SizedBox(height: 14),
+            _card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Meter photo (optional)',
+                    style: _text(14, FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Attach a JPEG or PNG, up to 5 MB. It is saved with this session.',
+                    style: _text(12, FontWeight.w400),
+                  ),
+                  if (_meterPhoto != null) ...[
+                    const SizedBox(height: 10),
+                    Image.memory(
+                      _meterPhoto!,
+                      height: 160,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, error, stack) =>
+                          const Text('Choose a JPEG or PNG image.'),
+                    ),
+                    TextButton(
+                      onPressed: _submitting
+                          ? null
+                          : () => setState(() => _meterPhoto = null),
+                      child: const Text('Remove photo'),
+                    ),
+                  ],
+                  OutlinedButton.icon(
+                    onPressed: _submitting ? null : _pickMeterPhoto,
+                    icon: const Icon(Icons.add_a_photo_outlined),
+                    label: const Text('Choose meter photo'),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 18),
             _primaryButton(
               icon: Icons.receipt_long_rounded,
@@ -196,6 +283,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
 
   Widget _buildSessionPicker() => _card(
     child: DropdownButtonFormField<String>(
+      key: ValueKey(_selected?.id),
       initialValue: _selected?.id,
       dropdownColor: AppColors.surfaceContainerHigh,
       isExpanded: true,
@@ -214,6 +302,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       onChanged: (id) => setState(() {
         _selected = _sessions.firstWhere((item) => item.id == id);
         _overrideController.clear();
+        _meterPhoto = null;
         _useOverride = false;
       }),
     ),
@@ -338,6 +427,10 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
 
   Widget _buildInvoice(PaymentInvoice invoice) => Column(
     children: [
+      if (_completionNotice != null) ...[
+        _MessageCard(message: _completionNotice!, isError: false),
+        const SizedBox(height: 14),
+      ],
       _card(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

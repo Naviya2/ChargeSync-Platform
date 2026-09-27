@@ -30,6 +30,16 @@ public sealed class ChargingSession : AuditableEntity
     public Reservation Reservation { get; private set; } = null!;
     public User? StaffUser { get; private set; }
     public PaymentInvoice? Invoice { get; private set; }
+    public byte[]? MeterPhoto { get; private set; }
+    public string? MeterPhotoContentType { get; private set; }
+
+    public void AttachMeterPhoto(byte[] data, string contentType)
+    {
+        if (data.Length == 0 || data.Length > 5 * 1024 * 1024)
+            throw new ArgumentException("Meter photo must be between 1 byte and 5 MB.");
+        MeterPhoto = data.ToArray();
+        MeterPhotoContentType = contentType;
+    }
 
     public static ChargingSession Start(
         Reservation reservation,
