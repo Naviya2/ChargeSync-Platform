@@ -133,4 +133,14 @@ class StationService {
   Future<void> updateOperatingHours(String stationId, List<Map<String, dynamic>> hours) async {
     await _put('/api/Stations/$stationId/operating-hours', hours);
   }
+
+  Future<Map<String, dynamic>?> getCompatibility(String stationId, [String? vehicleId]) async {
+    try {
+      final query = (vehicleId != null && vehicleId.isNotEmpty) ? '?vehicleId=$vehicleId' : '';
+      final response = await _get('/api/Stations/$stationId/compatibility$query');
+      return response is Map<String, dynamic> ? response : null;
+    } catch (_) {
+      return null;
+    }
+  }
 }

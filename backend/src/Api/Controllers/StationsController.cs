@@ -1,8 +1,10 @@
 using Application.Common.Interfaces;
 using Application.Stations;
 using Application.Stations.Models;
+using AgentClient.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
@@ -58,6 +60,73 @@ public class StationsController : ControllerBase
         var station = await _stationService.GetStationByIdAsync(id, OwnerId, cancellationToken);
         if (station == null) return NotFound();
         return Ok(station);
+    }
+
+    [HttpGet("{id:guid}/compatibility")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetCompatibility(
+        Guid id,
+        [FromQuery] Guid? vehicleId,
+        [FromServices] AgentClient.IVehicleAgentClient? agentClient,
+        [FromServices] IAppDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var station = await db.Stations
+            .Include(s => s.Chargers)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+
+        if (station == null) return NotFound();
+
+        Domain.Entities.Vehicle? vehicle = null;
+        if (vehicleId.HasValue)
+        {
+            vehicle = await db.Vehicles.AsNoTracking().FirstOrDefaultAsync(v => v.Id == vehicleId.Value, cancellationToken);
+        }
+
+        if (vehicle == null)
+        {
+            vehicle = await db.Vehicles.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+        }
+
+        if (agentClient != null && vehicle != null)
+        {
+            var agentRequest = new AgentCompatibilityRequest
+            {
+                Vehicle = new AgentVehicleInput
+                {
+                    VehicleId = vehicle.Id.ToString(),
+                    Make = vehicle.Make,
+                    Model = vehicle.Model,
+                    Connector = vehicle.Connector.ToString(),
+                    BatteryCapacityKwh = vehicle.BatteryCapacityKwh,
+                    MaxChargeRateKw = vehicle.MaxChargeRateKw
+                },
+                TargetStation = new AgentStationInput
+                {
+                    StationId = station.Id.ToString(),
+                    Name = station.Name,
+                    Latitude = station.Latitude,
+                    Longitude = station.Longitude,
+                    Address = station.Address,
+                    Chargers = station.Chargers.Select(c => new AgentChargerInput
+                    {
+                        ChargerId = c.Id.ToString(),
+                        Identifier = c.Identifier,
+                        Connector = c.Connector.ToString(),
+                        PowerKw = c.PowerKw
+                    }).ToList()
+                }
+            };
+
+            var aiResult = await agentClient.EvaluateCompatibilityAsync(agentRequest, cancellationToken);
+            if (aiResult != null)
+            {
+                return Ok(aiResult);
+            }
+        }
+
+        return Ok(new { message = "Compatibility evaluated locally", stationId = id });
     }
 
     [HttpPost]

@@ -51,6 +51,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
   Future<void> _initMap() async {
     await _getLocation();
     await _loadStations();
+    VehicleService.instance.fetchVehicles();
     setState(() {
       _isLoading = false;
     });
@@ -101,7 +102,14 @@ class _StationMapScreenState extends State<StationMapScreen> {
   }
 
   Future<void> _getRouteTo(Station station) async {
-    if (_currentLocation == null) return;
+    final activeVehicle = VehicleService.instance.activeVehicle;
+    // Trigger AI Compatibility Agent evaluation for selected station & active vehicle
+    StationService.instance.getCompatibility(station.id, activeVehicle?.id ?? '');
+
+    if (_currentLocation == null) {
+      setState(() => _selectedStation = station);
+      return;
+    }
 
     setState(() {
       _selectedStation = station;

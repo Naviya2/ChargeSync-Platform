@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using AgentClient;
 using Api.Common;
 using Application;
 using Infrastructure;
@@ -18,6 +19,7 @@ builder.Services
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddAgentClient(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Application.Common.Interfaces.ICurrentUser, Api.Authentication.CurrentUser>();
