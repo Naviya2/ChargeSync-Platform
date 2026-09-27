@@ -9,7 +9,8 @@ class UpcomingReservationCard extends StatefulWidget {
   const UpcomingReservationCard({super.key});
 
   @override
-  State<UpcomingReservationCard> createState() => _UpcomingReservationCardState();
+  State<UpcomingReservationCard> createState() =>
+      _UpcomingReservationCardState();
 }
 
 class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
@@ -27,8 +28,10 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
     try {
       final result = await ReservationApiClient.instance.getMyReservations();
       // Find the first reservation that is Confirmed or Pending
-      final active = result.items.where((r) => r.status == 'Confirmed' || r.status == 'Pending').toList();
-      
+      final active = result.items
+          .where((r) => r.status == 'Confirmed' || r.status == 'Pending')
+          .toList();
+
       if (active.isNotEmpty) {
         // Sort by start time ascending
         active.sort((a, b) => a.startTime.compareTo(b.startTime));
@@ -52,7 +55,7 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
 
   void _showQrDialog() {
     if (_upcomingReservation?.reservationQRCode == null) return;
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -60,15 +63,25 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
           backgroundColor: AppColors.surfaceContainer,
           title: Text(
             'Your QR Pass',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.onSurface),
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
+            ),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.qr_code_2, size: 200, color: Colors.black),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.qr_code_2,
+                  size: 200,
+                  color: Colors.black,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -79,7 +92,10 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
               const SizedBox(height: 8),
               Text(
                 'Token: ${_upcomingReservation!.reservationQRCode!.substring(0, 8)}...',
-                style: GoogleFonts.inter(fontSize: 10, color: AppColors.onSurfaceVariant),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: AppColors.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -102,7 +118,10 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
     }
 
     if (_errorMessage != null) {
-      return Text('Failed to load reservations', style: TextStyle(color: Colors.red));
+      return Text(
+        'Failed to load reservations',
+        style: TextStyle(color: Colors.red),
+      );
     }
 
     if (_upcomingReservation == null) {
@@ -205,11 +224,13 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
                           ),
                           children: [
                             TextSpan(
-                              text: '${res.startTime.month}/${res.startTime.day} • ${res.startTime.hour}:${res.startTime.minute.toString().padLeft(2, '0')} ',
+                              text:
+                                  '${res.startTime.month}/${res.startTime.day} • ${res.startTime.hour}:${res.startTime.minute.toString().padLeft(2, '0')} ',
                             ),
                             if (diff.inHours < 24 && diff.inMinutes > 0)
                               TextSpan(
-                                text: '(in ${diff.inHours > 0 ? '${diff.inHours}h ' : ''}${diff.inMinutes % 60}m)',
+                                text:
+                                    '(in ${diff.inHours > 0 ? '${diff.inHours}h ' : ''}${diff.inMinutes % 60}m)',
                                 style: const TextStyle(
                                   color: AppColors.primary,
                                   fontWeight: FontWeight.w500,
@@ -230,7 +251,9 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
             children: [
               Expanded(
                 child: Material(
-                  color: res.reservationQRCode != null ? AppColors.primary : AppColors.surfaceContainer,
+                  color: res.reservationQRCode != null
+                      ? AppColors.primary
+                      : AppColors.surfaceContainer,
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
@@ -242,7 +265,9 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
                         boxShadow: res.reservationQRCode != null
                             ? [
                                 BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.20),
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.20,
+                                  ),
                                   blurRadius: 16,
                                   offset: const Offset(0, 2),
                                 ),
@@ -255,7 +280,9 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
                           Icon(
                             Icons.qr_code_rounded,
                             size: 18,
-                            color: res.reservationQRCode != null ? AppColors.onPrimary : AppColors.onSurfaceVariant,
+                            color: res.reservationQRCode != null
+                                ? AppColors.onPrimary
+                                : AppColors.onSurfaceVariant,
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -263,7 +290,9 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: res.reservationQRCode != null ? AppColors.onPrimary : AppColors.onSurfaceVariant,
+                              color: res.reservationQRCode != null
+                                  ? AppColors.onPrimary
+                                  : AppColors.onSurfaceVariant,
                               letterSpacing: 0.01,
                             ),
                           ),

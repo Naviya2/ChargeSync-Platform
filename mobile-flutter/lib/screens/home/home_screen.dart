@@ -52,54 +52,61 @@ class _HomeScreenState extends State<HomeScreen>
           _currentTab == 1
               ? Positioned.fill(child: const StationMapScreen())
               : _currentTab == 2
-                  ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 72, bottom: 80), child: const ReservationListScreen()))
-                  : _currentTab == 4
-                      ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 72, bottom: 80), child: const ProfileScreen()))
-                      : CustomScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          slivers: [
-                            // Top offset for app bar
-                            SliverToBoxAdapter(
-                              child: SizedBox(height: topPadding + 72),
-                            ),
-                            SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                              sliver: SliverList(
-                                delegate: SliverChildListDelegate([
-                                  _buildGreetingSection(),
-                                  const SizedBox(height: 16),
-                                  const VehicleCard(),
-                                  const SizedBox(height: 16),
-                                  const FindChargerCard(),
-                                  const SizedBox(height: 16),
-                                  QuickActionsRow(
-                                    onFindHub: () => setState(() => _currentTab = 1),
-                                    onBookings: () => setState(() => _currentTab = 2),
-                                    onPlanRoute: () => setState(() => _currentTab = 1), // Usually plan route goes to map
-                                  ),
-                                  const SizedBox(height: 16),
-                                  const SmartRecommendationCard(),
-                                  const SizedBox(height: 16),
-                                  const UpcomingReservationCard(),
-                                  const SizedBox(height: 16),
-                                  const RewardsCard(),
-                                  const SizedBox(height: 32),
-                                ]),
-                              ),
-                            ),
-                            // Bottom offset for nav bar
-                            const SliverToBoxAdapter(child: SizedBox(height: 80)),
-                          ],
-                        ),
+              ? Positioned.fill(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: topPadding + 72, bottom: 80),
+                    child: const ReservationListScreen(),
+                  ),
+                )
+              : _currentTab == 4
+              ? Positioned.fill(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: topPadding + 72, bottom: 80),
+                    child: const ProfileScreen(),
+                  ),
+                )
+              : CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    // Top offset for app bar
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: topPadding + 72),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          _buildGreetingSection(),
+                          const SizedBox(height: 16),
+                          const VehicleCard(),
+                          const SizedBox(height: 16),
+                          const FindChargerCard(),
+                          const SizedBox(height: 16),
+                          QuickActionsRow(
+                            onFindHub: () => setState(() => _currentTab = 1),
+                            onBookings: () => setState(() => _currentTab = 2),
+                            onPlanRoute: () => setState(
+                              () => _currentTab = 1,
+                            ), // Usually plan route goes to map
+                          ),
+                          const SizedBox(height: 16),
+                          const SmartRecommendationCard(),
+                          const SizedBox(height: 16),
+                          const UpcomingReservationCard(),
+                          const SizedBox(height: 16),
+                          const RewardsCard(),
+                          const SizedBox(height: 32),
+                        ]),
+                      ),
+                    ),
+                    // Bottom offset for nav bar
+                    const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                  ],
+                ),
           // ---------- Fixed App Bar ----------
           _buildAppBar(topPadding),
           // ---------- Fixed Bottom Nav ----------
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _buildBottomNavBar(),
-          ),
+          Positioned(bottom: 0, left: 0, right: 0, child: _buildBottomNavBar()),
         ],
       ),
     );
@@ -184,7 +191,12 @@ class _HomeScreenState extends State<HomeScreen>
                       // Notification bell
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsScreen(),
+                            ),
+                          );
                         },
                         child: Stack(
                           children: [
@@ -218,7 +230,10 @@ class _HomeScreenState extends State<HomeScreen>
                                   decoration: BoxDecoration(
                                     color: AppColors.primary,
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: AppColors.surface, width: 2),
+                                    border: Border.all(
+                                      color: AppColors.surface,
+                                      width: 2,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -239,7 +254,9 @@ class _HomeScreenState extends State<HomeScreen>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.25),
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.25,
+                                ),
                                 blurRadius: 12,
                               ),
                             ],

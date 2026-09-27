@@ -100,7 +100,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
 
   Future<void> _getRouteTo(Station station) async {
     if (_currentLocation == null) return;
-    
+
     setState(() {
       _selectedStation = station;
       _routePoints = [];
@@ -115,18 +115,28 @@ class _StationMapScreenState extends State<StationMapScreen> {
         station.latitude,
         station.longitude,
       );
-      
+
       if (res['geometryCoordinates'] != null) {
         final coords = List<List<dynamic>>.from(res['geometryCoordinates']);
         setState(() {
-          _routePoints = coords.map((c) => LatLng(c[1] as double, c[0] as double)).toList();
-          _distance = '${((res['distanceMeters'] as num) / 1000).toStringAsFixed(1)} km';
-          _duration = '${((res['durationSeconds'] as num) / 60).toStringAsFixed(0)} min';
+          _routePoints = coords
+              .map((c) => LatLng(c[1] as double, c[0] as double))
+              .toList();
+          _distance =
+              '${((res['distanceMeters'] as num) / 1000).toStringAsFixed(1)} km';
+          _duration =
+              '${((res['durationSeconds'] as num) / 60).toStringAsFixed(0)} min';
         });
-        
+
         // Fit bounds
-        final bounds = LatLngBounds.fromPoints([_currentLocation!, LatLng(station.latitude, station.longitude), ..._routePoints]);
-        _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
+        final bounds = LatLngBounds.fromPoints([
+          _currentLocation!,
+          LatLng(station.latitude, station.longitude),
+          ..._routePoints,
+        ]);
+        _mapController.fitCamera(
+          CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
+        );
       }
     } catch (e) {
       setState(() {
@@ -136,8 +146,12 @@ class _StationMapScreenState extends State<StationMapScreen> {
   }
 
   Future<void> _launchGoogleMaps(Station station) async {
-    final url = Uri.parse('google.navigation:q=${station.latitude},${station.longitude}');
-    final webUrl = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}');
+    final url = Uri.parse(
+      'google.navigation:q=${station.latitude},${station.longitude}',
+    );
+    final webUrl = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}',
+    );
 
     try {
       if (await canLaunchUrl(url)) {
@@ -209,17 +223,19 @@ class _StationMapScreenState extends State<StationMapScreen> {
                         onTap: () => _getRouteTo(s),
                         child: Icon(
                           Icons.location_on,
-                          color: _selectedStation?.id == s.id ? AppColors.primary : AppColors.error,
+                          color: _selectedStation?.id == s.id
+                              ? AppColors.primary
+                              : AppColors.error,
                           size: _selectedStation?.id == s.id ? 40 : 30,
                         ),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ],
           ),
-          
+
           // App Bar Overlay
           Positioned(
             top: 0,
@@ -247,7 +263,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
               },
             ),
           ),
-          
+
           // Floating back button
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
@@ -286,7 +302,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
                       color: Colors.black26,
                       blurRadius: 10,
                       offset: Offset(0, -2),
-                    )
+                    ),
                   ],
                 ),
                 child: Column(
@@ -312,7 +328,11 @@ class _StationMapScreenState extends State<StationMapScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.route, color: AppColors.primary, size: 20),
+                        const Icon(
+                          Icons.route,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           '$_distance • $_duration',
@@ -337,7 +357,8 @@ class _StationMapScreenState extends State<StationMapScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            onPressed: () => _launchGoogleMaps(_selectedStation!),
+                            onPressed: () =>
+                                _launchGoogleMaps(_selectedStation!),
                             icon: const Icon(Icons.directions),
                             label: Text(
                               'Directions',
@@ -360,16 +381,24 @@ class _StationMapScreenState extends State<StationMapScreen> {
                               ),
                             ),
                             onPressed: () {
-                              if (_selectedStation?.chargers != null && _selectedStation!.chargers!.isNotEmpty) {
+                              if (_selectedStation?.chargers != null &&
+                                  _selectedStation!.chargers!.isNotEmpty) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => CreateReservationScreen(station: _selectedStation!),
+                                    builder: (context) =>
+                                        CreateReservationScreen(
+                                          station: _selectedStation!,
+                                        ),
                                   ),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('No available chargers at this station')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'No available chargers at this station',
+                                    ),
+                                  ),
                                 );
                               }
                             },

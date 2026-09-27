@@ -137,10 +137,7 @@ class _SignInScreenState extends State<SignInScreen>
 
     setState(() => _isLoading = true);
     try {
-      await AuthService.instance.login(
-        email: email,
-        password: password,
-      );
+      await AuthService.instance.login(email: email, password: password);
       if (!mounted) return;
       // ✅ Success — navigate to role-based dashboard
       _showToastMessage(
@@ -153,7 +150,8 @@ class _SignInScreenState extends State<SignInScreen>
       final auth = AuthService.instance;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => auth.isStaff ? const StaffDashboardScreen() : const HomeScreen(),
+          builder: (_) =>
+              auth.isStaff ? const StaffDashboardScreen() : const HomeScreen(),
         ),
         (route) => false, // Clear the whole stack
       );
@@ -188,7 +186,8 @@ class _SignInScreenState extends State<SignInScreen>
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => auth.isStaff ? const StaffDashboardScreen() : const HomeScreen(),
+          builder: (_) =>
+              auth.isStaff ? const StaffDashboardScreen() : const HomeScreen(),
         ),
         (route) => false,
       );
@@ -197,7 +196,11 @@ class _SignInScreenState extends State<SignInScreen>
       _showToastMessage(_ToastType.error, 'Sign In Failed', e.userMessage);
     } catch (e) {
       if (!mounted) return;
-      _showToastMessage(_ToastType.error, 'Google Sign-in Error', 'Could not complete Google Sign-in.');
+      _showToastMessage(
+        _ToastType.error,
+        'Google Sign-in Error',
+        'Could not complete Google Sign-in.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -253,10 +256,7 @@ class _SignInScreenState extends State<SignInScreen>
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: EdgeInsets.only(
-              top: topPad,
-              bottom: bottomPad + 24,
-            ),
+            padding: EdgeInsets.only(top: topPad, bottom: bottomPad + 24),
             child: Column(
               children: [
                 Padding(
@@ -343,14 +343,23 @@ class _SignInScreenState extends State<SignInScreen>
           ),
           Row(
             children: const [
-              Icon(Icons.signal_cellular_alt_rounded,
-                  size: 16, color: AppColors.onSurfaceVariant),
+              Icon(
+                Icons.signal_cellular_alt_rounded,
+                size: 16,
+                color: AppColors.onSurfaceVariant,
+              ),
               SizedBox(width: 4),
-              Icon(Icons.wifi_rounded,
-                  size: 16, color: AppColors.onSurfaceVariant),
+              Icon(
+                Icons.wifi_rounded,
+                size: 16,
+                color: AppColors.onSurfaceVariant,
+              ),
               SizedBox(width: 4),
-              Icon(Icons.battery_charging_full,
-                  size: 18, color: AppColors.primary),
+              Icon(
+                Icons.battery_charging_full,
+                size: 18,
+                color: AppColors.primary,
+              ),
             ],
           ),
         ],
@@ -412,8 +421,7 @@ class _SignInScreenState extends State<SignInScreen>
             ),
             const SizedBox(width: 6),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(999),
@@ -600,14 +608,16 @@ class _SignInScreenState extends State<SignInScreen>
             : AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(14),
         border: _emailHasError
-            ? Border.all(color: AppColors.error.withValues(alpha: 0.4), width: 1)
+            ? Border.all(
+                color: AppColors.error.withValues(alpha: 0.4),
+                width: 1,
+              )
             : Border.all(color: Colors.transparent),
       ),
       child: Row(
         children: [
           const SizedBox(width: 14),
-          const Icon(Icons.mail_rounded,
-              size: 20, color: AppColors.outline),
+          const Icon(Icons.mail_rounded, size: 20, color: AppColors.outline),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
@@ -640,8 +650,11 @@ class _SignInScreenState extends State<SignInScreen>
               },
               child: const Padding(
                 padding: EdgeInsets.all(10),
-                child: Icon(Icons.cancel_rounded,
-                    size: 18, color: AppColors.outline),
+                child: Icon(
+                  Icons.cancel_rounded,
+                  size: 18,
+                  color: AppColors.outline,
+                ),
               ),
             )
           else
@@ -661,7 +674,10 @@ class _SignInScreenState extends State<SignInScreen>
             : AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(14),
         border: _passwordHasError
-            ? Border.all(color: AppColors.error.withValues(alpha: 0.4), width: 1)
+            ? Border.all(
+                color: AppColors.error.withValues(alpha: 0.4),
+                width: 1,
+              )
             : Border.all(color: Colors.transparent),
       ),
       child: Row(
@@ -679,7 +695,8 @@ class _SignInScreenState extends State<SignInScreen>
                 color: AppColors.onSurface,
               ),
               onChanged: (_) {
-                if (_passwordHasError) setState(() => _passwordHasError = false);
+                if (_passwordHasError)
+                  setState(() => _passwordHasError = false);
               },
               decoration: InputDecoration(
                 border: InputBorder.none,
@@ -693,8 +710,7 @@ class _SignInScreenState extends State<SignInScreen>
             ),
           ),
           GestureDetector(
-            onTap: () =>
-                setState(() => _obscurePassword = !_obscurePassword),
+            onTap: () => setState(() => _obscurePassword = !_obscurePassword),
             child: Padding(
               padding: const EdgeInsets.all(10),
               child: Icon(
@@ -718,10 +734,7 @@ class _SignInScreenState extends State<SignInScreen>
         const SizedBox(width: 6),
         Text(
           message,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: AppColors.error,
-          ),
+          style: GoogleFonts.inter(fontSize: 12, color: AppColors.error),
         ),
       ],
     );
@@ -786,8 +799,11 @@ class _SignInScreenState extends State<SignInScreen>
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Icon(Icons.bolt_rounded,
-                          size: 18, color: AppColors.onPrimary),
+                      const Icon(
+                        Icons.bolt_rounded,
+                        size: 18,
+                        color: AppColors.onPrimary,
+                      ),
                     ],
                   ),
           ),
@@ -877,11 +893,9 @@ class _SignInScreenState extends State<SignInScreen>
           WidgetSpan(
             child: GestureDetector(
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const SignUpScreen(),
-                  ),
-                );
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const SignUpScreen()));
               },
               child: Text(
                 'Create account',
@@ -903,8 +917,11 @@ class _SignInScreenState extends State<SignInScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.verified_user_rounded,
-            size: 16, color: AppColors.outline),
+        const Icon(
+          Icons.verified_user_rounded,
+          size: 16,
+          color: AppColors.outline,
+        ),
         const SizedBox(width: 6),
         Text(
           '256-bit encrypted EV fleet authentication',
@@ -946,8 +963,7 @@ class _SignInScreenState extends State<SignInScreen>
                   AnimatedBuilder(
                     animation: _pulseController,
                     builder: (_, _) => Opacity(
-                      opacity:
-                          (1.0 - _pulseController.value).clamp(0.0, 1.0),
+                      opacity: (1.0 - _pulseController.value).clamp(0.0, 1.0),
                       child: Container(
                         width: 6,
                         height: 6,
@@ -975,19 +991,22 @@ class _SignInScreenState extends State<SignInScreen>
           Row(
             children: [
               _DemoBtn(
-                  label: 'Empty',
-                  color: AppColors.onSurface,
-                  onTap: _reset),
+                label: 'Empty',
+                color: AppColors.onSurface,
+                onTap: _reset,
+              ),
               const SizedBox(width: 6),
               _DemoBtn(
-                  label: 'Valid Auto',
-                  color: AppColors.primary,
-                  onTap: _fillDemo),
+                label: 'Valid Auto',
+                color: AppColors.primary,
+                onTap: _fillDemo,
+              ),
               const SizedBox(width: 6),
               _DemoBtn(
-                  label: 'Trigger Err',
-                  color: AppColors.error,
-                  onTap: _triggerErrors),
+                label: 'Trigger Err',
+                color: AppColors.error,
+                onTap: _triggerErrors,
+              ),
               const SizedBox(width: 6),
               _DemoBtn(
                 label: 'Spinner',
@@ -1090,7 +1109,11 @@ class _GoogleLogoPainter extends CustomPainter {
     canvas.drawPath(redPath, redPaint);
 
     // White inner circle to create donut
-    canvas.drawCircle(center, radius * 0.6, Paint()..color = AppColors.surfaceContainer);
+    canvas.drawCircle(
+      center,
+      radius * 0.6,
+      Paint()..color = AppColors.surfaceContainer,
+    );
 
     // Right bar for the G
     canvas.drawRect(

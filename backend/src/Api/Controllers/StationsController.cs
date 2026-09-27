@@ -38,6 +38,7 @@ public class StationsController : ControllerBase
     }
 
     [HttpGet("search")]
+    [HttpGet("nearby")]
     [AllowAnonymous]
     public async Task<IActionResult> SearchStations(
         [FromQuery] double? latitude,
