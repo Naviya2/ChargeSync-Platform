@@ -37,11 +37,9 @@ class _FindChargerCardState extends State<FindChargerCard>
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const StationMapScreen(),
-            ),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const StationMapScreen()));
         },
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -49,7 +47,7 @@ class _FindChargerCardState extends State<FindChargerCard>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF10B981).withOpacity(0.35),
+                color: const Color(0xFF10B981).withValues(alpha: 0.35),
                 blurRadius: 24,
                 offset: const Offset(0, 4),
                 spreadRadius: -4,
@@ -65,7 +63,9 @@ class _FindChargerCardState extends State<FindChargerCard>
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppColors.onPrimaryContainer.withOpacity(0.15),
+                      color: AppColors.onPrimaryContainer.withValues(
+                        alpha: 0.15,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -94,13 +94,18 @@ class _FindChargerCardState extends State<FindChargerCard>
                             animation: _pingController,
                             builder: (context, child) {
                               return Opacity(
-                                opacity: (1.0 - _pingController.value).clamp(0.0, 1.0),
+                                opacity: (1.0 - _pingController.value).clamp(
+                                  0.0,
+                                  1.0,
+                                ),
                                 child: Container(
                                   width: 6,
                                   height: 6,
                                   decoration: BoxDecoration(
                                     color: AppColors.onPrimaryContainer
-                                        .withOpacity(1.0 - _pingController.value),
+                                        .withValues(
+                                          alpha: 1.0 - _pingController.value,
+                                        ),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -122,7 +127,9 @@ class _FindChargerCardState extends State<FindChargerCard>
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.onPrimaryContainer.withOpacity(0.90),
+                              color: AppColors.onPrimaryContainer.withValues(
+                                alpha: 0.90,
+                              ),
                               letterSpacing: 0.06,
                             ),
                           ),
@@ -136,7 +143,7 @@ class _FindChargerCardState extends State<FindChargerCard>
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.onPrimaryContainer.withOpacity(0.10),
+                  color: AppColors.onPrimaryContainer.withValues(alpha: 0.10),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(

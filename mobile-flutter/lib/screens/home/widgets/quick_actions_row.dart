@@ -52,28 +52,19 @@ class QuickActionsRow extends StatelessWidget {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: _QuickActionItem(
-              action: _actions[0],
-              onTap: onFindHub,
-            ),
+            child: _QuickActionItem(action: _actions[0], onTap: onFindHub),
           ),
         ),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: _QuickActionItem(
-              action: _actions[1],
-              onTap: onPlanRoute,
-            ),
+            child: _QuickActionItem(action: _actions[1], onTap: onPlanRoute),
           ),
         ),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: _QuickActionItem(
-              action: _actions[2],
-              onTap: onBookings,
-            ),
+            child: _QuickActionItem(action: _actions[2], onTap: onBookings),
           ),
         ),
       ],
@@ -107,7 +98,7 @@ class _QuickActionItem extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 4,
                     ),
                   ],

@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/api/vehicle_service.dart';
+import '../../../screens/vehicles/compatible_stations_sheet.dart';
 import '../../stations/api/station_service.dart';
 import '../../stations/models/station.dart';
 import '../api/routing_service.dart';
@@ -100,7 +102,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
 
   Future<void> _getRouteTo(Station station) async {
     if (_currentLocation == null) return;
-    
+
     setState(() {
       _selectedStation = station;
       _routePoints = [];
@@ -115,18 +117,28 @@ class _StationMapScreenState extends State<StationMapScreen> {
         station.latitude,
         station.longitude,
       );
-      
+
       if (res['geometryCoordinates'] != null) {
         final coords = List<List<dynamic>>.from(res['geometryCoordinates']);
         setState(() {
-          _routePoints = coords.map((c) => LatLng(c[1] as double, c[0] as double)).toList();
-          _distance = '${((res['distanceMeters'] as num) / 1000).toStringAsFixed(1)} km';
-          _duration = '${((res['durationSeconds'] as num) / 60).toStringAsFixed(0)} min';
+          _routePoints = coords
+              .map((c) => LatLng(c[1] as double, c[0] as double))
+              .toList();
+          _distance =
+              '${((res['distanceMeters'] as num) / 1000).toStringAsFixed(1)} km';
+          _duration =
+              '${((res['durationSeconds'] as num) / 60).toStringAsFixed(0)} min';
         });
-        
+
         // Fit bounds
-        final bounds = LatLngBounds.fromPoints([_currentLocation!, LatLng(station.latitude, station.longitude), ..._routePoints]);
-        _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)));
+        final bounds = LatLngBounds.fromPoints([
+          _currentLocation!,
+          LatLng(station.latitude, station.longitude),
+          ..._routePoints,
+        ]);
+        _mapController.fitCamera(
+          CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
+        );
       }
     } catch (e) {
       setState(() {
@@ -136,8 +148,12 @@ class _StationMapScreenState extends State<StationMapScreen> {
   }
 
   Future<void> _launchGoogleMaps(Station station) async {
-    final url = Uri.parse('google.navigation:q=${station.latitude},${station.longitude}');
-    final webUrl = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}');
+    final url = Uri.parse(
+      'google.navigation:q=${station.latitude},${station.longitude}',
+    );
+    final webUrl = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}',
+    );
 
     try {
       if (await canLaunchUrl(url)) {
@@ -209,17 +225,19 @@ class _StationMapScreenState extends State<StationMapScreen> {
                         onTap: () => _getRouteTo(s),
                         child: Icon(
                           Icons.location_on,
-                          color: _selectedStation?.id == s.id ? AppColors.primary : AppColors.error,
+                          color: _selectedStation?.id == s.id
+                              ? AppColors.primary
+                              : AppColors.error,
                           size: _selectedStation?.id == s.id ? 40 : 30,
                         ),
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ],
           ),
-          
+
           // App Bar Overlay
           Positioned(
             top: 0,
@@ -247,7 +265,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
               },
             ),
           ),
-          
+
           // Floating back button
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
@@ -258,7 +276,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer.withOpacity(0.92),
+                  color: AppColors.surfaceContainer.withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -286,7 +304,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
                       color: Colors.black26,
                       blurRadius: 10,
                       offset: Offset(0, -2),
-                    )
+                    ),
                   ],
                 ),
                 child: Column(
@@ -312,7 +330,11 @@ class _StationMapScreenState extends State<StationMapScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        const Icon(Icons.route, color: AppColors.primary, size: 20),
+                        const Icon(
+                          Icons.route,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           '$_distance • $_duration',
@@ -324,7 +346,8 @@ class _StationMapScreenState extends State<StationMapScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    _buildCompatibilityBanner(_selectedStation!),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
@@ -337,7 +360,8 @@ class _StationMapScreenState extends State<StationMapScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            onPressed: () => _launchGoogleMaps(_selectedStation!),
+                            onPressed: () =>
+                                _launchGoogleMaps(_selectedStation!),
                             icon: const Icon(Icons.directions),
                             label: Text(
                               'Directions',
@@ -360,16 +384,24 @@ class _StationMapScreenState extends State<StationMapScreen> {
                               ),
                             ),
                             onPressed: () {
-                              if (_selectedStation?.chargers != null && _selectedStation!.chargers!.isNotEmpty) {
+                              if (_selectedStation?.chargers != null &&
+                                  _selectedStation!.chargers!.isNotEmpty) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => CreateReservationScreen(station: _selectedStation!),
+                                    builder: (context) =>
+                                        CreateReservationScreen(
+                                          station: _selectedStation!,
+                                        ),
                                   ),
                                 );
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('No available chargers at this station')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'No available chargers at this station',
+                                    ),
+                                  ),
                                 );
                               }
                             },
@@ -392,5 +424,88 @@ class _StationMapScreenState extends State<StationMapScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildCompatibilityBanner(Station station) {
+    final activeVehicle = VehicleService.instance.activeVehicle;
+    if (activeVehicle == null) {
+      return const SizedBox.shrink();
+    }
+
+    final chargers = station.chargers ?? [];
+    final matchingChargers = chargers.where((c) {
+      final connStr = c.connector.toUpperCase().replaceAll(' ', '').replaceAll('-', '');
+      final vehConn = activeVehicle.connector.toBackendString().toUpperCase();
+      return connStr.contains(vehConn) || vehConn.contains(connStr);
+    }).toList();
+
+    if (matchingChargers.isNotEmpty) {
+      final bestPower = matchingChargers.map((c) => c.powerKw).reduce((a, b) => a > b ? a : b);
+      final effectiveKw = bestPower < activeVehicle.maxChargeRateKw ? bestPower : activeVehicle.maxChargeRateKw;
+      final mins = (activeVehicle.batteryCapacityKwh * 0.70 / (effectiveKw > 0 ? effectiveKw : 1) * 60).round();
+
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryContainer.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Compatible with ${activeVehicle.fullName} (${activeVehicle.connector.shortName}) • ~${mins}m (10-80%)',
+                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Incompatible with ${activeVehicle.fullName} (${activeVehicle.connector.shortName})',
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.error),
+                  ),
+                  const SizedBox(height: 2),
+                  GestureDetector(
+                    onTap: () => CompatibleStationsSheet.show(context, activeVehicle),
+                    child: Text(
+                      'Tap to view compatible alternatives nearby →',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }

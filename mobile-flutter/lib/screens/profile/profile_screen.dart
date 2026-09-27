@@ -16,16 +16,19 @@ class ProfileScreen extends StatelessWidget {
       return Center(
         child: Text(
           'Not logged in',
-          style: GoogleFonts.inter(
-            color: AppColors.onSurface,
-            fontSize: 16,
-          ),
+          style: GoogleFonts.inter(color: AppColors.onSurface, fontSize: 16),
         ),
       );
     }
 
     final initials = user.fullName.isNotEmpty
-        ? user.fullName.trim().split(RegExp(' +')).map((s) => s[0]).take(2).join().toUpperCase()
+        ? user.fullName
+              .trim()
+              .split(RegExp(' +'))
+              .map((s) => s[0])
+              .take(2)
+              .join()
+              .toUpperCase()
         : 'U';
 
     return SingleChildScrollView(
@@ -43,7 +46,7 @@ class ProfileScreen extends StatelessWidget {
               color: AppColors.primaryContainer,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.25),
+                  color: AppColors.primary.withValues(alpha: 0.25),
                   blurRadius: 16,
                 ),
               ],
@@ -87,28 +90,44 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           // My Vehicles Tile (if Driver)
           if (user.role.toLowerCase() == 'driver')
             Container(
               margin: const EdgeInsets.only(bottom: 16),
               child: ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 tileColor: AppColors.surfaceContainerLow,
-                leading: const Icon(Icons.electric_car_rounded, color: AppColors.primary),
+                leading: const Icon(
+                  Icons.electric_car_rounded,
+                  color: AppColors.primary,
+                ),
                 title: Text(
                   'My Registered Vehicles',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.onSurface,
+                  ),
                 ),
                 subtitle: Text(
                   'Manage EVs, connectors & max charge rates',
-                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.onSurfaceVariant),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.onSurfaceVariant,
+                  ),
                 ),
-                trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.onSurfaceVariant,
+                ),
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const VehiclesListScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const VehiclesListScreen(),
+                    ),
                   );
                 },
               ),

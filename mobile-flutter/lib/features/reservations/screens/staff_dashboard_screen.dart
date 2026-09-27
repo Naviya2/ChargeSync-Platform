@@ -105,10 +105,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
             right: 0,
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surface.withOpacity(0.92),
+                color: AppColors.surface.withValues(alpha: 0.92),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
+                    color: Colors.black.withValues(alpha: 0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 1),
                   ),
@@ -156,7 +156,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
                                   children: [
                                     AnimatedBuilder(
                                       animation: _pulseController,
-                                      builder: (_, __) => Container(
+                                      builder: (_, _) => Container(
                                         width: 6,
                                         height: 6,
                                         decoration: const BoxDecoration(
@@ -212,10 +212,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
             right: 0,
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.surface.withOpacity(0.90),
+                color: AppColors.surface.withValues(alpha: 0.90),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.35),
+                    color: Colors.black.withValues(alpha: 0.35),
                     blurRadius: 16,
                     offset: const Offset(0, -2),
                   ),

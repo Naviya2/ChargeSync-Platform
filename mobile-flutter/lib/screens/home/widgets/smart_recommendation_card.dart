@@ -1,178 +1,196 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/api/vehicle_service.dart';
 
 class SmartRecommendationCard extends StatelessWidget {
   const SmartRecommendationCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // Ambient glow
-          Positioned(
-            left: -48,
-            bottom: -48,
-            child: Container(
-              width: 192,
-              height: 192,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.tertiaryContainer.withValues(alpha: 0.10),
+    return AnimatedBuilder(
+      animation: VehicleService.instance,
+      builder: (context, _) {
+        final vehicle = VehicleService.instance.activeVehicle;
+        
+        // Dynamic calculations based on active vehicle (hub has 150 kW DC Fast Charger, $0.22/kWh base)
+        final batteryCapacity = vehicle?.batteryCapacityKwh ?? 75.0;
+        final maxChargeRate = vehicle?.maxChargeRateKw ?? 150.0;
+        final effectiveRate = maxChargeRate > 150.0 ? 150.0 : (maxChargeRate <= 0 ? 50.0 : maxChargeRate);
+        
+        // 10% to 80% SOC delta (70% capacity)
+        final energyNeededKwh = batteryCapacity * 0.70;
+        final durationMins = ((energyNeededKwh / effectiveRate) * 60).round().clamp(10, 180);
+        final estCost = (energyNeededKwh * 0.22) + 2.50; // tariff + connection fee
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
+            ],
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              // Header row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Ambient glow
+              Positioned(
+                left: -48,
+                bottom: -48,
+                child: Container(
+                  width: 192,
+                  height: 192,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.tertiaryContainer.withValues(alpha: 0.10),
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Header row
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(
-                        Icons.auto_awesome_rounded,
-                        color: AppColors.tertiary,
-                        size: 18,
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.auto_awesome_rounded,
+                            color: AppColors.tertiary,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Smart Recommendation',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.tertiary,
+                              letterSpacing: 0.02,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Smart Recommendation',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.tertiary,
-                          letterSpacing: 0.02,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.tertiaryContainer.withValues(
+                            alpha: 0.20,
+                          ),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'Save \$4.20',
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.tertiary,
+                            letterSpacing: 0.06,
+                          ),
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Electrify Metro Hub',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                      letterSpacing: -0.01,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Key metrics grid
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.tertiaryContainer.withValues(
-                        alpha: 0.20,
-                      ),
-                      borderRadius: BorderRadius.circular(999),
+                      color: AppColors.surfaceContainer,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      'Save \$4.20',
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.tertiary,
-                        letterSpacing: 0.06,
+                    child: Row(
+                      children: [
+                        const _MetricItem(
+                          label: 'Distance',
+                          value: '1.2 mi',
+                          valueColor: AppColors.onSurface,
+                        ),
+                        const SizedBox(width: 8),
+                        _MetricItem(
+                          label: 'Duration',
+                          value: '$durationMins mins',
+                          valueColor: AppColors.onSurface,
+                        ),
+                        const SizedBox(width: 8),
+                        _MetricItem(
+                          label: 'Est. Cost',
+                          value: '\$${estCost.toStringAsFixed(2)}',
+                          valueColor: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Rates increase in 45 mins. Charging ${vehicle?.make != null ? "${vehicle!.make} ${vehicle.model}" : "now"} saves \$4.20 and comfortably secures your evening commute.',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Material(
+                    color: AppColors.surfaceContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {},
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'View Optimal Plan',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.onSurface,
+                                letterSpacing: 0.01,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                              color: AppColors.tertiary,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Electrify Metro Hub',
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
-                  letterSpacing: -0.01,
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Key metrics grid
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    _MetricItem(
-                      label: 'Distance',
-                      value: '1.2 mi',
-                      valueColor: AppColors.onSurface,
-                    ),
-                    const SizedBox(width: 8),
-                    _MetricItem(
-                      label: 'Duration',
-                      value: '22 mins',
-                      valueColor: AppColors.onSurface,
-                    ),
-                    const SizedBox(width: 8),
-                    _MetricItem(
-                      label: 'Est. Cost',
-                      value: '\$8.60',
-                      valueColor: AppColors.primary,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Rates increase in 45 mins. Charging now saves \$4.20 and comfortably secures your evening commute.',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.onSurfaceVariant,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Material(
-                color: AppColors.surfaceContainer,
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {},
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'View Optimal Plan',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.onSurface,
-                            letterSpacing: 0.01,
-                          ),
-                        ),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 18,
-                          color: AppColors.tertiary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

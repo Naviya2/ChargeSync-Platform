@@ -60,45 +60,63 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _upcomingReservations.isEmpty
-              ? Center(
-                  child: Text(
-                    'No new notifications',
-                    style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+          ? Center(
+              child: Text(
+                'No new notifications',
+                style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _upcomingReservations.length,
+              itemBuilder: (context, index) {
+                final res = _upcomingReservations[index];
+                return Card(
+                  color: AppColors.surfaceContainerLow,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: AppColors.primary.withValues(alpha: 0.5),
+                    ),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _upcomingReservations.length,
-                  itemBuilder: (context, index) {
-                    final res = _upcomingReservations[index];
-                    return Card(
-                      color: AppColors.surfaceContainerLow,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.calendar_today,
+                      color: AppColors.primary,
+                    ),
+                    title: Text(
+                      'Upcoming Reservation Reminder',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.onSurface,
                       ),
-                      child: ListTile(
-                        leading: const Icon(Icons.calendar_today, color: AppColors.primary),
-                        title: Text(
-                          'Upcoming Reservation Reminder',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.onSurface),
-                        ),
-                        subtitle: Text(
-                          'You have a charging session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}.',
-                          style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
-                        ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.onSurfaceVariant),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const Scaffold(body: SafeArea(child: ReservationListScreen()))),
-                          );
-                        },
+                    ),
+                    subtitle: Text(
+                      'You have a charging session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}.',
+                      style: GoogleFonts.inter(
+                        color: AppColors.onSurfaceVariant,
                       ),
-                    );
-                  },
-                ),
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const Scaffold(
+                            body: SafeArea(child: ReservationListScreen()),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
     );
   }
 }

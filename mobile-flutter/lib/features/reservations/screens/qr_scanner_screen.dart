@@ -137,14 +137,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                           width: 200,
                           height: 200,
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       ),
                       if (_isLoading)
                         Container(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           child: const Center(
                             child: CircularProgressIndicator(color: AppColors.primary),
                           ),

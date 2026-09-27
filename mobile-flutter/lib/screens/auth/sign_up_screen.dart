@@ -49,7 +49,18 @@ class _SignUpScreenState extends State<SignUpScreen>
   bool _isSuccess = false;
 
   // ── Options ─────────────────────────────────────────────────────────────────
-  final List<String> _carMakes = ['Tesla', 'Rivian', 'BMW', 'Hyundai', 'Kia', 'Audi', 'Ford', 'Chevrolet', 'Porsche', 'Lucid'];
+  final List<String> _carMakes = [
+    'Tesla',
+    'Rivian',
+    'BMW',
+    'Hyundai',
+    'Kia',
+    'Audi',
+    'Ford',
+    'Chevrolet',
+    'Porsche',
+    'Lucid',
+  ];
   final Map<String, List<String>> _carModels = {
     'Tesla': ['Model Y', 'Model 3', 'Model S', 'Model X', 'Cybertruck'],
     'Rivian': ['R1T', 'R1S', 'R2'],
@@ -62,7 +73,13 @@ class _SignUpScreenState extends State<SignUpScreen>
     'Porsche': ['Taycan', 'Macan EV'],
     'Lucid': ['Air Grand Touring', 'Air Pure', 'Gravity'],
   };
-  final List<String> _connectors = ['NACS (Tesla)', 'CCS1', 'CCS2', 'CHAdeMO', 'J1772'];
+  final List<String> _connectors = [
+    'NACS (Tesla)',
+    'CCS1',
+    'CCS2',
+    'CHAdeMO',
+    'J1772',
+  ];
 
   @override
   void initState() {
@@ -75,8 +92,9 @@ class _SignUpScreenState extends State<SignUpScreen>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    _progressAnim = Tween<double>(begin: 0, end: 1 / _totalSteps)
-        .animate(CurvedAnimation(parent: _progressController, curve: Curves.easeOut));
+    _progressAnim = Tween<double>(begin: 0, end: 1 / _totalSteps).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
+    );
     _progressController.forward();
   }
 
@@ -101,10 +119,13 @@ class _SignUpScreenState extends State<SignUpScreen>
     if (_validateCurrentStep()) {
       final next = _currentStep + 1;
       setState(() => _currentStep = next);
-      _progressAnim = Tween<double>(
-        begin: _progressAnim.value,
-        end: (next + 1) / _totalSteps,
-      ).animate(CurvedAnimation(parent: _progressController, curve: Curves.easeOut));
+      _progressAnim =
+          Tween<double>(
+            begin: _progressAnim.value,
+            end: (next + 1) / _totalSteps,
+          ).animate(
+            CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
+          );
       _progressController.forward(from: 0);
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
@@ -117,10 +138,13 @@ class _SignUpScreenState extends State<SignUpScreen>
     if (_currentStep > 0) {
       final prev = _currentStep - 1;
       setState(() => _currentStep = prev);
-      _progressAnim = Tween<double>(
-        begin: _progressAnim.value,
-        end: (prev + 1) / _totalSteps,
-      ).animate(CurvedAnimation(parent: _progressController, curve: Curves.easeOut));
+      _progressAnim =
+          Tween<double>(
+            begin: _progressAnim.value,
+            end: (prev + 1) / _totalSteps,
+          ).animate(
+            CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
+          );
       _progressController.forward(from: 0);
       _pageController.previousPage(
         duration: const Duration(milliseconds: 400),
@@ -143,8 +167,9 @@ class _SignUpScreenState extends State<SignUpScreen>
         _errors['lastName'] = 'Last name is required';
         valid = false;
       }
-      if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
-          .hasMatch(_emailController.text.trim())) {
+      if (!RegExp(
+        r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+      ).hasMatch(_emailController.text.trim())) {
         _errors['email'] = 'Enter a valid email address';
         valid = false;
       }
@@ -172,13 +197,16 @@ class _SignUpScreenState extends State<SignUpScreen>
     setState(() => _isLoading = true);
 
     try {
-      final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
+      final fullName =
+          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}';
       await AuthService.instance.register(
-        fullName:    fullName,
-        email:       _emailController.text.trim(),
-        password:    _passwordController.text,
-        role:        'Driver',
-        phoneNumber: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+        fullName: fullName,
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        role: 'Driver',
+        phoneNumber: _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
       );
       if (!mounted) return;
       // ✅ Show success screen, then pop back to sign-in
@@ -194,14 +222,19 @@ class _SignUpScreenState extends State<SignUpScreen>
       if (e.statusCode == 409) {
         // Email already registered — go back to step 1 and highlight email field
         setState(() {
-          _errors['email'] = 'This email is already registered. Sign in instead.';
+          _errors['email'] =
+              'This email is already registered. Sign in instead.';
           _currentStep = 0;
-          _progressAnim = Tween<double>(begin: 0, end: 1 / _totalSteps)
-              .animate(CurvedAnimation(parent: _progressController, curve: Curves.easeOut));
+          _progressAnim = Tween<double>(begin: 0, end: 1 / _totalSteps).animate(
+            CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
+          );
           _progressController.forward(from: 0);
         });
-        _pageController.animateToPage(0,
-            duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
       } else if (e.statusCode == 400) {
         setState(() => _errors['email'] = e.userMessage);
       } else {
@@ -209,10 +242,14 @@ class _SignUpScreenState extends State<SignUpScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.errorContainer,
-            content: Text(e.userMessage,
-                style: const TextStyle(color: AppColors.onSurface)),
+            content: Text(
+              e.userMessage,
+              style: const TextStyle(color: AppColors.onSurface),
+            ),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -222,10 +259,14 @@ class _SignUpScreenState extends State<SignUpScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: AppColors.errorContainer,
-          content: const Text('Cannot connect to server. Is the backend running?',
-              style: TextStyle(color: AppColors.onSurface)),
+          content: const Text(
+            'Cannot connect to server. Is the backend running?',
+            style: TextStyle(color: AppColors.onSurface),
+          ),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     }
@@ -237,7 +278,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       final auth = AuthService.instance;
       await auth.loginWithGoogle();
       if (!mounted) return;
-      
+
       setState(() {
         _isLoading = false;
         _isSuccess = true;
@@ -246,10 +287,14 @@ class _SignUpScreenState extends State<SignUpScreen>
       if (mounted) Navigator.of(context).pop();
     } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.userMessage)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.userMessage)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google Sign-up failed')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Google Sign-up failed')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -305,10 +350,7 @@ class _SignUpScreenState extends State<SignUpScreen>
               child: PageView(
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildStep1(),
-                  _buildStep2(),
-                ],
+                children: [_buildStep1(), _buildStep2()],
               ),
             ),
             // Bottom nav buttons
@@ -322,14 +364,16 @@ class _SignUpScreenState extends State<SignUpScreen>
   // ── Header ───────────────────────────────────────────────────────────────────
   Widget _buildHeader(double topPad) {
     final stepTitles = ['Account Info', 'Security Setup'];
-    final stepSubs = [
-      'Tell us who you are',
-      'Create a secure password',
-    ];
+    final stepSubs = ['Tell us who you are', 'Create a secure password'];
 
     return Container(
       color: AppColors.surface,
-      padding: EdgeInsets.only(top: topPad + 4, left: 16, right: 16, bottom: 12),
+      padding: EdgeInsets.only(
+        top: topPad + 4,
+        left: 16,
+        right: 16,
+        bottom: 12,
+      ),
       child: Column(
         children: [
           // Status + Back row
@@ -337,7 +381,9 @@ class _SignUpScreenState extends State<SignUpScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               GestureDetector(
-                onTap: _currentStep == 0 ? () => Navigator.pop(context) : _prevStep,
+                onTap: _currentStep == 0
+                    ? () => Navigator.pop(context)
+                    : _prevStep,
                 child: Container(
                   width: 36,
                   height: 36,
@@ -345,8 +391,11 @@ class _SignUpScreenState extends State<SignUpScreen>
                     color: AppColors.surfaceContainer,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.arrow_back_rounded,
-                      size: 18, color: AppColors.onSurface),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    size: 18,
+                    color: AppColors.onSurface,
+                  ),
                 ),
               ),
               const SizedBox(width: 36), // Balance placeholder
@@ -363,8 +412,11 @@ class _SignUpScreenState extends State<SignUpScreen>
                   color: AppColors.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.bolt_rounded,
-                    size: 22, color: AppColors.onPrimaryContainer),
+                child: const Icon(
+                  Icons.bolt_rounded,
+                  size: 22,
+                  color: AppColors.onPrimaryContainer,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -383,18 +435,23 @@ class _SignUpScreenState extends State<SignUpScreen>
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.12),
+                          color: AppColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        child: Text('EV',
-                            style: GoogleFonts.inter(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                              letterSpacing: 0.06,
-                            )),
+                        child: Text(
+                          'EV',
+                          style: GoogleFonts.inter(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
+                            letterSpacing: 0.06,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -410,7 +467,10 @@ class _SignUpScreenState extends State<SignUpScreen>
               const Spacer(),
               // Step counter
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainer,
                   borderRadius: BorderRadius.circular(999),
@@ -466,7 +526,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       alignment: Alignment.centerLeft,
       child: AnimatedBuilder(
         animation: _progressAnim,
-        builder: (_, __) => FractionallySizedBox(
+        builder: (_, _) => FractionallySizedBox(
           widthFactor: _progressAnim.value,
           child: Container(
             decoration: BoxDecoration(
@@ -497,14 +557,18 @@ class _SignUpScreenState extends State<SignUpScreen>
             height: 8,
             decoration: BoxDecoration(
               color: isDone
-                  ? AppColors.primary.withOpacity(0.5)
+                  ? AppColors.primary.withValues(alpha: 0.5)
                   : isActive
-                      ? AppColors.primary
-                      : AppColors.surfaceContainerHigh,
+                  ? AppColors.primary
+                  : AppColors.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(999),
             ),
             child: isDone
-                ? const Icon(Icons.check_rounded, size: 7, color: AppColors.onPrimary)
+                ? const Icon(
+                    Icons.check_rounded,
+                    size: 7,
+                    color: AppColors.onPrimary,
+                  )
                 : null,
           );
         }),
@@ -523,19 +587,28 @@ class _SignUpScreenState extends State<SignUpScreen>
             padding: const EdgeInsets.all(12),
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: AppColors.primaryContainer.withOpacity(0.3),
+              color: AppColors.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                const Icon(
+                  Icons.info_outline,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Only drivers can register here. If you are a station owner or staff member, please use the web portal to register.',
-                    style: GoogleFonts.inter(fontSize: 13, color: AppColors.onSurface),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppColors.onSurface,
+                    ),
                   ),
                 ),
               ],
@@ -618,7 +691,8 @@ class _SignUpScreenState extends State<SignUpScreen>
             controller: _passwordController,
             hint: 'Min. 8 characters',
             obscure: _obscurePassword,
-            onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+            onToggle: () =>
+                setState(() => _obscurePassword = !_obscurePassword),
             errorKey: 'password',
             onChanged: (_) => setState(() {}),
           ),
@@ -633,9 +707,13 @@ class _SignUpScreenState extends State<SignUpScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Password strength',
-                    style: GoogleFonts.inter(
-                        fontSize: 11, color: AppColors.onSurfaceVariant)),
+                Text(
+                  'Password strength',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
                 Text(
                   _strengthLabel(strength),
                   style: GoogleFonts.inter(
@@ -702,18 +780,23 @@ class _SignUpScreenState extends State<SignUpScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Requirements',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurfaceVariant,
-                letterSpacing: 0.04,
-              )),
+          Text(
+            'Requirements',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurfaceVariant,
+              letterSpacing: 0.04,
+            ),
+          ),
           const SizedBox(height: 8),
           _reqRow('At least 8 characters', pwd.length >= 8),
           _reqRow('Uppercase letter (A–Z)', RegExp(r'[A-Z]').hasMatch(pwd)),
           _reqRow('Number (0–9)', RegExp(r'[0-9]').hasMatch(pwd)),
-          _reqRow('Special character (!@#\$...)', RegExp(r'[!@#\$%^&*]').hasMatch(pwd)),
+          _reqRow(
+            'Special character (!@#\$...)',
+            RegExp(r'[!@#\$%^&*]').hasMatch(pwd),
+          ),
         ],
       ),
     );
@@ -771,8 +854,11 @@ class _SignUpScreenState extends State<SignUpScreen>
                   : Border.all(color: AppColors.outline, width: 1.5),
             ),
             child: _agreedToTerms
-                ? const Icon(Icons.check_rounded,
-                    size: 14, color: AppColors.onPrimary)
+                ? const Icon(
+                    Icons.check_rounded,
+                    size: 14,
+                    color: AppColors.onPrimary,
+                  )
                 : null,
           ),
           const SizedBox(width: 10),
@@ -780,7 +866,9 @@ class _SignUpScreenState extends State<SignUpScreen>
             child: RichText(
               text: TextSpan(
                 style: GoogleFonts.inter(
-                    fontSize: 13, color: AppColors.onSurfaceVariant),
+                  fontSize: 13,
+                  color: AppColors.onSurfaceVariant,
+                ),
                 children: [
                   const TextSpan(text: 'I agree to the '),
                   TextSpan(
@@ -801,8 +889,8 @@ class _SignUpScreenState extends State<SignUpScreen>
                     ),
                   ),
                   const TextSpan(
-                      text:
-                          '. Your EV data is encrypted and never sold.'),
+                    text: '. Your EV data is encrypted and never sold.',
+                  ),
                 ],
               ),
             ),
@@ -835,9 +923,12 @@ class _SignUpScreenState extends State<SignUpScreen>
                 _selectedMake = v!;
                 _selectedModel = _carModels[v]!.first;
                 // Auto-set connector
-                if (v == 'Tesla') _selectedConnector = 'NACS (Tesla)';
-                else if (v == 'Rivian') _selectedConnector = 'NACS (Tesla)';
-                else _selectedConnector = 'CCS1';
+                if (v == 'Tesla') {
+                  _selectedConnector = 'NACS (Tesla)';
+                } else if (v == 'Rivian')
+                  _selectedConnector = 'NACS (Tesla)';
+                else
+                  _selectedConnector = 'CCS1';
               });
             },
           ),
@@ -926,7 +1017,7 @@ class _SignUpScreenState extends State<SignUpScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryContainer.withOpacity(0.25),
+            AppColors.primaryContainer.withValues(alpha: 0.25),
             AppColors.surfaceContainer,
           ],
           begin: Alignment.topLeft,
@@ -934,7 +1025,9 @@ class _SignUpScreenState extends State<SignUpScreen>
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: AppColors.primary.withOpacity(0.15), width: 1),
+          color: AppColors.primary.withValues(alpha: 0.15),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
@@ -954,8 +1047,11 @@ class _SignUpScreenState extends State<SignUpScreen>
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.power_rounded,
-                        size: 13, color: AppColors.primary),
+                    const Icon(
+                      Icons.power_rounded,
+                      size: 13,
+                      color: AppColors.primary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       _selectedConnector,
@@ -972,9 +1068,8 @@ class _SignUpScreenState extends State<SignUpScreen>
                   children: [
                     AnimatedBuilder(
                       animation: _pulseController,
-                      builder: (_, __) => Opacity(
-                        opacity:
-                            (1 - _pulseController.value).clamp(0.0, 1.0),
+                      builder: (_, _) => Opacity(
+                        opacity: (1 - _pulseController.value).clamp(0.0, 1.0),
                         child: Container(
                           width: 6,
                           height: 6,
@@ -1002,11 +1097,14 @@ class _SignUpScreenState extends State<SignUpScreen>
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.electric_car_rounded,
-                size: 32, color: AppColors.primary),
+            child: const Icon(
+              Icons.electric_car_rounded,
+              size: 32,
+              color: AppColors.primary,
+            ),
           ),
         ],
       ),
@@ -1022,7 +1120,7 @@ class _SignUpScreenState extends State<SignUpScreen>
         color: AppColors.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -1040,8 +1138,11 @@ class _SignUpScreenState extends State<SignUpScreen>
                   color: AppColors.surfaceContainer,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.arrow_back_rounded,
-                    color: AppColors.onSurface, size: 20),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.onSurface,
+                  size: 20,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -1059,7 +1160,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.35),
+                      color: AppColors.primary.withValues(alpha: 0.35),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -1140,7 +1241,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -1148,7 +1249,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -1159,8 +1260,11 @@ class _SignUpScreenState extends State<SignUpScreen>
                       color: AppColors.primary,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_rounded,
-                        size: 30, color: AppColors.onPrimary),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      size: 30,
+                      color: AppColors.onPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -1191,7 +1295,7 @@ class _SignUpScreenState extends State<SignUpScreen>
                 children: [
                   AnimatedBuilder(
                     animation: _pulseController,
-                    builder: (_, __) => Opacity(
+                    builder: (_, _) => Opacity(
                       opacity: (1 - _pulseController.value).clamp(0, 1.0),
                       child: Container(
                         width: 7,
@@ -1244,12 +1348,12 @@ class _SignUpScreenState extends State<SignUpScreen>
           height: 52,
           decoration: BoxDecoration(
             color: hasError
-                ? AppColors.errorContainer.withOpacity(0.1)
+                ? AppColors.errorContainer.withValues(alpha: 0.1)
                 : AppColors.surfaceContainer,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: hasError
-                  ? AppColors.error.withOpacity(0.5)
+                  ? AppColors.error.withValues(alpha: 0.5)
                   : Colors.transparent,
             ),
           ),
@@ -1270,12 +1374,16 @@ class _SignUpScreenState extends State<SignUpScreen>
                     onChanged?.call(v);
                   },
                   style: GoogleFonts.inter(
-                      fontSize: 14, color: AppColors.onSurface),
+                    fontSize: 14,
+                    color: AppColors.onSurface,
+                  ),
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: hint,
                     hintStyle: GoogleFonts.inter(
-                        fontSize: 14, color: AppColors.outline),
+                      fontSize: 14,
+                      color: AppColors.outline,
+                    ),
                     isDense: true,
                   ),
                 ),
@@ -1306,12 +1414,12 @@ class _SignUpScreenState extends State<SignUpScreen>
       height: 52,
       decoration: BoxDecoration(
         color: hasError
-            ? AppColors.errorContainer.withOpacity(0.1)
+            ? AppColors.errorContainer.withValues(alpha: 0.1)
             : AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: hasError
-              ? AppColors.error.withOpacity(0.5)
+              ? AppColors.error.withValues(alpha: 0.5)
               : Colors.transparent,
         ),
       ),
@@ -1331,12 +1439,16 @@ class _SignUpScreenState extends State<SignUpScreen>
                 onChanged?.call(v);
               },
               style: GoogleFonts.inter(
-                  fontSize: 14, color: AppColors.onSurface),
+                fontSize: 14,
+                color: AppColors.onSurface,
+              ),
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hint,
-                hintStyle:
-                    GoogleFonts.inter(fontSize: 14, color: AppColors.outline),
+                hintStyle: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: AppColors.outline,
+                ),
                 isDense: true,
               ),
             ),
@@ -1388,16 +1500,28 @@ class _SignUpScreenState extends State<SignUpScreen>
                   isExpanded: true,
                   underline: const SizedBox(),
                   dropdownColor: AppColors.surfaceContainerHigh,
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.outline, size: 20),
+                  icon: const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.outline,
+                    size: 20,
+                  ),
                   style: GoogleFonts.inter(
-                      fontSize: 14, color: AppColors.onSurface),
+                    fontSize: 14,
+                    color: AppColors.onSurface,
+                  ),
                   items: items
-                      .map((e) => DropdownMenuItem(
+                      .map(
+                        (e) => DropdownMenuItem(
                           value: e,
-                          child: Text(e,
-                              style: GoogleFonts.inter(
-                                  fontSize: 14, color: AppColors.onSurface))))
+                          child: Text(
+                            e,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: onChanged,
                 ),
@@ -1413,15 +1537,22 @@ class _SignUpScreenState extends State<SignUpScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label,
-            style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.onSurface)),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.onSurface,
+          ),
+        ),
         if (subLabel != null)
-          Text(subLabel,
-              style: GoogleFonts.inter(
-                  fontSize: 10, color: AppColors.onSurfaceVariant)),
+          Text(
+            subLabel,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
       ],
     );
   }
@@ -1432,8 +1563,10 @@ class _SignUpScreenState extends State<SignUpScreen>
         const Icon(Icons.error_rounded, size: 14, color: AppColors.error),
         const SizedBox(width: 5),
         Flexible(
-          child: Text(message,
-              style: GoogleFonts.inter(fontSize: 11, color: AppColors.error)),
+          child: Text(
+            message,
+            style: GoogleFonts.inter(fontSize: 11, color: AppColors.error),
+          ),
         ),
       ],
     );
@@ -1457,11 +1590,14 @@ class _SignUpScreenState extends State<SignUpScreen>
               child: CustomPaint(painter: _GoogleLogoPainter()),
             ),
             const SizedBox(width: 12),
-            Text('Sign up with Google',
-                style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface)),
+            Text(
+              'Sign up with Google',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
+              ),
+            ),
           ],
         ),
       ),
@@ -1472,18 +1608,23 @@ class _SignUpScreenState extends State<SignUpScreen>
     return Row(
       children: [
         Expanded(
-            child: Container(height: 1, color: AppColors.surfaceContainerHighest)),
+          child: Container(height: 1, color: AppColors.surfaceContainerHighest),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text('OR',
-              style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.outline,
-                  letterSpacing: 0.06)),
+          child: Text(
+            'OR',
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppColors.outline,
+              letterSpacing: 0.06,
+            ),
+          ),
         ),
         Expanded(
-            child: Container(height: 1, color: AppColors.surfaceContainerHighest)),
+          child: Container(height: 1, color: AppColors.surfaceContainerHighest),
+        ),
       ],
     );
   }
@@ -1498,14 +1639,17 @@ class _SignUpScreenState extends State<SignUpScreen>
           text: TextSpan(
             text: 'Already have an account? ',
             style: GoogleFonts.inter(
-                fontSize: 13, color: AppColors.onSurfaceVariant),
+              fontSize: 13,
+              color: AppColors.onSurfaceVariant,
+            ),
             children: [
               TextSpan(
                 text: 'Sign In',
                 style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
               ),
             ],
           ),
@@ -1539,7 +1683,11 @@ class _GoogleLogoPainter extends CustomPainter {
     drawArc(180, 90, const Color(0xFFEA4335));
 
     // White inner
-    canvas.drawCircle(center, w * 0.35, Paint()..color = AppColors.surfaceContainer);
+    canvas.drawCircle(
+      center,
+      w * 0.35,
+      Paint()..color = AppColors.surfaceContainer,
+    );
     // Blue right bar
     canvas.drawRect(
       Rect.fromLTWH(center.dx, center.dy - h * 0.1, w * 0.5, h * 0.2),

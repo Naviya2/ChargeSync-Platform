@@ -79,7 +79,7 @@ class _KwhOverrideScreenState extends State<KwhOverrideScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.onSurfaceVariant.withOpacity(0.4),
+                color: AppColors.onSurfaceVariant.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -248,8 +248,8 @@ class _KwhOverrideScreenState extends State<KwhOverrideScreen> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: isFlagged
-                      ? Colors.orange.withOpacity(0.15)
-                      : AppColors.primaryContainer.withOpacity(0.2),
+                      ? Colors.orange.withValues(alpha: 0.15)
+                      : AppColors.primaryContainer.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isFlagged ? Colors.orange : AppColors.primary,
@@ -296,7 +296,7 @@ class _KwhOverrideScreenState extends State<KwhOverrideScreen> {
                   border: Border.all(
                     color: _meterPhoto != null
                         ? AppColors.primary
-                        : AppColors.onSurfaceVariant.withOpacity(0.3),
+                        : AppColors.onSurfaceVariant.withValues(alpha: 0.3),
                     width: _meterPhoto != null ? 2 : 1,
                     style: _meterPhoto != null ? BorderStyle.solid : BorderStyle.solid,
                   ),
@@ -315,7 +315,7 @@ class _KwhOverrideScreenState extends State<KwhOverrideScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppColors.surface.withOpacity(0.85),
+                                  color: AppColors.surface.withValues(alpha: 0.85),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -350,7 +350,7 @@ class _KwhOverrideScreenState extends State<KwhOverrideScreen> {
                             'Camera or Gallery',
                             style: GoogleFonts.inter(
                               fontSize: 11,
-                              color: AppColors.onSurfaceVariant.withOpacity(0.6),
+                              color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -403,9 +403,9 @@ class _KwhOverrideScreenState extends State<KwhOverrideScreen> {
                 decoration: BoxDecoration(
                   color: _isSuccess
                       ? (_discrepancyPercent != null && _discrepancyPercent! > 15
-                          ? Colors.orange.withOpacity(0.1)
-                          : AppColors.primaryContainer.withOpacity(0.2))
-                      : Colors.red.withOpacity(0.1),
+                          ? Colors.orange.withValues(alpha: 0.1)
+                          : AppColors.primaryContainer.withValues(alpha: 0.2))
+                      : Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: _isSuccess

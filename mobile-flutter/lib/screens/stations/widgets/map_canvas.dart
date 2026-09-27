@@ -17,8 +17,7 @@ class MapCanvas extends StatefulWidget {
   State<MapCanvas> createState() => _MapCanvasState();
 }
 
-class _MapCanvasState extends State<MapCanvas>
-    with TickerProviderStateMixin {
+class _MapCanvasState extends State<MapCanvas> with TickerProviderStateMixin {
   late AnimationController _pingController;
   late AnimationController _routeController;
 
@@ -64,17 +63,14 @@ class _MapCanvasState extends State<MapCanvas>
       child: Stack(
         children: [
           // Map background
-          Positioned.fill(
-            child: CustomPaint(painter: _MapPainter()),
-          ),
+          Positioned.fill(child: CustomPaint(painter: _MapPainter())),
 
           // Route dash line (animated)
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _routeController,
-              builder: (_, __) => CustomPaint(
-                painter: _RoutePainter(_routeController.value),
-              ),
+              builder: (_, _) =>
+                  CustomPaint(painter: _RoutePainter(_routeController.value)),
             ),
           ),
 
@@ -97,123 +93,138 @@ class _MapCanvasState extends State<MapCanvas>
           ),
 
           // User location marker (left 45%, top 52%)
-          LayoutBuilder(builder: (context, constraints) {
-            final cx = constraints.maxWidth * 0.45;
-            final cy = 420 * 0.52;
-            return Positioned(
-              left: cx - 24,
-              top: cy - 24,
-              child: AnimatedBuilder(
-                animation: _pingController,
-                builder: (_, __) {
-                  return SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Ping ring
-                        Opacity(
-                          opacity:
-                              (1.0 - _pingController.value).clamp(0.0, 1.0),
-                          child: Container(
-                            width: 48 * _pingController.value,
-                            height: 48 * _pingController.value,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary
-                                  .withOpacity(0.2 * (1 - _pingController.value)),
-                              shape: BoxShape.circle,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cx = constraints.maxWidth * 0.45;
+              final cy = 420 * 0.52;
+              return Positioned(
+                left: cx - 24,
+                top: cy - 24,
+                child: AnimatedBuilder(
+                  animation: _pingController,
+                  builder: (_, _) {
+                    return SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Ping ring
+                          Opacity(
+                            opacity: (1.0 - _pingController.value).clamp(
+                              0.0,
+                              1.0,
                             ),
-                          ),
-                        ),
-                        // Inner glow ring
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.3),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.6),
-                                blurRadius: 16,
-                                spreadRadius: 2,
+                            child: Container(
+                              width: 48 * _pingController.value,
+                              height: 48 * _pingController.value,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.2 * (1 - _pingController.value),
+                                ),
+                                shape: BoxShape.circle,
                               ),
-                            ],
+                            ),
                           ),
-                          child: Container(
-                            margin: const EdgeInsets.all(5),
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
+                          // Inner glow ring
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                  blurRadius: 16,
+                                  spreadRadius: 2,
+                                ),
+                              ],
                             ),
-                            child: const Icon(
-                              Icons.navigation_rounded,
-                              size: 13,
-                              color: AppColors.onPrimary,
+                            child: Container(
+                              margin: const EdgeInsets.all(5),
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.navigation_rounded,
+                                size: 13,
+                                color: AppColors.onPrimary,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            );
-          }),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
 
           // YOU label
-          LayoutBuilder(builder: (context, constraints) {
-            final cx = constraints.maxWidth * 0.45;
-            final cy = 420 * 0.52;
-            return Positioned(
-              left: cx - 16,
-              top: cy + 26,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLowest.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'YOU',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
-                    letterSpacing: 1.2,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cx = constraints.maxWidth * 0.45;
+              final cy = 420 * 0.52;
+              return Positioned(
+                left: cx - 16,
+                top: cy + 26,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLowest.withValues(
+                      alpha: 0.9,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'YOU',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            },
+          ),
 
           // Station pins
           ..._stationPositions.entries.map((e) {
             final id = e.key;
             final pos = e.value;
             final isActive = widget.activeStationId == id;
-            return LayoutBuilder(builder: (context, constraints) {
-              final left = constraints.maxWidth * pos[0];
-              final top = 420 * pos[1];
-              return Positioned(
-                left: left - 40,
-                top: top - 60,
-                child: GestureDetector(
-                  onTap: () => widget.onStationSelected(id),
-                  child: AnimatedScale(
-                    scale: isActive ? 1.1 : 0.92,
-                    duration: const Duration(milliseconds: 200),
-                    child: _StationPin(
-                      id: id,
-                      label: _stationLabels[id] ?? '',
-                      isActive: isActive,
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final left = constraints.maxWidth * pos[0];
+                final top = 420 * pos[1];
+                return Positioned(
+                  left: left - 40,
+                  top: top - 60,
+                  child: GestureDetector(
+                    onTap: () => widget.onStationSelected(id),
+                    child: AnimatedScale(
+                      scale: isActive ? 1.1 : 0.92,
+                      duration: const Duration(milliseconds: 200),
+                      child: _StationPin(
+                        id: id,
+                        label: _stationLabels[id] ?? '',
+                        isActive: isActive,
+                      ),
                     ),
                   ),
-                ),
-              );
-            });
+                );
+              },
+            );
           }),
         ],
       ),
@@ -229,8 +240,10 @@ class _MapPainter extends CustomPainter {
     final h = size.height;
 
     // Base background
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h),
-        Paint()..color = const Color(0xFF0A0E13));
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, w, h),
+      Paint()..color = const Color(0xFF0A0E13),
+    );
 
     // Bay gradient silhouette
     final bayPath = Path()
@@ -248,8 +261,8 @@ class _MapPainter extends CustomPainter {
           center: const Alignment(-0.7, -0.8),
           radius: 1.2,
           colors: [
-            const Color(0xFF182333).withOpacity(0.8),
-            const Color(0xFF0A0E13).withOpacity(0.2),
+            const Color(0xFF182333).withValues(alpha: 0.8),
+            const Color(0xFF0A0E13).withValues(alpha: 0.2),
           ],
         ).createShader(Rect.fromLTWH(0, 0, w, h)),
     );
@@ -309,7 +322,7 @@ class _MapPainter extends CustomPainter {
 
     // Green route highlight
     final greenPaint = Paint()
-      ..color = AppColors.primary.withOpacity(0.3)
+      ..color = AppColors.primary.withValues(alpha: 0.3)
       ..strokeWidth = 2.5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -332,19 +345,24 @@ class _MapPainter extends CustomPainter {
     ];
     for (final l in minorLines) {
       canvas.drawLine(
-          Offset(w * l[0], h * l[1]), Offset(w * l[2], h * l[3]), minorPaint);
+        Offset(w * l[0], h * l[1]),
+        Offset(w * l[2], h * l[3]),
+        minorPaint,
+      );
     }
   }
 
   void _drawPark(Canvas canvas, double cx, double cy, double rx, double ry) {
     final path = Path()
-      ..addOval(Rect.fromCenter(
-          center: Offset(cx, cy), width: rx * 2, height: ry * 2));
+      ..addOval(
+        Rect.fromCenter(center: Offset(cx, cy), width: rx * 2, height: ry * 2),
+      );
     canvas.drawPath(
-        path,
-        Paint()
-          ..color = const Color(0xFF14261E).withOpacity(0.4)
-          ..style = PaintingStyle.fill);
+      path,
+      Paint()
+        ..color = const Color(0xFF14261E).withValues(alpha: 0.4)
+        ..style = PaintingStyle.fill,
+    );
   }
 
   @override
@@ -368,7 +386,7 @@ class _RoutePainter extends CustomPainter {
       ..lineTo(w * 0.59, h * 0.37);
 
     final paint = Paint()
-      ..color = AppColors.primary.withOpacity(0.85)
+      ..color = AppColors.primary.withValues(alpha: 0.85)
       ..strokeWidth = 3.5
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -383,10 +401,7 @@ class _RoutePainter extends CustomPainter {
       while (offset < totalLength) {
         final start = offset;
         final end = math.min(offset + dashLen, totalLength);
-        canvas.drawPath(
-          metric.extractPath(start, end),
-          paint,
-        );
+        canvas.drawPath(metric.extractPath(start, end), paint);
         offset += dashLen + gapLen;
       }
     }
@@ -416,13 +431,13 @@ class _MapFab extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainer.withOpacity(0.92),
+          color: AppColors.surfaceContainer.withValues(alpha: 0.92),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 8,
-            )
+            ),
           ],
         ),
         child: Icon(icon, size: 20, color: color),
@@ -452,30 +467,34 @@ class _StationPin extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : AppColors.surfaceContainerHigh,
+            color: isActive
+                ? AppColors.primary
+                : AppColors.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(999),
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.4),
+                      color: AppColors.primary.withValues(alpha: 0.4),
                       blurRadius: 16,
                       spreadRadius: 2,
-                    )
+                    ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       blurRadius: 4,
-                    )
+                    ),
                   ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isActive) ...[
-                Icon(Icons.bolt_rounded,
-                    size: 12,
-                    color: isActive ? AppColors.onPrimary : AppColors.primary),
+                Icon(
+                  Icons.bolt_rounded,
+                  size: 12,
+                  color: isActive ? AppColors.onPrimary : AppColors.primary,
+                ),
                 const SizedBox(width: 3),
               ],
               Text(
@@ -498,7 +517,9 @@ class _StationPin extends StatelessWidget {
             color: AppColors.surfaceContainerLowest,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isActive ? AppColors.primary : AppColors.surfaceContainerHigh,
+              color: isActive
+                  ? AppColors.primary
+                  : AppColors.surfaceContainerHigh,
               width: 2,
             ),
           ),
@@ -514,7 +535,9 @@ class _StationPin extends StatelessWidget {
           height: 6,
           margin: const EdgeInsets.only(top: 1),
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary : AppColors.surfaceContainerHigh,
+            color: isActive
+                ? AppColors.primary
+                : AppColors.surfaceContainerHigh,
             shape: BoxShape.circle,
           ),
         ),

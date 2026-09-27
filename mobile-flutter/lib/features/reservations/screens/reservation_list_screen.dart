@@ -144,7 +144,7 @@ class _ReservationListScreenState extends State<ReservationListScreen>
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _reservations.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        separatorBuilder: (_, _) => const SizedBox(height: 16),
         itemBuilder: (context, index) {
           final res = _reservations[index];
           final isActive = res.status == 'Confirmed' || res.status == 'Pending';
