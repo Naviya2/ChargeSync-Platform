@@ -33,5 +33,9 @@ public interface ISessionService
         string requesterRole,
         Guid id,
         decimal? staffOverriddenKwh,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        MeterPhotoUpload? meterPhoto = null);
+
+    Task<MeterPhotoUpload?> GetMeterPhotoAsync(Guid requesterId, string requesterRole,
+        Guid id, CancellationToken cancellationToken = default);
 }

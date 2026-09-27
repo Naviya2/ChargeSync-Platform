@@ -97,7 +97,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
               const QrScannerScreen(),
               const StationManagementScreen(),
               const WalkInBookingScreen(),
-              const SessionCheckoutScreen(),
+              SessionCheckoutScreen(active: _currentTab == 4),
             ],
           ),
           // ── App Bar ──────────────────────────────────────────────

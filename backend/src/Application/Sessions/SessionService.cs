@@ -70,6 +70,8 @@ public sealed class SessionService : ISessionService
             query = query.Where(s => _db.Chargers
                 .Where(c => c.Id == s.Reservation.ChargerId)
                 .Any(c => _db.Stations.Any(st => st.Id == c.StationId && st.OwnerId == requesterId)));
+        else if (requesterRole is not (nameof(UserRole.Admin) or nameof(UserRole.SupportManager)))
+            throw new ForbiddenAccessException();
 
         if (filter.Status.HasValue)
             query = query.Where(s => s.Status == filter.Status.Value);
@@ -77,6 +79,7 @@ public sealed class SessionService : ISessionService
         return await query.OrderByDescending(s => s.StartTime).Select(s => new ChargingSessionDto
         {
             Id = s.Id,
+            HasMeterPhoto = s.MeterPhoto != null,
             ReservationId = s.ReservationId,
             ChargerId = s.Reservation.ChargerId,
             DriverId = s.Reservation.DriverId,
@@ -132,7 +135,8 @@ public sealed class SessionService : ISessionService
         string requesterRole,
         Guid id,
         decimal? staffOverriddenKwh,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        MeterPhotoUpload? meterPhoto = null)
     {
         var session = await _db.ChargingSessions
             .Include(s => s.Reservation)
@@ -145,6 +149,8 @@ public sealed class SessionService : ISessionService
             ?? throw new NotFoundException(nameof(Charger), session.Reservation.ChargerId);
 
         session.Stop(DateTimeOffset.UtcNow, charger.PowerKw, staffOverriddenKwh);
+        if (meterPhoto is not null)
+            session.AttachMeterPhoto(meterPhoto.Data, meterPhoto.ContentType);
         var invoice = await _payments.IssueForSessionAsync(session, charger, cancellationToken);
         charger.SetStatus(ChargerStatus.Available);
         session.Reservation.Complete();
@@ -159,6 +165,16 @@ public sealed class SessionService : ISessionService
             Session = await ToDtoAsync(session, cancellationToken),
             Invoice = await _payments.ToDtoAsync(invoice, cancellationToken)
         };
+    }
+
+    public async Task<MeterPhotoUpload?> GetMeterPhotoAsync(Guid requesterId, string requesterRole,
+        Guid id, CancellationToken cancellationToken = default)
+    {
+        var session = await _db.ChargingSessions.AsNoTracking().Include(s => s.Reservation)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (session is null || !await CanReadAsync(requesterId, requesterRole, session, cancellationToken))
+            return null;
+        return session.MeterPhoto is null ? null : new MeterPhotoUpload(session.MeterPhoto, session.MeterPhotoContentType!);
     }
 
     private async Task AddSessionAsync(
@@ -230,6 +246,7 @@ public sealed class SessionService : ISessionService
         return new ChargingSessionDto
         {
             Id = session.Id,
+            HasMeterPhoto = session.MeterPhoto != null,
             ReservationId = session.ReservationId,
             ChargerId = charger.Id,
             DriverId = session.Reservation.DriverId,

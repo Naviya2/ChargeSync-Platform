@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260927114542_AddPaymentConcurrency")]
+    partial class AddPaymentConcurrency
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -98,12 +101,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<decimal?>("FinalEnergyDeliveredKwh")
                         .HasPrecision(8, 2)
                         .HasColumnType("numeric(8,2)");
-
-                    b.Property<byte[]>("MeterPhoto")
-                        .HasColumnType("bytea");
-
-                    b.Property<string>("MeterPhotoContentType")
-                        .HasColumnType("text");
 
                     b.Property<Guid>("ReservationId")
                         .HasColumnType("uuid");

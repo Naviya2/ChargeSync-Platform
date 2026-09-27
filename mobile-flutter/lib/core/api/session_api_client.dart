@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -18,6 +19,7 @@ class SessionApiClient {
   Future<SessionCompletion> stopSession({
     required String sessionId,
     double? staffOverriddenKwh,
+    Uint8List? meterPhoto,
   }) async {
     final token = await _getAccessToken();
     final request = http.MultipartRequest(
@@ -31,6 +33,15 @@ class SessionApiClient {
       );
     }
 
+    if (meterPhoto != null) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'meterPhoto',
+          meterPhoto,
+          filename: 'meter-photo',
+        ),
+      );
+    }
     final response = await http.Response.fromStream(await request.send());
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return SessionCompletion.fromJson(

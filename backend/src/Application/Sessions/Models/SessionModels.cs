@@ -15,6 +15,7 @@ public sealed class SessionFilter
 
 public sealed class ChargingSessionDto
 {
+    public bool HasMeterPhoto { get; set; }
     public Guid Id { get; set; }
     public Guid ReservationId { get; set; }
     public Guid ChargerId { get; set; }

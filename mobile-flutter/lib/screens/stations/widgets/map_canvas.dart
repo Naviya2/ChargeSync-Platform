@@ -1,15 +1,18 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/api/station_models.dart';
 import '../../../core/theme/app_colors.dart';
 
 class MapCanvas extends StatefulWidget {
-  final int activeStationId;
+  final List<StationDto> stations;
+  final int activeStationIndex;
   final ValueChanged<int> onStationSelected;
 
   const MapCanvas({
     super.key,
-    required this.activeStationId,
+    required this.stations,
+    required this.activeStationIndex,
     required this.onStationSelected,
   });
 
@@ -41,20 +44,33 @@ class _MapCanvasState extends State<MapCanvas> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // Station positions on map [left%, top%]
-  static const Map<int, List<double>> _stationPositions = {
-    1: [0.59, 0.37],
-    2: [0.76, 0.56],
-    3: [0.30, 0.68],
-    4: [0.26, 0.24],
-  };
+  // Distribute stations evenly in the map canvas.
+  // For up to 6 stations we use fixed 'good-looking' positions;
+  // beyond that we spread them across a grid.
+  static const List<List<double>> _pinPositions = [
+    [0.59, 0.37],
+    [0.76, 0.56],
+    [0.30, 0.68],
+    [0.26, 0.24],
+    [0.50, 0.50],
+    [0.70, 0.20],
+  ];
 
-  static const Map<int, String> _stationLabels = {
-    1: '250 kW • 4 Free • \$0.31',
-    2: '150 kW • 6 Free',
-    3: '50 kW • 2 Free',
-    4: 'Adapter Req.',
-  };
+  List<double> _positionFor(int index) {
+    if (index < _pinPositions.length) return _pinPositions[index];
+    // Fallback: scatter using index
+    final row = index ~/ 3;
+    final col = index % 3;
+    return [0.2 + col * 0.3, 0.25 + row * 0.25];
+  }
+
+  String _labelFor(StationDto s) {
+    final parts = <String>[];
+    if (s.maxPowerKw > 0) parts.add('${s.maxPowerKw.toStringAsFixed(0)} kW');
+    if (s.freeStalls > 0) parts.add('${s.freeStalls} Free');
+    if (parts.isEmpty) parts.add(s.name);
+    return parts.join(' • ');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -198,26 +214,26 @@ class _MapCanvasState extends State<MapCanvas> with TickerProviderStateMixin {
             },
           ),
 
-          // Station pins
-          ..._stationPositions.entries.map((e) {
-            final id = e.key;
-            final pos = e.value;
-            final isActive = widget.activeStationId == id;
+          // Station pins from real API data
+          ...widget.stations.asMap().entries.map((entry) {
+            final index   = entry.key;
+            final station = entry.value;
+            final pos     = _positionFor(index);
+            final isActive = widget.activeStationIndex == index;
             return LayoutBuilder(
               builder: (context, constraints) {
                 final left = constraints.maxWidth * pos[0];
-                final top = 420 * pos[1];
+                final top  = 420 * pos[1];
                 return Positioned(
                   left: left - 40,
-                  top: top - 60,
+                  top:  top  - 60,
                   child: GestureDetector(
-                    onTap: () => widget.onStationSelected(id),
+                    onTap: () => widget.onStationSelected(index),
                     child: AnimatedScale(
                       scale: isActive ? 1.1 : 0.92,
                       duration: const Duration(milliseconds: 200),
                       child: _StationPin(
-                        id: id,
-                        label: _stationLabels[id] ?? '',
+                        label: _labelFor(station),
                         isActive: isActive,
                       ),
                     ),
@@ -448,12 +464,10 @@ class _MapFab extends StatelessWidget {
 
 // ─── Station pin ─────────────────────────────────────────────────────────────
 class _StationPin extends StatelessWidget {
-  final int id;
   final String label;
   final bool isActive;
 
   const _StationPin({
-    required this.id,
     required this.label,
     required this.isActive,
   });

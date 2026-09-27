@@ -36,8 +36,8 @@ public class Reservation : AuditableEntity
         DriverId = driverId;
         ChargerId = chargerId;
         VehicleId = vehicleId;
-        StartTime = startTime;
-        EndTime = endTime;
+        StartTime = startTime.ToUniversalTime();
+        EndTime = endTime.ToUniversalTime();
         AdvanceDepositAmount = advanceDepositAmount;
         Status = ReservationStatus.Pending;
     }
