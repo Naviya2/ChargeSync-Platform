@@ -34,6 +34,8 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             InvalidCredentialsException => (StatusCodes.Status401Unauthorized, "Authentication failed"),
             InvalidRefreshTokenException => (StatusCodes.Status401Unauthorized, "Authentication failed"),
             ForbiddenAccessException => (StatusCodes.Status403Forbidden, "Forbidden"),
+            ArgumentException => (StatusCodes.Status400BadRequest, "Invalid request"),
+            InvalidOperationException => (StatusCodes.Status400BadRequest, "Invalid operation"),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
         };
 

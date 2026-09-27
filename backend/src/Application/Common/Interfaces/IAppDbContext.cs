@@ -30,5 +30,7 @@ public interface IAppDbContext
 
     DbSet<WaitlistEntry> WaitlistEntries { get; }
 
+    DbSet<ChargingSession> ChargingSessions { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

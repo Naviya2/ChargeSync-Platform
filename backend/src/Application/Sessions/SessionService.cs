@@ -1,0 +1,201 @@
+using Application.Common.Exceptions;
+using Application.Common.Interfaces;
+using Application.Sessions.Models;
+using Domain.Entities;
+using Domain.Enums;
+using Domain.Users;
+using Microsoft.EntityFrameworkCore;
+
+namespace Application.Sessions;
+
+public sealed class SessionService : ISessionService
+{
+    private readonly IAppDbContext _db;
+
+    public SessionService(IAppDbContext db) => _db = db;
+
+    public async Task<ChargingSessionDto> StartAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid reservationId,
+        CancellationToken cancellationToken = default)
+    {
+        var reservation = await _db.Reservations
+            .FirstOrDefaultAsync(r => r.Id == reservationId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Reservation), reservationId);
+
+        await EnsureCanManageAsync(requesterId, requesterRole, reservation.ChargerId, cancellationToken);
+        await AddSessionAsync(reservation, requesterId, cancellationToken);
+        await MarkChargerOccupiedAsync(reservation.ChargerId, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var session = await _db.ChargingSessions
+            .AsNoTracking()
+            .Include(s => s.Reservation)
+            .SingleAsync(s => s.ReservationId == reservationId, cancellationToken);
+        return ToDto(session);
+    }
+
+    public async Task StartForCheckedInReservationAsync(
+        Reservation reservation,
+        Guid staffUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var staff = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == staffUserId, cancellationToken)
+            ?? throw new NotFoundException(nameof(User), staffUserId);
+
+        await EnsureCanManageAsync(staffUserId, staff.Role.ToString(), reservation.ChargerId, cancellationToken);
+        await AddSessionAsync(reservation, staffUserId, cancellationToken);
+        await MarkChargerOccupiedAsync(reservation.ChargerId, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ChargingSessionDto>> GetListAsync(
+        Guid requesterId,
+        string requesterRole,
+        SessionFilter filter,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _db.ChargingSessions.AsNoTracking().Include(s => s.Reservation).AsQueryable();
+
+        if (requesterRole == UserRole.Driver.ToString())
+            query = query.Where(s => s.Reservation.DriverId == requesterId);
+        else if (requesterRole == UserRole.StationOwner.ToString())
+            query = query.Where(s => _db.Chargers
+                .Where(c => c.Id == s.Reservation.ChargerId)
+                .Any(c => _db.Stations.Any(st => st.Id == c.StationId && st.OwnerId == requesterId)));
+
+        if (filter.Status.HasValue)
+            query = query.Where(s => s.Status == filter.Status.Value);
+
+        return await query.OrderByDescending(s => s.StartTime).Select(s => new ChargingSessionDto
+        {
+            Id = s.Id,
+            ReservationId = s.ReservationId,
+            ChargerId = s.Reservation.ChargerId,
+            DriverId = s.Reservation.DriverId,
+            StartTime = s.StartTime,
+            EndTime = s.EndTime,
+            AutoCalculatedKwh = s.AutoCalculatedKwh,
+            StaffOverriddenKwh = s.StaffOverriddenKwh,
+            FinalEnergyDeliveredKwh = s.FinalEnergyDeliveredKwh,
+            StaffUserId = s.StaffUserId,
+            Status = s.Status
+        }).ToListAsync(cancellationToken);
+    }
+
+    public async Task<ChargingSessionDto?> GetByIdAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var session = await _db.ChargingSessions.AsNoTracking()
+            .Include(s => s.Reservation)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        if (session is null) return null;
+
+        if (!await CanReadAsync(requesterId, requesterRole, session, cancellationToken))
+            return null;
+
+        return ToDto(session);
+    }
+
+    public async Task<ChargingSessionDto> StopAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        decimal? staffOverriddenKwh,
+        CancellationToken cancellationToken = default)
+    {
+        var session = await _db.ChargingSessions
+            .Include(s => s.Reservation)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken)
+            ?? throw new NotFoundException(nameof(ChargingSession), id);
+
+        await EnsureCanManageAsync(requesterId, requesterRole, session.Reservation.ChargerId, cancellationToken);
+        var charger = await _db.Chargers
+            .FirstOrDefaultAsync(c => c.Id == session.Reservation.ChargerId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Charger), session.Reservation.ChargerId);
+
+        session.Stop(DateTimeOffset.UtcNow, charger.PowerKw, staffOverriddenKwh);
+        charger.SetStatus(ChargerStatus.Available);
+        session.Reservation.Complete();
+        _db.ReservationStatusHistories.Add(ReservationStatusHistory.Record(
+            session.ReservationId,
+            ReservationStatus.CheckedIn,
+            ReservationStatus.Completed,
+            requesterId));
+        await _db.SaveChangesAsync(cancellationToken);
+        return ToDto(session);
+    }
+
+    private async Task AddSessionAsync(
+        Reservation reservation,
+        Guid staffUserId,
+        CancellationToken cancellationToken)
+    {
+        if (reservation.ChargingSession is not null || await _db.ChargingSessions
+                .AnyAsync(s => s.ReservationId == reservation.Id, cancellationToken))
+            throw new InvalidOperationException("A charging session already exists for this reservation.");
+
+        _db.ChargingSessions.Add(ChargingSession.Start(reservation, staffUserId));
+    }
+
+    private async Task MarkChargerOccupiedAsync(Guid chargerId, CancellationToken cancellationToken)
+    {
+        var charger = await _db.Chargers
+            .FirstOrDefaultAsync(c => c.Id == chargerId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Charger), chargerId);
+
+        if (charger.Status != ChargerStatus.Available)
+            throw new InvalidOperationException("The charger is not available for a new session.");
+
+        charger.SetStatus(ChargerStatus.Occupied);
+    }
+
+    private async Task<bool> CanReadAsync(
+        Guid requesterId,
+        string requesterRole,
+        ChargingSession session,
+        CancellationToken cancellationToken)
+    {
+        if (requesterRole is nameof(UserRole.Admin) or nameof(UserRole.SupportManager)) return true;
+        if (requesterRole == UserRole.Driver.ToString())
+            return session.Reservation.DriverId == requesterId;
+        if (requesterRole != UserRole.StationOwner.ToString()) return false;
+
+        return await OwnsChargerAsync(requesterId, session.Reservation.ChargerId, cancellationToken);
+    }
+
+    private async Task EnsureCanManageAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid chargerId,
+        CancellationToken cancellationToken)
+    {
+        if (requesterRole == UserRole.Admin.ToString()) return;
+        if (requesterRole != UserRole.StationOwner.ToString() ||
+            !await OwnsChargerAsync(requesterId, chargerId, cancellationToken))
+            throw new ForbiddenAccessException();
+    }
+
+    private Task<bool> OwnsChargerAsync(Guid requesterId, Guid chargerId, CancellationToken cancellationToken) =>
+        _db.Chargers.AnyAsync(c => c.Id == chargerId &&
+            _db.Stations.Any(s => s.Id == c.StationId && s.OwnerId == requesterId), cancellationToken);
+
+    private static ChargingSessionDto ToDto(ChargingSession s) => new()
+    {
+        Id = s.Id,
+        ReservationId = s.ReservationId,
+        ChargerId = s.Reservation.ChargerId,
+        DriverId = s.Reservation.DriverId,
+        StartTime = s.StartTime,
+        EndTime = s.EndTime,
+        AutoCalculatedKwh = s.AutoCalculatedKwh,
+        StaffOverriddenKwh = s.StaffOverriddenKwh,
+        FinalEnergyDeliveredKwh = s.FinalEnergyDeliveredKwh,
+        StaffUserId = s.StaffUserId,
+        Status = s.Status
+    };
+}

@@ -29,6 +29,16 @@ public class ReservationStatusHistory : AuditableEntity
         ChangedAt = DateTimeOffset.UtcNow;
     }
 
+    private ReservationStatusHistory(
+        Reservation reservation,
+        ReservationStatus? oldStatus,
+        ReservationStatus newStatus,
+        Guid? changedByUserId)
+        : this(reservation.Id, oldStatus, newStatus, changedByUserId)
+    {
+        Reservation = reservation;
+    }
+
     // ── Identity ─────────────────────────────────────────────────────────────
     public Guid Id { get; private set; }
 
@@ -70,5 +80,20 @@ public class ReservationStatusHistory : AuditableEntity
         Guid? changedByUserId = null)
     {
         return new ReservationStatusHistory(reservationId, oldStatus, newStatus, changedByUserId);
+    }
+
+    /// <summary>
+    /// Records a transition for a reservation that may not have received its
+    /// database-generated identifier yet. Keeping the navigation attached lets EF
+    /// propagate the generated key before inserting the history row.
+    /// </summary>
+    public static ReservationStatusHistory Record(
+        Reservation reservation,
+        ReservationStatus? oldStatus,
+        ReservationStatus newStatus,
+        Guid? changedByUserId = null)
+    {
+        ArgumentNullException.ThrowIfNull(reservation);
+        return new ReservationStatusHistory(reservation, oldStatus, newStatus, changedByUserId);
     }
 }

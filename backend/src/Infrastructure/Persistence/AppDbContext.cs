@@ -40,6 +40,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
 
+    public DbSet<ChargingSession> ChargingSessions => Set<ChargingSession>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
