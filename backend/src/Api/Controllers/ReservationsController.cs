@@ -55,6 +55,13 @@ public sealed class ReservationsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("availability")]
+    public async Task<ActionResult<IReadOnlyList<TimeSlotDto>>> GetAvailability([FromQuery] Guid chargerId, [FromQuery] DateTime date, [FromQuery] int durationMinutes, CancellationToken cancellationToken)
+    {
+        var slots = await _reservationService.GetAvailableTimeSlotsAsync(chargerId, date, durationMinutes, cancellationToken);
+        return Ok(slots);
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ReservationDto>> GetById(Guid id, CancellationToken cancellationToken)
     {

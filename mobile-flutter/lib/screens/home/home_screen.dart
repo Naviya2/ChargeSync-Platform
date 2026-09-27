@@ -12,6 +12,7 @@ import '../auth/sign_in_screen.dart';
 import '../../features/reservations/screens/reservation_list_screen.dart';
 import '../../core/api/auth_service.dart';
 import '../profile/profile_screen.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -51,15 +52,15 @@ class _HomeScreenState extends State<HomeScreen>
           _currentTab == 1
               ? Positioned.fill(child: const StationMapScreen())
               : _currentTab == 2
-                  ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 112, bottom: 80), child: const ReservationListScreen()))
+                  ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 72, bottom: 80), child: const ReservationListScreen()))
                   : _currentTab == 4
-                      ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 112, bottom: 80), child: const ProfileScreen()))
+                      ? Positioned.fill(child: Padding(padding: EdgeInsets.only(top: topPadding + 72, bottom: 80), child: const ProfileScreen()))
                       : CustomScrollView(
                           physics: const BouncingScrollPhysics(),
                           slivers: [
                             // Top offset for app bar
                             SliverToBoxAdapter(
-                              child: SizedBox(height: topPadding + 112),
+                              child: SizedBox(height: topPadding + 72),
                             ),
                             SliverPadding(
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -71,7 +72,11 @@ class _HomeScreenState extends State<HomeScreen>
                                   const SizedBox(height: 16),
                                   const FindChargerCard(),
                                   const SizedBox(height: 16),
-                                  const QuickActionsRow(),
+                                  QuickActionsRow(
+                                    onFindHub: () => setState(() => _currentTab = 1),
+                                    onBookings: () => setState(() => _currentTab = 2),
+                                    onPlanRoute: () => setState(() => _currentTab = 1), // Usually plan route goes to map
+                                  ),
                                   const SizedBox(height: 16),
                                   const SmartRecommendationCard(),
                                   const SizedBox(height: 16),
@@ -105,109 +110,22 @@ class _HomeScreenState extends State<HomeScreen>
     final user = AuthService.instance.currentUser;
     final name = user?.fullName.split(' ').first ?? 'Driver';
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Good morning, $name',
-              style: GoogleFonts.inter(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurface,
-                letterSpacing: -0.01,
-              ),
-            ),
-            const SizedBox(height: 4),
-          ],
-        ),
-        Row(
-          children: [
-            // Notification bell
-            Stack(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.notifications_outlined,
-                    size: 20,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: AnimatedBuilder(
-                    animation: _pulseController,
-                    builder: (_, __) => Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.surface, width: 2),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 8),
-            // Avatar
-            GestureDetector(
-              onTap: () {
-                setState(() => _currentTab = 4);
-              },
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.25),
-                      blurRadius: 12,
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Container(
-                    color: AppColors.primaryContainer,
-                    child: Center(
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.onPrimaryContainer,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+    return Text(
+      'Good morning, $name',
+      style: GoogleFonts.inter(
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        color: AppColors.onSurface,
+        letterSpacing: -0.01,
+      ),
     );
   }
 
   // ---- App Bar ----
   Widget _buildAppBar(double topPadding) {
+    final user = AuthService.instance.currentUser;
+    final name = user?.fullName.split(' ').first ?? 'Driver';
+
     return Positioned(
       top: 0,
       left: 0,
@@ -250,23 +168,98 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'ChargeSync',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSurface,
-                                  letterSpacing: -0.005,
+                      Text(
+                        'ChargeSync',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                          letterSpacing: -0.005,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      // Notification bell
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                        },
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceContainer,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.15),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.notifications_outlined,
+                                size: 18,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: AnimatedBuilder(
+                                animation: _pulseController,
+                                builder: (_, __) => Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: AppColors.surface, width: 2),
+                                  ),
                                 ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Avatar
+                      GestureDetector(
+                        onTap: () {
+                          setState(() => _currentTab = 4);
+                        },
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.25),
+                                blurRadius: 12,
                               ),
                             ],
                           ),
-                        ],
+                          child: ClipOval(
+                            child: Container(
+                              color: AppColors.primaryContainer,
+                              child: Center(
+                                child: Text(
+                                  name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.onPrimaryContainer,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),

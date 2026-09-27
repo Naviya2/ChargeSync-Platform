@@ -17,8 +17,7 @@ class _SignUpScreenState extends State<SignUpScreen>
   // Page controller for multi-step form
   final PageController _pageController = PageController();
   int _currentStep = 0;
-  static const int _totalSteps = 3;
-
+  static const int _totalSteps = 2;
   // ── Step 1: Account Info ────────────────────────────────────────────────────
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -309,7 +308,6 @@ class _SignUpScreenState extends State<SignUpScreen>
                 children: [
                   _buildStep1(),
                   _buildStep2(),
-                  _buildStep3(),
                 ],
               ),
             ),
@@ -323,11 +321,10 @@ class _SignUpScreenState extends State<SignUpScreen>
 
   // ── Header ───────────────────────────────────────────────────────────────────
   Widget _buildHeader(double topPad) {
-    final stepTitles = ['Account Info', 'Security Setup', 'Your EV Profile'];
+    final stepTitles = ['Account Info', 'Security Setup'];
     final stepSubs = [
       'Tell us who you are',
       'Create a secure password',
-      'Add your electric vehicle',
     ];
 
     return Container(
@@ -522,6 +519,28 @@ class _SignUpScreenState extends State<SignUpScreen>
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Column(
         children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryContainer.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Only drivers can register here. If you are a station owner or staff member, please use the web portal to register.',
+                    style: GoogleFonts.inter(fontSize: 13, color: AppColors.onSurface),
+                  ),
+                ),
+              ],
+            ),
+          ),
           // Name row
           Row(
             children: [

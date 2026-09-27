@@ -135,3 +135,17 @@ class PagedResult<T> {
     );
   }
 }
+
+class TimeSlotDto {
+  final DateTime startTime;
+  final DateTime endTime;
+
+  TimeSlotDto({required this.startTime, required this.endTime});
+
+  factory TimeSlotDto.fromJson(Map<String, dynamic> json) {
+    return TimeSlotDto(
+      startTime: DateTime.parse(json['startTime']),
+      endTime: DateTime.parse(json['endTime']),
+    );
+  }
+}

@@ -45,7 +45,7 @@ public static class DependencyInjection
             var apiKey = configuration["OpenRouteService:ApiKey"];
             if (!string.IsNullOrEmpty(apiKey))
             {
-                client.DefaultRequestHeaders.Add("Authorization", apiKey);
+                client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", apiKey);
             }
         });
 

@@ -97,4 +97,13 @@ public interface IReservationService
         string requesterRole,
         Guid id,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets available time slots for a specific charger on a specific date, for a given duration.
+    /// </summary>
+    Task<IReadOnlyList<TimeSlotDto>> GetAvailableTimeSlotsAsync(
+        Guid chargerId,
+        DateTime date,
+        int durationMinutes,
+        CancellationToken cancellationToken = default);
 }

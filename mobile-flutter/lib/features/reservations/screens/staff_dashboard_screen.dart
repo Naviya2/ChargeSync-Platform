@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/api/auth_service.dart';
+import '../../../core/api/reservation_api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import 'qr_scanner_screen.dart';
 import 'walk_in_booking_screen.dart';
@@ -20,6 +22,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
     with SingleTickerProviderStateMixin {
   int _currentTab = 0;
   late AnimationController _pulseController;
+  Timer? _pollingTimer;
+  int _lastReservationCount = 0;
 
   @override
   void initState() {
@@ -28,10 +32,37 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+
+    _startPolling();
+  }
+
+  void _startPolling() async {
+    try {
+      final res = await ReservationApiClient.instance.getMyReservations();
+      if (mounted) {
+        _lastReservationCount = res.totalCount;
+      }
+    } catch (_) {}
+
+    _pollingTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
+      try {
+        final res = await ReservationApiClient.instance.getMyReservations();
+        if (mounted && res.totalCount > _lastReservationCount) {
+          _lastReservationCount = res.totalCount;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('New reservation received!'),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+        }
+      } catch (_) {}
+    });
   }
 
   @override
   void dispose() {
+    _pollingTimer?.cancel();
     _pulseController.dispose();
     super.dispose();
   }

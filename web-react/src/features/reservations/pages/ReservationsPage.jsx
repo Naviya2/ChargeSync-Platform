@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
 import { useReservationsList } from '../hooks/useReservations'
 import PageHeader from '../../../components/shared/PageHeader'
 import { Card, Spinner, Button } from '../../../components/ui'
 import ReservationDetailsModal from '../components/ReservationDetailsModal'
+import { useNotificationStore } from '../../../store/notificationStore'
 
 const STATUS_COLORS = {
   Pending: 'bg-yellow-100 text-yellow-800',
@@ -15,9 +16,25 @@ const STATUS_COLORS = {
 
 export default function ReservationsPage() {
   const [selectedId, setSelectedId] = useState(null)
-  const { data, isLoading, isError } = useReservationsList()
+  const notify = useNotificationStore((s) => s.notify)
+  const prevCountRef = useRef(0)
+
+  const { data, isLoading, isError } = useReservationsList({}, { refetchInterval: 10000 })
 
   const reservations = data?.items || []
+
+  useEffect(() => {
+    if (reservations.length > 0) {
+      if (prevCountRef.current > 0 && reservations.length > prevCountRef.current) {
+        notify({
+          title: 'New Reservation',
+          message: 'A driver just booked a new slot.',
+          type: 'info',
+        })
+      }
+      prevCountRef.current = reservations.length
+    }
+  }, [reservations, notify])
 
   return (
     <div className="space-y-6">
