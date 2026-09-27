@@ -36,8 +36,8 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         var response = await client.PostAsJsonAsync("/api/reservations/walk-in", new WalkInRequest
         {
             ChargerId = chargerId,
-            StartTime = DateTimeOffset.UtcNow,
-            EndTime = DateTimeOffset.UtcNow.AddHours(1)
+            StartTime = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(5.5)),
+            EndTime = DateTimeOffset.UtcNow.AddHours(1).ToOffset(TimeSpan.FromHours(5.5))
         });
         response.EnsureSuccessStatusCode();
         var reservation = await response.Content.ReadFromJsonAsync<ReservationDto>(JsonOptions);
@@ -63,9 +63,10 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         var stop = await client.PutAsync($"/api/sessions/{session.Id}/stop", stopForm);
         stop.EnsureSuccessStatusCode();
         var completion = await stop.Content.ReadFromJsonAsync<SessionCompletionDto>(JsonOptions);
+        Assert.Null(completion!.Invoice.DriverId);
 
         var cashPayment = await client.PostAsJsonAsync(
-            $"/api/payments/invoices/{completion!.Invoice.Id}/settle",
+            $"/api/payments/invoices/{completion.Invoice.Id}/settle",
             new SettleInvoiceRequest { PaymentMethod = PaymentMethod.Cash });
         cashPayment.EnsureSuccessStatusCode();
         var cashInvoice = await cashPayment.Content.ReadFromJsonAsync<PaymentInvoiceDto>(JsonOptions);
@@ -122,18 +123,20 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         Assert.Equal(500m, completed.Invoice.NetAmountDue);
         Assert.Equal(InvoiceStatus.Pending, completed.Invoice.Status);
 
-        var settlement = await client.PostAsJsonAsync(
-            $"/api/payments/invoices/{completed.Invoice.Id}/settle",
-            new SettleInvoiceRequest { PaymentMethod = PaymentMethod.Wallet });
-        settlement.EnsureSuccessStatusCode();
+        var settlementUrl = $"/api/payments/invoices/{completed.Invoice.Id}/settle";
+        var settlements = await Task.WhenAll(
+            client.PostAsJsonAsync(
+                settlementUrl,
+                new SettleInvoiceRequest { PaymentMethod = PaymentMethod.Wallet }),
+            client.PostAsJsonAsync(
+                settlementUrl,
+                new SettleInvoiceRequest { PaymentMethod = PaymentMethod.Wallet }));
+        var settlement = Assert.Single(settlements, response => response.IsSuccessStatusCode);
+        Assert.Single(settlements, response =>
+            response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Conflict);
         var paidInvoice = await settlement.Content.ReadFromJsonAsync<PaymentInvoiceDto>(JsonOptions);
         Assert.Equal(InvoiceStatus.Paid, paidInvoice!.Status);
         Assert.Equal(PaymentMethod.Wallet, paidInvoice.PaymentMethod);
-
-        var duplicateSettlement = await client.PostAsJsonAsync(
-            $"/api/payments/invoices/{completed.Invoice.Id}/settle",
-            new SettleInvoiceRequest { PaymentMethod = PaymentMethod.Wallet });
-        Assert.Equal(HttpStatusCode.BadRequest, duplicateSettlement.StatusCode);
 
         using var verificationScope = _factory.Services.CreateScope();
         var verificationDb = verificationScope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -145,6 +148,63 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
                 .SingleAsync());
         Assert.Equal(
             500m,
+            await verificationDb.Users
+                .Where(u => u.Id == owner.User.Id)
+                .Select(u => u.WalletBalance)
+                .SingleAsync());
+    }
+
+    [Fact]
+    public async Task WalletSettlement_WithInsufficientBalance_LeavesInvoicePending()
+    {
+        var client = _factory.CreateClient();
+        var owner = await RegisterOwnerAsync(client);
+        var chargerId = await CreateChargerAsync(owner.User.Id);
+        Guid invoiceId;
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var reservation = Reservation.Create(
+                owner.User.Id,
+                chargerId,
+                DateTimeOffset.UtcNow.AddMinutes(1),
+                DateTimeOffset.UtcNow.AddHours(1),
+                0m);
+            reservation.ConfirmWithQrCode(Guid.NewGuid().ToString("N"));
+            reservation.CheckIn();
+            db.Reservations.Add(reservation);
+            await db.SaveChangesAsync();
+
+            var session = ChargingSession.Start(
+                reservation,
+                owner.User.Id,
+                DateTimeOffset.UtcNow.AddHours(-1));
+            session.Stop(DateTimeOffset.UtcNow, 50m, 20m);
+            db.ChargingSessions.Add(session);
+            await db.SaveChangesAsync();
+
+            var invoice = PaymentInvoice.Issue(session, owner.User.Id, 40m, 0m);
+            db.PaymentInvoices.Add(invoice);
+            await db.SaveChangesAsync();
+            invoiceId = invoice.Id;
+        }
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/payments/invoices/{invoiceId}/settle",
+            new SettleInvoiceRequest { PaymentMethod = PaymentMethod.Wallet });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        using var verificationScope = _factory.Services.CreateScope();
+        var verificationDb = verificationScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.Equal(
+            InvoiceStatus.Pending,
+            await verificationDb.PaymentInvoices
+                .Where(i => i.Id == invoiceId)
+                .Select(i => i.Status)
+                .SingleAsync());
+        Assert.Equal(
+            0m,
             await verificationDb.Users
                 .Where(u => u.Id == owner.User.Id)
                 .Select(u => u.WalletBalance)

@@ -33,6 +33,7 @@ public sealed class PaymentInvoiceConfiguration : IEntityTypeConfiguration<Payme
             .HasConversion<string>()
             .HasMaxLength(20)
             .HasDefaultValue(InvoiceStatus.Pending)
+            .IsConcurrencyToken()
             .IsRequired();
         builder.Property(i => i.IssuedAt).IsRequired();
 

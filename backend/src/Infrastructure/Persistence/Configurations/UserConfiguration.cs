@@ -57,6 +57,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.WalletBalance)
             .IsRequired()
             .HasPrecision(10, 2)
+            .IsConcurrencyToken()
             .HasDefaultValue(0m);
 
         builder.Property(u => u.CreatedAt)

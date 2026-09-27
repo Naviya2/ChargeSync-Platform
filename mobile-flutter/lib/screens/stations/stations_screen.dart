@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../core/api/auth_service.dart';
+import '../../core/api/station_api_client.dart';
+import '../../core/api/station_models.dart';
 import '../../core/theme/app_colors.dart';
 import 'widgets/map_canvas.dart';
 import 'widgets/station_bottom_sheet.dart';
@@ -12,15 +16,56 @@ class StationsScreen extends StatefulWidget {
 }
 
 class _StationsScreenState extends State<StationsScreen> {
-  int _activeStationId = 1;
+  int _activeStationIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   bool _showClear = false;
 
-  // Active filter chips
   final Set<String> _activeFilters = {'compatible', 'available'};
 
-  void _onStationSelected(int id) {
-    setState(() => _activeStationId = id);
+  // API state
+  List<StationDto> _stations = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStations();
+  }
+
+  Future<void> _loadStations() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final auth = AuthService.instance;
+      List<StationDto> stations;
+
+      if (auth.isStaff) {
+        // Station owner: fetch ONLY their own stations
+        stations = await StationApiClient.instance.getMyStations();
+      } else {
+        // EV Driver / public: fetch all approved stations
+        stations = await StationApiClient.instance.getAllStations();
+      }
+
+      setState(() {
+        _stations = stations;
+        _activeStationIndex = 0;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _onStationSelected(int index) {
+    setState(() => _activeStationIndex = index);
   }
 
   @override
@@ -35,56 +80,55 @@ class _StationsScreenState extends State<StationsScreen> {
       backgroundColor: AppColors.surface,
       body: Stack(
         children: [
-          // Main scrollable content
-          CustomScrollView(
-            slivers: [
-              // App Bar (fixed)
-              SliverToBoxAdapter(
-                child: StationsAppBar(
-                  searchController: _searchController,
-                  showClear: _showClear,
-                  onSearchChanged: (val) {
-                    setState(() => _showClear = val.isNotEmpty);
-                  },
-                  onClearSearch: () {
-                    _searchController.clear();
-                    setState(() => _showClear = false);
-                  },
-                  activeFilters: _activeFilters,
-                  onFilterToggle: (filter) {
-                    setState(() {
-                      if (_activeFilters.contains(filter)) {
-                        _activeFilters.remove(filter);
-                      } else {
-                        _activeFilters.add(filter);
-                      }
-                    });
-                  },
+          if (_isLoading)
+            _LoadingView()
+          else if (_error != null)
+            _ErrorView(error: _error!, onRetry: _loadStations)
+          else if (_stations.isEmpty)
+            _EmptyView()
+          else
+            CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: StationsAppBar(
+                    searchController: _searchController,
+                    showClear: _showClear,
+                    onSearchChanged: (val) {
+                      setState(() => _showClear = val.isNotEmpty);
+                    },
+                    onClearSearch: () {
+                      _searchController.clear();
+                      setState(() => _showClear = false);
+                    },
+                    activeFilters: _activeFilters,
+                    onFilterToggle: (filter) {
+                      setState(() {
+                        if (_activeFilters.contains(filter)) {
+                          _activeFilters.remove(filter);
+                        } else {
+                          _activeFilters.add(filter);
+                        }
+                      });
+                    },
+                  ),
                 ),
-              ),
-
-              // Map Canvas
-              SliverToBoxAdapter(
-                child: MapCanvas(
-                  activeStationId: _activeStationId,
-                  onStationSelected: _onStationSelected,
+                SliverToBoxAdapter(
+                  child: MapCanvas(
+                    stations: _stations,
+                    activeStationIndex: _activeStationIndex,
+                    onStationSelected: _onStationSelected,
+                  ),
                 ),
-              ),
-
-              // Bottom Sheet Panel
-              SliverToBoxAdapter(
-                child: StationBottomSheet(
-                  activeStationId: _activeStationId,
-                  onStationSelected: (id) {
-                    setState(() => _activeStationId = id);
-                  },
+                SliverToBoxAdapter(
+                  child: StationBottomSheet(
+                    stations: _stations,
+                    activeStationIndex: _activeStationIndex,
+                    onStationSelected: _onStationSelected,
+                  ),
                 ),
-              ),
-
-              // Bottom nav padding
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
-            ],
-          ),
+                const SliverToBoxAdapter(child: SizedBox(height: 80)),
+              ],
+            ),
 
           // Floating back button
           Positioned(
@@ -98,6 +142,111 @@ class _StationsScreenState extends State<StationsScreen> {
   }
 }
 
+// ─── Loading view ─────────────────────────────────────────────────────────────
+class _LoadingView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: AppColors.primary),
+          const SizedBox(height: 16),
+          Text(
+            'Loading stations…',
+            style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Error view ───────────────────────────────────────────────────────────────
+class _ErrorView extends StatelessWidget {
+  final String error;
+  final VoidCallback onRetry;
+  const _ErrorView({required this.error, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded, color: AppColors.error, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load stations',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppColors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Empty view ───────────────────────────────────────────────────────────────
+class _EmptyView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.ev_station_rounded,
+              color: AppColors.onSurfaceVariant, size: 64),
+          const SizedBox(height: 16),
+          Text(
+            'No stations found',
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your registered stations will appear here\nonce approved.',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Back button ──────────────────────────────────────────────────────────────
 class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

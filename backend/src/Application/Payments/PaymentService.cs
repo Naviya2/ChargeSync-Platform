@@ -68,7 +68,17 @@ public sealed class PaymentService : IPaymentService
         }
 
         invoice.Settle(request.PaymentMethod);
-        await _db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            // EF Core wraps this SaveChanges call in one transaction. The invoice
+            // status and wallet balance concurrency tokens prevent double payment
+            // and lost wallet deductions when requests arrive at the same time.
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new PaymentConflictException();
+        }
         return await ToDtoAsync(invoice, cancellationToken);
     }
 
