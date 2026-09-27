@@ -7,6 +7,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/api/vehicle_service.dart';
+import '../../../screens/vehicles/compatible_stations_sheet.dart';
 import '../../stations/api/station_service.dart';
 import '../../stations/models/station.dart';
 import '../api/routing_service.dart';
@@ -344,7 +346,8 @@ class _StationMapScreenState extends State<StationMapScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    _buildCompatibilityBanner(_selectedStation!),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
@@ -421,5 +424,88 @@ class _StationMapScreenState extends State<StationMapScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildCompatibilityBanner(Station station) {
+    final activeVehicle = VehicleService.instance.activeVehicle;
+    if (activeVehicle == null) {
+      return const SizedBox.shrink();
+    }
+
+    final chargers = station.chargers ?? [];
+    final matchingChargers = chargers.where((c) {
+      final connStr = c.connector.toUpperCase().replaceAll(' ', '').replaceAll('-', '');
+      final vehConn = activeVehicle.connector.toBackendString().toUpperCase();
+      return connStr.contains(vehConn) || vehConn.contains(connStr);
+    }).toList();
+
+    if (matchingChargers.isNotEmpty) {
+      final bestPower = matchingChargers.map((c) => c.powerKw).reduce((a, b) => a > b ? a : b);
+      final effectiveKw = bestPower < activeVehicle.maxChargeRateKw ? bestPower : activeVehicle.maxChargeRateKw;
+      final mins = (activeVehicle.batteryCapacityKwh * 0.70 / (effectiveKw > 0 ? effectiveKw : 1) * 60).round();
+
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.primaryContainer.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Compatible with ${activeVehicle.fullName} (${activeVehicle.connector.shortName}) • ~${mins}m (10-80%)',
+                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Incompatible with ${activeVehicle.fullName} (${activeVehicle.connector.shortName})',
+                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.error),
+                  ),
+                  const SizedBox(height: 2),
+                  GestureDetector(
+                    onTap: () => CompatibleStationsSheet.show(context, activeVehicle),
+                    child: Text(
+                      'Tap to view compatible alternatives nearby →',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }

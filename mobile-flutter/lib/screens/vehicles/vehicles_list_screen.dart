@@ -5,6 +5,7 @@ import '../../core/api/vehicle_models.dart';
 import '../../core/api/vehicle_service.dart';
 import '../../core/theme/app_colors.dart';
 import 'add_edit_vehicle_screen.dart';
+import 'compatible_stations_sheet.dart';
 
 class VehiclesListScreen extends StatefulWidget {
   const VehiclesListScreen({super.key});
@@ -195,7 +196,7 @@ class _VehiclesListScreenState extends State<VehiclesListScreen> {
               physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
               padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 96),
               itemCount: _vehicleService.vehicles.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 16),
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
                 final vehicle = _vehicleService.vehicles[index];
                 final isActive = _vehicleService.activeVehicle?.id == vehicle.id;
@@ -316,8 +317,30 @@ class _VehiclesListScreenState extends State<VehiclesListScreen> {
                         ],
                       ),
                       const SizedBox(height: 14),
+
+                      // Find Compatible Stations Button (FR-1.3 & FR-1.5)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryContainer.withValues(alpha: 0.35),
+                            foregroundColor: AppColors.primary,
+                            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            elevation: 0,
+                          ),
+                          onPressed: () => CompatibleStationsSheet.show(context, vehicle),
+                          icon: const Icon(Icons.radar_rounded, size: 18),
+                          label: Text(
+                            'Find Compatible Stations (${vehicle.connector.shortName})',
+                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       const Divider(color: AppColors.surfaceContainerHigh),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
 
                       // Action Row
                       Row(

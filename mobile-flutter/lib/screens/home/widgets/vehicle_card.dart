@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/api/vehicle_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../vehicles/add_edit_vehicle_screen.dart';
+import '../../vehicles/compatible_stations_sheet.dart';
 import '../../vehicles/vehicles_list_screen.dart';
 
 class VehicleCard extends StatefulWidget {
@@ -159,41 +160,80 @@ class _VehicleCardState extends State<VehicleCard> {
                           ],
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const VehiclesListScreen()),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerHigh,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _vehicleService.vehicles.length > 1 ? 'Switch' : 'Manage',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primary,
-                                  letterSpacing: 0.06,
-                                ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () => CompatibleStationsSheet.show(context, activeVehicle),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 5,
                               ),
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.swap_horiz_rounded,
-                                size: 14,
-                                color: AppColors.primary,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryContainer.withValues(alpha: 0.35),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
                               ),
-                            ],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.radar_rounded,
+                                    size: 13,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Stations',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const VehiclesListScreen()),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _vehicleService.vehicles.length > 1 ? 'Switch' : 'Manage',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
+                                      letterSpacing: 0.06,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.swap_horiz_rounded,
+                                    size: 14,
+                                    color: AppColors.primary,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
