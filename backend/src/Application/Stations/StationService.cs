@@ -96,7 +96,7 @@ public class StationService : IStationService
 
     public async Task<StationDto> RegisterStationAsync(Guid ownerId, RegisterStationRequest request, CancellationToken cancellationToken = default)
     {
-        var station = Station.Create(request.Name, request.Address, request.Latitude, request.Longitude, ownerId);
+        var station = Station.Create(request.Name, request.Address, request.Latitude, request.Longitude, ownerId, request.DocumentUrls);
         
         _context.Stations.Add(station);
         await _context.SaveChangesAsync(cancellationToken);
@@ -140,6 +140,35 @@ public class StationService : IStationService
         await _context.SaveChangesAsync(cancellationToken);
 
         return MapChargerToDto(charger);
+    }
+
+    public async Task<ChargerDto> UpdateChargerAsync(Guid stationId, Guid chargerId, Guid ownerId, UpdateChargerRequest request, CancellationToken cancellationToken = default)
+    {
+        var charger = await _context.Chargers
+            .Include(c => c.Station)
+            .FirstOrDefaultAsync(c => c.Id == chargerId && c.StationId == stationId && c.Station.OwnerId == ownerId, cancellationToken);
+
+        if (charger == null)
+            throw new UnauthorizedAccessException("Charger not found or you are not the owner.");
+
+        charger.UpdateDetails(request.Identifier, request.BayLabel, request.Connector, request.PowerKw, request.Tariff);
+        
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return MapChargerToDto(charger);
+    }
+
+    public async Task DeleteChargerAsync(Guid stationId, Guid chargerId, Guid ownerId, CancellationToken cancellationToken = default)
+    {
+        var charger = await _context.Chargers
+            .Include(c => c.Station)
+            .FirstOrDefaultAsync(c => c.Id == chargerId && c.StationId == stationId && c.Station.OwnerId == ownerId, cancellationToken);
+
+        if (charger == null)
+            throw new UnauthorizedAccessException("Charger not found or you are not the owner.");
+
+        _context.Chargers.Remove(charger);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateOperatingHoursAsync(Guid stationId, Guid ownerId, List<OperatingHourDto> hours, CancellationToken cancellationToken = default)
@@ -203,6 +232,20 @@ public class StationService : IStationService
         };
     }
 
+    public async Task DeleteMaintenanceWindowAsync(Guid maintenanceId, Guid ownerId, CancellationToken cancellationToken = default)
+    {
+        var maintenance = await _context.MaintenanceWindows
+            .Include(m => m.Charger)
+                .ThenInclude(c => c.Station)
+            .FirstOrDefaultAsync(m => m.Id == maintenanceId && m.Charger.Station.OwnerId == ownerId, cancellationToken);
+
+        if (maintenance == null)
+            throw new UnauthorizedAccessException("Maintenance window not found or you are not the owner.");
+
+        _context.MaintenanceWindows.Remove(maintenance);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     private static StationDto MapToDto(Station station)
     {
         return new StationDto
@@ -215,6 +258,7 @@ public class StationService : IStationService
             Status = station.Status,
             RejectionReason = station.RejectionReason,
             OwnerId = station.OwnerId,
+            DocumentUrls = station.DocumentUrls,
             CreatedAt = station.CreatedAt,
             Chargers = station.Chargers?.Select(MapChargerToDto).ToList() ?? new List<ChargerDto>(),
             OperatingHours = station.OperatingHours?.Select(h => new OperatingHourDto

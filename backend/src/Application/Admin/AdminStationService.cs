@@ -17,6 +17,7 @@ public class AdminStationService : IAdminStationService
     public async Task<List<StationDto>> GetPendingStationsAsync(CancellationToken cancellationToken = default)
     {
         var stations = await _context.Stations
+            .Include(s => s.Owner)
             .Include(s => s.Chargers)
             .Include(s => s.OperatingHours)
             .Where(s => s.Status == StationStatus.Pending)
@@ -28,6 +29,7 @@ public class AdminStationService : IAdminStationService
     public async Task<StationDto?> GetStationByIdAsync(Guid stationId, CancellationToken cancellationToken = default)
     {
         var station = await _context.Stations
+            .Include(s => s.Owner)
             .Include(s => s.Chargers)
             .Include(s => s.OperatingHours)
             .FirstOrDefaultAsync(s => s.Id == stationId, cancellationToken);
@@ -65,7 +67,15 @@ public class AdminStationService : IAdminStationService
             Status = station.Status,
             RejectionReason = station.RejectionReason,
             OwnerId = station.OwnerId,
+            DocumentUrls = station.DocumentUrls,
             CreatedAt = station.CreatedAt,
+            Owner = station.Owner != null ? new OwnerDto
+            {
+                Id = station.Owner.Id,
+                Name = station.Owner.FullName,
+                Email = station.Owner.Email,
+                Phone = station.Owner.PhoneNumber
+            } : null,
             Chargers = station.Chargers?.Select(c => new ChargerDto
             {
                 Id = c.Id,

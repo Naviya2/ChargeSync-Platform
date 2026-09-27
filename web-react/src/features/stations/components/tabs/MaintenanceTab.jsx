@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { cn } from '../../../../lib/cn'
 import { useAddMaintenanceWindow } from '../../hooks/useStations'
 
-import { useUpdateMaintenanceWindow } from '../../hooks/useStations'
+import { useUpdateMaintenanceWindow, useDeleteMaintenanceWindow } from '../../hooks/useStations'
 
 const toLocalDatetimeString = (dateStr) => {
   if (!dateStr) return '';
@@ -14,6 +14,7 @@ const toLocalDatetimeString = (dateStr) => {
 function MaintenanceItem({ item, stationId }) {
   const [isEditing, setIsEditing] = useState(false)
   const updateMaintenance = useUpdateMaintenanceWindow()
+  const deleteMaintenance = useDeleteMaintenanceWindow()
   
   const [form, setForm] = useState({
     reason: item.reason || '',
@@ -121,9 +122,9 @@ function MaintenanceItem({ item, stationId }) {
             </span>
           </div>
           {item.reason && (
-            <p className="mt-space-2xs font-body-sm text-body-sm text-on-surface-variant">{item.reason}</p>
+            <p className="mt-space-2xs font-body-md text-body-md text-on-surface-variant">{item.reason}</p>
           )}
-          <div className="mt-space-xs flex flex-wrap items-center gap-space-md font-label-sm text-label-sm text-on-surface-variant">
+          <div className="mt-space-xs flex flex-wrap items-center gap-space-md font-body-sm text-body-sm text-on-surface-variant">
             <span className="flex items-center gap-1">
               <span className="material-symbols-outlined text-xs">ev_station</span> Charger ID: {item.chargerId || item.chargers}
             </span>
@@ -134,13 +135,30 @@ function MaintenanceItem({ item, stationId }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-space-xs self-end md:self-center">
+      <div className="flex items-center gap-space-md self-end md:self-center">
         <button
           type="button"
           onClick={() => setIsEditing(true)}
-          className="rounded-lg bg-surface-container-lowest px-space-sm py-space-xs font-label-md text-label-md text-on-surface shadow-sm hover:bg-surface-container"
+          className="rounded p-space-2xs text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors"
+          title="Edit Maintenance"
         >
-          Edit
+          <span className="material-symbols-outlined text-xl">edit</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm('Are you sure you want to delete this maintenance window?')) {
+              deleteMaintenance.mutate(
+                { maintenanceId: item.id, stationId },
+                { onError: () => alert('Failed to delete maintenance window') }
+              )
+            }
+          }}
+          disabled={deleteMaintenance?.isPending}
+          className="rounded p-space-2xs text-on-surface-variant hover:bg-error-container hover:text-error transition-colors disabled:opacity-50"
+          title="Delete Maintenance"
+        >
+          <span className="material-symbols-outlined text-xl">delete</span>
         </button>
         {(item.actions || []).map((action) => (
           <button
@@ -191,7 +209,7 @@ export default function MaintenanceTab({ stationId, maintenance = [], chargers =
           <h3 className="font-headline-sm text-headline-sm text-on-surface">
             Scheduled &amp; Upcoming Maintenance Windows
           </h3>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
+          <p className="font-body-md text-body-md text-on-surface-variant">
             Planned hardware recalibration, liquid coolant purges, and utility substation tests.
           </p>
         </div>
