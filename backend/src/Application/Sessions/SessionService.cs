@@ -1,6 +1,7 @@
 using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Application.Sessions.Models;
+using Application.Payments;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Users;
@@ -11,8 +12,13 @@ namespace Application.Sessions;
 public sealed class SessionService : ISessionService
 {
     private readonly IAppDbContext _db;
+    private readonly IPaymentService _payments;
 
-    public SessionService(IAppDbContext db) => _db = db;
+    public SessionService(IAppDbContext db, IPaymentService payments)
+    {
+        _db = db;
+        _payments = payments;
+    }
 
     public async Task<ChargingSessionDto> StartAsync(
         Guid requesterId,
@@ -33,7 +39,7 @@ public sealed class SessionService : ISessionService
             .AsNoTracking()
             .Include(s => s.Reservation)
             .SingleAsync(s => s.ReservationId == reservationId, cancellationToken);
-        return ToDto(session);
+        return await ToDtoAsync(session, cancellationToken);
     }
 
     public async Task StartForCheckedInReservationAsync(
@@ -74,6 +80,26 @@ public sealed class SessionService : ISessionService
             ReservationId = s.ReservationId,
             ChargerId = s.Reservation.ChargerId,
             DriverId = s.Reservation.DriverId,
+            StationName = _db.Stations
+                .Where(st => _db.Chargers.Any(c => c.Id == s.Reservation.ChargerId && c.StationId == st.Id))
+                .Select(st => st.Name)
+                .FirstOrDefault() ?? string.Empty,
+            ChargerIdentifier = _db.Chargers
+                .Where(c => c.Id == s.Reservation.ChargerId)
+                .Select(c => c.Identifier)
+                .FirstOrDefault() ?? string.Empty,
+            BayLabel = _db.Chargers
+                .Where(c => c.Id == s.Reservation.ChargerId)
+                .Select(c => c.BayLabel)
+                .FirstOrDefault() ?? string.Empty,
+            ChargerPowerKw = _db.Chargers
+                .Where(c => c.Id == s.Reservation.ChargerId)
+                .Select(c => c.PowerKw)
+                .FirstOrDefault(),
+            TariffPerKwh = _db.Chargers
+                .Where(c => c.Id == s.Reservation.ChargerId)
+                .Select(c => c.Tariff)
+                .FirstOrDefault(),
             StartTime = s.StartTime,
             EndTime = s.EndTime,
             AutoCalculatedKwh = s.AutoCalculatedKwh,
@@ -98,10 +124,10 @@ public sealed class SessionService : ISessionService
         if (!await CanReadAsync(requesterId, requesterRole, session, cancellationToken))
             return null;
 
-        return ToDto(session);
+        return await ToDtoAsync(session, cancellationToken);
     }
 
-    public async Task<ChargingSessionDto> StopAsync(
+    public async Task<SessionCompletionDto> StopAsync(
         Guid requesterId,
         string requesterRole,
         Guid id,
@@ -119,6 +145,7 @@ public sealed class SessionService : ISessionService
             ?? throw new NotFoundException(nameof(Charger), session.Reservation.ChargerId);
 
         session.Stop(DateTimeOffset.UtcNow, charger.PowerKw, staffOverriddenKwh);
+        var invoice = await _payments.IssueForSessionAsync(session, charger, cancellationToken);
         charger.SetStatus(ChargerStatus.Available);
         session.Reservation.Complete();
         _db.ReservationStatusHistories.Add(ReservationStatusHistory.Record(
@@ -127,7 +154,11 @@ public sealed class SessionService : ISessionService
             ReservationStatus.Completed,
             requesterId));
         await _db.SaveChangesAsync(cancellationToken);
-        return ToDto(session);
+        return new SessionCompletionDto
+        {
+            Session = await ToDtoAsync(session, cancellationToken),
+            Invoice = await _payments.ToDtoAsync(invoice, cancellationToken)
+        };
     }
 
     private async Task AddSessionAsync(
@@ -184,18 +215,36 @@ public sealed class SessionService : ISessionService
         _db.Chargers.AnyAsync(c => c.Id == chargerId &&
             _db.Stations.Any(s => s.Id == c.StationId && s.OwnerId == requesterId), cancellationToken);
 
-    private static ChargingSessionDto ToDto(ChargingSession s) => new()
+    private async Task<ChargingSessionDto> ToDtoAsync(
+        ChargingSession session,
+        CancellationToken cancellationToken)
     {
-        Id = s.Id,
-        ReservationId = s.ReservationId,
-        ChargerId = s.Reservation.ChargerId,
-        DriverId = s.Reservation.DriverId,
-        StartTime = s.StartTime,
-        EndTime = s.EndTime,
-        AutoCalculatedKwh = s.AutoCalculatedKwh,
-        StaffOverriddenKwh = s.StaffOverriddenKwh,
-        FinalEnergyDeliveredKwh = s.FinalEnergyDeliveredKwh,
-        StaffUserId = s.StaffUserId,
-        Status = s.Status
-    };
+        var charger = await _db.Chargers.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == session.Reservation.ChargerId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Charger), session.Reservation.ChargerId);
+        var stationName = await _db.Stations.AsNoTracking()
+            .Where(s => s.Id == charger.StationId)
+            .Select(s => s.Name)
+            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+
+        return new ChargingSessionDto
+        {
+            Id = session.Id,
+            ReservationId = session.ReservationId,
+            ChargerId = charger.Id,
+            DriverId = session.Reservation.DriverId,
+            StationName = stationName,
+            ChargerIdentifier = charger.Identifier,
+            BayLabel = charger.BayLabel,
+            ChargerPowerKw = charger.PowerKw,
+            TariffPerKwh = charger.Tariff,
+            StartTime = session.StartTime,
+            EndTime = session.EndTime,
+            AutoCalculatedKwh = session.AutoCalculatedKwh,
+            StaffOverriddenKwh = session.StaffOverriddenKwh,
+            FinalEnergyDeliveredKwh = session.FinalEnergyDeliveredKwh,
+            StaffUserId = session.StaffUserId,
+            Status = session.Status
+        };
+    }
 }

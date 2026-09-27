@@ -28,7 +28,7 @@ public interface ISessionService
         Guid id,
         CancellationToken cancellationToken = default);
 
-    Task<ChargingSessionDto> StopAsync(
+    Task<SessionCompletionDto> StopAsync(
         Guid requesterId,
         string requesterRole,
         Guid id,

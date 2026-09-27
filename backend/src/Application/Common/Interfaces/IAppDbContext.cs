@@ -32,5 +32,7 @@ public interface IAppDbContext
 
     DbSet<ChargingSession> ChargingSessions { get; }
 
+    DbSet<PaymentInvoice> PaymentInvoices { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

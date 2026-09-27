@@ -7,6 +7,7 @@ using Application.Authentication.Models;
 using Application.ReservationPlanning.DTOs;
 using Application.ReservationPlanning.Models;
 using Application.Sessions.Models;
+using Application.Payments.Models;
 using Domain.Entities;
 using Domain.Enums;
 using Infrastructure.Persistence;
@@ -56,6 +57,20 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
             ReservationId = reservation!.Id
         });
         Assert.Equal(HttpStatusCode.BadRequest, duplicate.StatusCode);
+
+        using var stopForm = new MultipartFormDataContent();
+        stopForm.Add(new StringContent("8.25"), "staffOverriddenKwh");
+        var stop = await client.PutAsync($"/api/sessions/{session.Id}/stop", stopForm);
+        stop.EnsureSuccessStatusCode();
+        var completion = await stop.Content.ReadFromJsonAsync<SessionCompletionDto>(JsonOptions);
+
+        var cashPayment = await client.PostAsJsonAsync(
+            $"/api/payments/invoices/{completion!.Invoice.Id}/settle",
+            new SettleInvoiceRequest { PaymentMethod = PaymentMethod.Cash });
+        cashPayment.EnsureSuccessStatusCode();
+        var cashInvoice = await cashPayment.Content.ReadFromJsonAsync<PaymentInvoiceDto>(JsonOptions);
+        Assert.Equal(PaymentMethod.Cash, cashInvoice!.PaymentMethod);
+        Assert.Equal(InvoiceStatus.Paid, cashInvoice.Status);
     }
 
     [Fact]
@@ -77,6 +92,8 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
                 DateTimeOffset.UtcNow.AddHours(1),
                 0m);
             reservation.ConfirmWithQrCode(qrCode);
+            var driver = await db.Users.SingleAsync(u => u.Id == owner.User.Id);
+            driver.CreditBalance(1000m);
             db.Reservations.Add(reservation);
             await db.SaveChangesAsync();
             reservationId = reservation.Id;
@@ -96,11 +113,27 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         form.Add(new StringContent("12.50"), "staffOverriddenKwh");
         var stop = await client.PutAsync($"/api/sessions/{session.Id}/stop", form);
         stop.EnsureSuccessStatusCode();
-        var completed = await stop.Content.ReadFromJsonAsync<ChargingSessionDto>(JsonOptions);
+        var completed = await stop.Content.ReadFromJsonAsync<SessionCompletionDto>(JsonOptions);
 
-        Assert.Equal(12.50m, completed!.FinalEnergyDeliveredKwh);
-        Assert.NotNull(completed.EndTime);
-        Assert.NotEqual(ChargingSessionStatus.InProgress, completed.Status);
+        Assert.Equal(12.50m, completed!.Session.FinalEnergyDeliveredKwh);
+        Assert.NotNull(completed.Session.EndTime);
+        Assert.NotEqual(ChargingSessionStatus.InProgress, completed.Session.Status);
+        Assert.Equal(500m, completed.Invoice.GrossAmount);
+        Assert.Equal(500m, completed.Invoice.NetAmountDue);
+        Assert.Equal(InvoiceStatus.Pending, completed.Invoice.Status);
+
+        var settlement = await client.PostAsJsonAsync(
+            $"/api/payments/invoices/{completed.Invoice.Id}/settle",
+            new SettleInvoiceRequest { PaymentMethod = PaymentMethod.Wallet });
+        settlement.EnsureSuccessStatusCode();
+        var paidInvoice = await settlement.Content.ReadFromJsonAsync<PaymentInvoiceDto>(JsonOptions);
+        Assert.Equal(InvoiceStatus.Paid, paidInvoice!.Status);
+        Assert.Equal(PaymentMethod.Wallet, paidInvoice.PaymentMethod);
+
+        var duplicateSettlement = await client.PostAsJsonAsync(
+            $"/api/payments/invoices/{completed.Invoice.Id}/settle",
+            new SettleInvoiceRequest { PaymentMethod = PaymentMethod.Wallet });
+        Assert.Equal(HttpStatusCode.BadRequest, duplicateSettlement.StatusCode);
 
         using var verificationScope = _factory.Services.CreateScope();
         var verificationDb = verificationScope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -109,6 +142,12 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
             await verificationDb.Chargers
                 .Where(c => c.Id == chargerId)
                 .Select(c => c.Status)
+                .SingleAsync());
+        Assert.Equal(
+            500m,
+            await verificationDb.Users
+                .Where(u => u.Id == owner.User.Id)
+                .Select(u => u.WalletBalance)
                 .SingleAsync());
     }
 

@@ -7,7 +7,7 @@ import '../../../core/api/reservation_api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import 'qr_scanner_screen.dart';
 import 'walk_in_booking_screen.dart';
-import 'kwh_override_screen.dart';
+import '../../payments/screens/session_checkout_screen.dart';
 import '../../stations/screens/station_management_screen.dart';
 import '../../../screens/auth/sign_in_screen.dart';
 
@@ -91,11 +91,13 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
           IndexedStack(
             index: _currentTab,
             children: [
-              _StaffHomeTab(onTabSelected: (idx) => setState(() => _currentTab = idx)),
+              _StaffHomeTab(
+                onTabSelected: (idx) => setState(() => _currentTab = idx),
+              ),
               const QrScannerScreen(),
               const StationManagementScreen(),
               const WalkInBookingScreen(),
-              const KwhOverrideScreen(),
+              const SessionCheckoutScreen(),
             ],
           ),
           // ── App Bar ──────────────────────────────────────────────
@@ -253,8 +255,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
                         onTap: () => setState(() => _currentTab = 3),
                       ),
                       _NavItem(
-                        icon: Icons.electric_meter_rounded,
-                        label: 'kWh Override',
+                        icon: Icons.receipt_long_rounded,
+                        label: 'Checkout',
                         isActive: _currentTab == 4,
                         onTap: () => setState(() => _currentTab = 4),
                       ),
@@ -298,7 +300,11 @@ class _StaffHomeTab extends StatelessWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              const Icon(Icons.shield_rounded, size: 14, color: AppColors.primary),
+              const Icon(
+                Icons.shield_rounded,
+                size: 14,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 4),
               Text(
                 '${user?.role ?? 'Staff'} • On-Site POS Mode',
@@ -315,7 +321,8 @@ class _StaffHomeTab extends StatelessWidget {
           _ActionCard(
             icon: Icons.qr_code_scanner_rounded,
             title: 'Scan QR Check-in',
-            subtitle: 'Scan a driver\'s reservation QR code to start their session.',
+            subtitle:
+                'Scan a driver\'s reservation QR code to start their session.',
             onTap: () => onTabSelected(1),
           ),
           const SizedBox(height: 16),
@@ -327,9 +334,10 @@ class _StaffHomeTab extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _ActionCard(
-            icon: Icons.electric_meter_rounded,
-            title: 'kWh Override',
-            subtitle: 'Manually correct system-calculated energy consumption.',
+            icon: Icons.receipt_long_rounded,
+            title: 'Session checkout',
+            subtitle:
+                'Complete charging, verify energy, invoice, and take payment.',
             onTap: () => onTabSelected(4),
           ),
         ],
@@ -369,7 +377,11 @@ class _ActionCard extends StatelessWidget {
                   color: AppColors.primaryContainer,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 26, color: AppColors.onPrimaryContainer),
+                child: Icon(
+                  icon,
+                  size: 26,
+                  color: AppColors.onPrimaryContainer,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -396,7 +408,10 @@ class _ActionCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.onSurfaceVariant),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.onSurfaceVariant,
+              ),
             ],
           ),
         ),

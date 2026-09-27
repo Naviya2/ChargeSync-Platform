@@ -42,6 +42,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<ChargingSession> ChargingSessions => Set<ChargingSession>();
 
+    public DbSet<PaymentInvoice> PaymentInvoices => Set<PaymentInvoice>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
