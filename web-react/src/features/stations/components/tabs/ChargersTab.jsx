@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../../../lib/cn'
+import { CONNECTOR_TYPES, CONNECTOR_TYPE_OPTIONS } from '../../../../lib/constants'
 import { useAddCharger, useUpdateCharger, useDeleteCharger } from '../../hooks/useStations'
 
 const STATE_STYLE = {
@@ -34,7 +35,7 @@ export default function ChargersTab({ stationId, chargers }) {
   const [form, setForm] = useState({
     identifier: '',
     bayLabel: '',
-    connectorTypeId: 'CCS2',
+    connectorTypeId: CONNECTOR_TYPES.CCS2,
     maxOutputKw: 150,
     pricePerKwh: 0.50,
     status: 'available'
@@ -84,7 +85,7 @@ export default function ChargersTab({ stationId, chargers }) {
     setForm({
       identifier: ch.identifier || '',
       bayLabel: ch.bayLabel || '',
-      connectorTypeId: ch.connectorTypeId || ch.connector || 'CCS2',
+      connectorTypeId: ch.connectorTypeId || ch.connector || CONNECTOR_TYPES.CCS2,
       maxOutputKw: ch.powerKw || ch.maxOutputKw || ch.power || 150,
       pricePerKwh: ch.tariff || ch.pricePerKwh || 0.50,
       status: ch.status || 'available'
@@ -125,7 +126,7 @@ export default function ChargersTab({ stationId, chargers }) {
               setForm({
                 identifier: '',
                 bayLabel: '',
-                connectorTypeId: 'CCS2',
+                connectorTypeId: CONNECTOR_TYPES.CCS2,
                 maxOutputKw: 150,
                 pricePerKwh: 0.50,
                 status: 'available'
@@ -174,10 +175,11 @@ export default function ChargersTab({ stationId, chargers }) {
                 value={form.connectorTypeId}
                 onChange={(e) => setForm({ ...form, connectorTypeId: e.target.value })}
               >
-                <option value="CCS2">CCS2</option>
-                <option value="CCS1">CCS1</option>
-                <option value="CHADEMO">CHAdeMO</option>
-                <option value="TYPE2">Type 2</option>
+                {CONNECTOR_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="flex flex-col gap-space-2xs">
