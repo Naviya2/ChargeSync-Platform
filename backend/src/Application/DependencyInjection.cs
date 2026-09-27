@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<Application.ReservationPlanning.IReservationService, Application.ReservationPlanning.ReservationService>();
         services.AddScoped<Application.ReservationPlanning.IWaitlistService, Application.ReservationPlanning.WaitlistService>();
         services.AddScoped<Application.Sessions.ISessionService, Application.Sessions.SessionService>();
+        services.AddScoped<Application.Payments.IPaymentService, Application.Payments.PaymentService>();
 
         return services;
     }

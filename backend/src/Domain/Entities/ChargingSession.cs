@@ -29,6 +29,7 @@ public sealed class ChargingSession : AuditableEntity
 
     public Reservation Reservation { get; private set; } = null!;
     public User? StaffUser { get; private set; }
+    public PaymentInvoice? Invoice { get; private set; }
 
     public static ChargingSession Start(
         Reservation reservation,

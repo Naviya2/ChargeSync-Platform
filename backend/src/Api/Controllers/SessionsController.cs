@@ -54,7 +54,7 @@ public sealed class SessionsController : ControllerBase
     [HttpPut("{id:guid}/stop")]
     [Authorize(Policy = AuthorizationPolicies.StationOwner)]
     [Consumes("multipart/form-data")]
-    public async Task<ActionResult<ChargingSessionDto>> Stop(
+    public async Task<ActionResult<SessionCompletionDto>> Stop(
         Guid id,
         [FromForm] StopSessionForm request,
         CancellationToken cancellationToken)
