@@ -3,6 +3,7 @@ using Application.Common.Exceptions;
 using Application.Common.Interfaces;
 using Application.ReservationPlanning.DTOs;
 using Application.ReservationPlanning.Models;
+using Application.Sessions;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Users;
@@ -15,11 +16,13 @@ public sealed class ReservationService : IReservationService
 {
     private readonly IAppDbContext _db;
     private readonly IWaitlistService _waitlist;
+    private readonly ISessionService _sessions;
 
-    public ReservationService(IAppDbContext db, IWaitlistService waitlist)
+    public ReservationService(IAppDbContext db, IWaitlistService waitlist, ISessionService sessions)
     {
         _db = db;
         _waitlist = waitlist;
+        _sessions = sessions;
     }
 
     // ── Create advance reservation ────────────────────────────────────────────
@@ -89,6 +92,7 @@ public sealed class ReservationService : IReservationService
 
         _db.Reservations.Add(reservation);
         RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.CheckedIn, actorId: staffUserId);
+        await _sessions.StartForCheckedInReservationAsync(reservation, staffUserId, cancellationToken);
 
         await _db.SaveChangesAsync(cancellationToken);
         return ToDto(reservation);
@@ -233,6 +237,7 @@ public sealed class ReservationService : IReservationService
         reservation.CheckIn();
 
         RecordHistory(reservation, oldStatus, ReservationStatus.CheckedIn, actorId: staffUserId);
+        await _sessions.StartForCheckedInReservationAsync(reservation, staffUserId, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
         return ToDto(reservation);
     }
@@ -351,7 +356,7 @@ public sealed class ReservationService : IReservationService
         Guid? actorId)
     {
         var entry = ReservationStatusHistory.Record(
-            reservation.Id,
+            reservation,
             oldStatus,
             newStatus,
             actorId);

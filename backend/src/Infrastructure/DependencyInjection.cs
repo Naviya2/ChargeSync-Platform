@@ -31,6 +31,8 @@ public static class DependencyInjection
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.Configure<SeedOptions>(configuration.GetSection(SeedOptions.SectionName));
+        services.Configure<Infrastructure.Payments.PayHereOptions>(configuration.GetSection("PayHere"));
+        services.AddScoped<Application.Wallets.IWalletGateway, Infrastructure.Payments.PayHereGateway>();
 
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
@@ -64,6 +66,11 @@ public static class DependencyInjection
         if (db.Database.IsRelational())
         {
             await db.Database.MigrateAsync();
+        }
+        else
+        {
+            // Include model-seeded catalogs in the in-memory API test host too.
+            await db.Database.EnsureCreatedAsync();
         }
 
         await scope.ServiceProvider.GetRequiredService<DbSeeder>().SeedAsync();

@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/api/station_models.dart';
 import '../../../core/theme/app_colors.dart';
-import '../station_data.dart';
 
 class StationBottomSheet extends StatefulWidget {
-  final int activeStationId;
+  final List<StationDto> stations;
+  final int activeStationIndex;
   final ValueChanged<int> onStationSelected;
 
   const StationBottomSheet({
     super.key,
-    required this.activeStationId,
+    required this.stations,
+    required this.activeStationIndex,
     required this.onStationSelected,
   });
 
@@ -33,7 +35,7 @@ class _StationBottomSheetState extends State<StationBottomSheet>
   @override
   void didUpdateWidget(StationBottomSheet old) {
     super.didUpdateWidget(old);
-    if (old.activeStationId != widget.activeStationId) {
+    if (old.activeStationIndex != widget.activeStationIndex) {
       _glowController.forward(from: 0).then((_) => _glowController.reverse());
     }
   }
@@ -44,8 +46,7 @@ class _StationBottomSheetState extends State<StationBottomSheet>
     super.dispose();
   }
 
-  StationData get _active =>
-      kStations.firstWhere((s) => s.id == widget.activeStationId);
+  StationDto get _active => widget.stations[widget.activeStationIndex];
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +107,7 @@ class _StationBottomSheetState extends State<StationBottomSheet>
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            '14 Found',
+                            '${widget.stations.length} Found',
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -165,15 +166,15 @@ class _StationBottomSheetState extends State<StationBottomSheet>
                 const SizedBox(height: 10),
 
                 // Other stations
-                ...kStations.where((s) => s.id != widget.activeStationId).map(
-                      (station) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _StationListCard(
-                          station: station,
-                          onTap: () => widget.onStationSelected(station.id),
-                        ),
-                      ),
-                    ),
+                ...widget.stations.asMap().entries
+                    .where((e) => e.key != widget.activeStationIndex)
+                    .map((e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _StationListCard(
+                            station: e.value,
+                            onTap: () => widget.onStationSelected(e.key),
+                          ),
+                        )),
               ],
             ),
           ),
@@ -186,7 +187,7 @@ class _StationBottomSheetState extends State<StationBottomSheet>
 
 // ─── Active Station Detail Card ───────────────────────────────────────────────
 class _ActiveStationCard extends StatelessWidget {
-  final StationData station;
+  final StationDto station;
   const _ActiveStationCard({required this.station});
 
   @override
@@ -220,7 +221,7 @@ class _ActiveStationCard extends StatelessWidget {
                       children: [
                         Flexible(
                           child: Text(
-                            station.title,
+                            station.name,
                             style: GoogleFonts.inter(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -259,11 +260,11 @@ class _ActiveStationCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          // Compatibility badge
+          // Status badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: station.isCompatible
+              color: station.status == StationStatus.approved
                   ? AppColors.primaryContainer.withValues(alpha: 0.15)
                   : AppColors.tertiaryContainer.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
@@ -272,22 +273,24 @@ class _ActiveStationCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  station.isCompatible
+                  station.status == StationStatus.approved
                       ? Icons.verified_user_rounded
                       : Icons.info_rounded,
                   size: 15,
-                  color: station.isCompatible
+                  color: station.status == StationStatus.approved
                       ? AppColors.primary
                       : AppColors.tertiary,
                 ),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    station.compatibility,
+                    station.status == StationStatus.approved
+                        ? 'Approved Station'
+                        : 'Status: ${station.status.name}',
                     style: GoogleFonts.inter(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: station.isCompatible
+                      color: station.status == StationStatus.approved
                           ? AppColors.primary
                           : AppColors.tertiary,
                     ),
@@ -307,10 +310,10 @@ class _ActiveStationCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                _MetricCell(label: 'SPEED', value: station.speed, isHighlight: true),
-                _MetricCell(label: 'DISTANCE', value: station.distance),
-                _MetricCell(label: 'TIME', value: station.time),
-                _MetricCell(label: 'PRICE', value: station.price),
+                _MetricCell(label: 'SPEED', value: station.speedLabel, isHighlight: true),
+                _MetricCell(label: 'CHARGERS', value: '${station.totalStalls}'),
+                _MetricCell(label: 'FREE', value: '${station.freeStalls}'),
+                _MetricCell(label: 'PRICE', value: station.priceLabel),
               ],
             ),
           ),
@@ -325,8 +328,10 @@ class _ActiveStationCard extends StatelessWidget {
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
+                    decoration: BoxDecoration(
+                      color: station.freeStalls > 0
+                          ? AppColors.primary
+                          : AppColors.error,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -342,7 +347,7 @@ class _ActiveStationCard extends StatelessWidget {
                 ],
               ),
               Text(
-                'No wait time expected',
+                station.freeStalls > 0 ? 'Stalls available' : 'All stalls occupied',
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   color: AppColors.onSurfaceVariant,
@@ -395,7 +400,7 @@ class _ActiveStationCard extends StatelessWidget {
               const SizedBox(width: 8),
               Wrap(
                 spacing: 6,
-                children: station.connectors
+                children: station.connectorNames
                     .map((c) => Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
@@ -536,21 +541,19 @@ class _MetricCell extends StatelessWidget {
 
 // ─── Secondary station list card ─────────────────────────────────────────────
 class _StationListCard extends StatelessWidget {
-  final StationData station;
+  final StationDto station;
   final VoidCallback onTap;
 
   const _StationListCard({required this.station, required this.onTap});
 
   Color get _speedColor {
-    if (station.isCompatible && !station.requiresAdapter) {
-      final kw = int.tryParse(station.speed.replaceAll(' kW', '')) ?? 0;
-      return kw >= 150 ? AppColors.primary : AppColors.secondary;
-    }
+    final kw = station.maxPowerKw;
+    if (kw >= 150) return AppColors.primary;
+    if (kw >= 50)  return AppColors.secondary;
     return AppColors.onSurface;
   }
 
   Color get _dotColor {
-    if (station.requiresAdapter) return AppColors.surfaceVariant;
     return station.freeStalls > 0 ? AppColors.primary : AppColors.error;
   }
 
@@ -579,7 +582,7 @@ class _StationListCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              station.title,
+                              station.name,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -588,33 +591,27 @@ class _StationListCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          if (station.badge.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 5, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: station.requiresAdapter
-                                    ? AppColors.surfaceVariant
-                                    : station.badge == 'Eco Solar'
-                                        ? AppColors.tertiaryContainer
-                                            .withValues(alpha: 0.2)
-                                        : AppColors.primaryContainer
-                                            .withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                station.badge.toUpperCase(),
-                                style: GoogleFonts.inter(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: station.requiresAdapter
-                                      ? AppColors.onSurfaceVariant
-                                      : station.badge == 'Eco Solar'
-                                          ? AppColors.tertiary
-                                          : AppColors.primary,
-                                ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: station.status == StationStatus.approved
+                                  ? AppColors.primaryContainer
+                                      .withValues(alpha: 0.2)
+                                  : AppColors.surfaceVariant,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              station.status.name.toUpperCase(),
+                              style: GoogleFonts.inter(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: station.status == StationStatus.approved
+                                    ? AppColors.primary
+                                    : AppColors.onSurfaceVariant,
                               ),
                             ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 2),
@@ -628,12 +625,12 @@ class _StationListCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Right: speed + dist/time
+                // Right: speed + stalls
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      station.speed,
+                      station.speedLabel,
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -641,7 +638,7 @@ class _StationListCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${station.distance} • ${station.time}',
+                      '${station.freeStalls}/${station.totalStalls} free',
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         color: AppColors.onSurfaceVariant,
@@ -674,7 +671,7 @@ class _StationListCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      ' • ${station.price}/kWh',
+                      ' • ${station.priceLabel}/kWh',
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AppColors.onSurfaceVariant,
@@ -689,19 +686,13 @@ class _StationListCard extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: station.requiresAdapter
-                            ? AppColors.outline
-                            : (station.badge == 'Eco Solar'
-                                ? AppColors.secondary
-                                : AppColors.primary),
+                        color: AppColors.primary,
                       ),
                     ),
-                    Icon(
+                    const Icon(
                       Icons.chevron_right_rounded,
                       size: 14,
-                      color: station.requiresAdapter
-                          ? AppColors.outline
-                          : AppColors.primary,
+                      color: AppColors.primary,
                     ),
                   ],
                 ),

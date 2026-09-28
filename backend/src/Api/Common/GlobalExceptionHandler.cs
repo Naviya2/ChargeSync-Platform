@@ -31,9 +31,13 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ValidationException => (StatusCodes.Status400BadRequest, "One or more validation errors occurred."),
             NotFoundException => (StatusCodes.Status404NotFound, "Not found"),
             EmailAlreadyInUseException => (StatusCodes.Status409Conflict, "Conflict"),
+            PaymentConflictException => (StatusCodes.Status409Conflict, "Payment conflict"),
+            MembershipConflictException => (StatusCodes.Status409Conflict, "Membership conflict"),
             InvalidCredentialsException => (StatusCodes.Status401Unauthorized, "Authentication failed"),
             InvalidRefreshTokenException => (StatusCodes.Status401Unauthorized, "Authentication failed"),
             ForbiddenAccessException => (StatusCodes.Status403Forbidden, "Forbidden"),
+            ArgumentException => (StatusCodes.Status400BadRequest, "Invalid request"),
+            InvalidOperationException => (StatusCodes.Status400BadRequest, "Invalid operation"),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
         };
 

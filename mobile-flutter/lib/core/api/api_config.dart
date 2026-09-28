@@ -29,6 +29,14 @@ class ApiConfig {
   static String get logout   => '$baseUrl/api/auth/logout';
   static String get me       => '$baseUrl/api/auth/me';
 
+  // ── Station endpoints ────────────────────────────────────────────────────────
+  /// GET /api/stations  — owner's own stations (requires StationOwner or Admin role)
+  static String get myStations     => '$baseUrl/api/stations';
+  /// GET /api/stations/all  — all approved stations (public)
+  static String get allStations    => '$baseUrl/api/stations/all';
+  /// GET /api/stations/search?...  — search/nearby (public)
+  static String get searchStations => '$baseUrl/api/stations/search';
+
   // ── Token storage keys ──────────────────────────────────────────────────────
   static const String kAccessToken  = 'cs_access_token';
   static const String kRefreshToken = 'cs_refresh_token';
