@@ -27,7 +27,8 @@ class VehicleCompatibilityAgent:
     - Autonomously discovers and ranks alternative compatible stations if target station is unsuitable.
     """
 
-    def __init__(self):
+    def __init__(self, llm=None):
+        self.llm = llm
         self.charge_delta_percent = settings.DEFAULT_CHARGE_DELTA_PERCENT
 
     @staticmethod

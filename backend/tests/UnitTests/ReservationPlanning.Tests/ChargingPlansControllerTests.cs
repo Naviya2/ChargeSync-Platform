@@ -2,6 +2,7 @@ using AgentClient;
 using AgentClient.Models;
 using Api.Authentication;
 using Api.Controllers;
+using Application.Common.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;

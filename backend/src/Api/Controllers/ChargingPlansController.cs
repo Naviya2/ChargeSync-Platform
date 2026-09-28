@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Api.Authentication;
+using Application.Common.Interfaces;
 
 namespace Api.Controllers;
 

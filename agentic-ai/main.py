@@ -32,9 +32,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-vehicle_agent = VehicleCompatibilityAgent()
-station_agent = StationAnalysisAgent()
-planning_agent = PlanningCoordinatorAgent()
+from fastapi import Request, Depends
+from llm_provider import get_gemini_provider
+
+def get_vehicle_agent(request: Request):
+    api_key = request.headers.get("x-gemini-api-key")
+    model = request.headers.get("x-gemini-model")
+    llm = get_gemini_provider(api_key, model) if api_key else None
+    return VehicleCompatibilityAgent(llm)
+
+def get_station_agent(request: Request):
+    api_key = request.headers.get("x-gemini-api-key")
+    model = request.headers.get("x-gemini-model")
+    llm = get_gemini_provider(api_key, model) if api_key else None
+    return StationAnalysisAgent(llm)
+
+def get_planning_agent(request: Request):
+    api_key = request.headers.get("x-gemini-api-key")
+    model = request.headers.get("x-gemini-model")
+    llm = get_gemini_provider(api_key, model) if api_key else None
+    return PlanningCoordinatorAgent(llm)
 
 @app.get("/health", tags=["Health"])
 async def health_check():
@@ -46,48 +63,33 @@ async def health_check():
     }
 
 @app.post("/api/compatibility/evaluate", response_model=CompatibilityResponse, tags=["Compatibility Agent"])
-async def evaluate_compatibility(request: CompatibilityRequest):
-    """
-    Evaluates hardware compatibility between a vehicle and a target charging station.
-    Calculates effective power, estimated 10%->80% charge duration, compatibility score (0-100),
-    detects power bottlenecks, and returns alternative station suggestions if needed.
-    """
+async def evaluate_compatibility(request: CompatibilityRequest, agent: VehicleCompatibilityAgent = Depends(get_vehicle_agent)):
     try:
-        response = vehicle_agent.evaluate(request)
+        response = agent.evaluate(request)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Compatibility evaluation failed: {str(e)}")
 
 @app.post("/api/compatibility/batch-evaluate", response_model=BatchCompatibilityResponse, tags=["Compatibility Agent"])
-async def batch_evaluate_compatibility(request: BatchCompatibilityRequest):
-    """
-    Evaluates a vehicle against a list of candidate stations, scoring and ranking each for smart map discovery.
-    """
+async def batch_evaluate_compatibility(request: BatchCompatibilityRequest, agent: VehicleCompatibilityAgent = Depends(get_vehicle_agent)):
     try:
-        response = vehicle_agent.batch_evaluate(request)
+        response = agent.batch_evaluate(request)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch evaluation failed: {str(e)}")
 
 @app.post("/api/station-analysis/evaluate", response_model=StationAnalysisResponse, tags=["Station Analysis Agent"])
-async def analyze_station(request: StationAnalysisRequest):
-    """
-    Evaluates live charger status, pricing history, and utilization to supply candidate station scores.
-    """
+async def analyze_station(request: StationAnalysisRequest, agent: StationAnalysisAgent = Depends(get_station_agent)):
     try:
-        response = station_agent.analyze(request)
+        response = agent.analyze(request)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Station analysis failed: {str(e)}")
 
 @app.post("/api/charging-plan/generate", response_model=PlanningResponse, tags=["Planning Agent"])
-async def generate_charging_plan(request: PlanningRequest):
-    """
-    Synthesizes driver objectives, coordinates Compatibility and Station agents, and generates ranked itineraries.
-    Must handle records with null DriverId without failing availability models.
-    """
+async def generate_charging_plan(request: PlanningRequest, agent: PlanningCoordinatorAgent = Depends(get_planning_agent)):
     try:
-        response = planning_agent.generate_plan(request)
+        response = agent.generate_plan(request)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Charging plan generation failed: {str(e)}")

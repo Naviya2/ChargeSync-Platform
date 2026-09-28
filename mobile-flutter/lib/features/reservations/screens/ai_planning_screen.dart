@@ -281,14 +281,29 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                           width: double.infinity,
                           child: OutlinedButton(
                             onPressed: () {
-                              // We could pass the station ID and let them book
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CreateReservationScreen(
+                                    station: Station(
+                                      id: itinerary.stationId,
+                                      name: itinerary.stationName,
+                                      address: 'Selected from AI Plan',
+                                      latitude: 0.0,
+                                      longitude: 0.0,
+                                      ownerId: '',
+                                      status: 'Active',
+                                    ),
+                                  ),
+                                ),
+                              );
                             },
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primary,
                               side: const BorderSide(color: AppColors.primary),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
-                            child: const Text('Select this itinerary'),
+                            child: const Text('Select this Plan'),
                           ),
                         ),
                       ],
