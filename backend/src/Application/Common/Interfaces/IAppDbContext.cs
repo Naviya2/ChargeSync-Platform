@@ -10,6 +10,8 @@ namespace Application.Common.Interfaces;
 /// </summary>
 public interface IAppDbContext
 {
+    DbSet<Domain.Support.SupportTicket> SupportTickets { get; }
+    DbSet<Domain.Support.SupportMessage> SupportMessages { get; }
     DbSet<Domain.Wallets.WalletTopUp> WalletTopUps { get; }
     DbSet<Domain.Memberships.MembershipPlan> MembershipPlans { get; }
     DbSet<Domain.Memberships.Subscription> Subscriptions { get; }
