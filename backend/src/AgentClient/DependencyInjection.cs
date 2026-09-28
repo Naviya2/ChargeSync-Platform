@@ -15,6 +15,12 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(5);
         });
 
+        services.AddHttpClient<IPlanningAgentClient, PlanningAgentClient>(client =>
+        {
+            client.BaseAddress = new Uri(agentBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+
         return services;
     }
 }

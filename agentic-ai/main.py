@@ -11,13 +11,16 @@ from models.station_analysis_models import (
     StationAnalysisRequest,
     StationAnalysisResponse,
 )
+from models.planning_models import PlanningRequest, PlanningResponse
+
 from agents.compatibility_agent import VehicleCompatibilityAgent
 from agents.station_analysis_agent import StationAnalysisAgent
+from agents.planning_coordinator_agent import PlanningCoordinatorAgent
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Intelligent Agentic AI service for ChargeSync EV Platform (Function 1: Vehicle & AI Compatibility Discovery)",
+    description="Intelligent Agentic AI service for ChargeSync EV Platform",
 )
 
 # Enable CORS for local testing and ASP.NET Core backend communication
@@ -29,8 +32,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-agent = VehicleCompatibilityAgent()
+vehicle_agent = VehicleCompatibilityAgent()
 station_agent = StationAnalysisAgent()
+planning_agent = PlanningCoordinatorAgent()
 
 @app.get("/health", tags=["Health"])
 async def health_check():
@@ -38,7 +42,7 @@ async def health_check():
         "status": "online",
         "service": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        "function": "Function 1: Vehicle & AI Compatibility Discovery",
+        "description": "Agentic AI Subsystem (Compatibility, Station Analysis, and Planning Coordinators)",
     }
 
 @app.post("/api/compatibility/evaluate", response_model=CompatibilityResponse, tags=["Compatibility Agent"])
@@ -49,7 +53,7 @@ async def evaluate_compatibility(request: CompatibilityRequest):
     detects power bottlenecks, and returns alternative station suggestions if needed.
     """
     try:
-        response = agent.evaluate(request)
+        response = vehicle_agent.evaluate(request)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Compatibility evaluation failed: {str(e)}")
@@ -60,7 +64,7 @@ async def batch_evaluate_compatibility(request: BatchCompatibilityRequest):
     Evaluates a vehicle against a list of candidate stations, scoring and ranking each for smart map discovery.
     """
     try:
-        response = agent.batch_evaluate(request)
+        response = vehicle_agent.batch_evaluate(request)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch evaluation failed: {str(e)}")
@@ -75,6 +79,18 @@ async def analyze_station(request: StationAnalysisRequest):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Station analysis failed: {str(e)}")
+
+@app.post("/api/charging-plan/generate", response_model=PlanningResponse, tags=["Planning Agent"])
+async def generate_charging_plan(request: PlanningRequest):
+    """
+    Synthesizes driver objectives, coordinates Compatibility and Station agents, and generates ranked itineraries.
+    Must handle records with null DriverId without failing availability models.
+    """
+    try:
+        response = planning_agent.generate_plan(request)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Charging plan generation failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
