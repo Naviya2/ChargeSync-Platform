@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/api/vehicle_models.dart';
 import '../../../core/theme/app_colors.dart';
 import '../api/station_service.dart';
 
@@ -17,8 +18,7 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
   final _powerKwController = TextEditingController();
   final _tariffController = TextEditingController();
   
-  // 0 = Type2, 1 = CCS2, 2 = CHAdeMO
-  int _selectedConnector = 0;
+  ConnectorType _selectedConnector = ConnectorType.type2;
   bool _isLoading = false;
 
   Future<void> _submit() async {
@@ -29,10 +29,10 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
     final request = {
       'identifier': _identifierController.text,
       'bayLabel': _bayLabelController.text,
-      'connector': _selectedConnector,
+      'connector': _selectedConnector.toBackendString(),
       'powerKw': double.parse(_powerKwController.text),
       'tariff': double.parse(_tariffController.text),
-      'status': 0 // Available
+      'status': 'Available' // Use string instead of int
     };
 
     try {
@@ -80,14 +80,15 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                 validator: (val) => val == null || val.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<int>(
+              DropdownButtonFormField<ConnectorType>(
                 initialValue: _selectedConnector,
                 decoration: const InputDecoration(labelText: 'Connector Type'),
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text('Type 2')),
-                  DropdownMenuItem(value: 1, child: Text('CCS 2')),
-                  DropdownMenuItem(value: 2, child: Text('CHAdeMO')),
-                ],
+                items: ConnectorType.values.map((type) {
+                  return DropdownMenuItem(
+                    value: type,
+                    child: Text(type.displayName),
+                  );
+                }).toList(),
                 onChanged: (val) {
                   if (val != null) setState(() => _selectedConnector = val);
                 },
