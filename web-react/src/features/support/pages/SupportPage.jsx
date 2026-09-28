@@ -11,7 +11,7 @@ import SupportInboxPage from './SupportInboxPage'
 export default function SupportPage() {
   const role = useAuthStore((s) => s.user?.role)
 
-  if (role === ROLES.SUPPORT_MANAGER) {
+  if (role === ROLES.SUPPORT_MANAGER || role === ROLES.ADMIN) {
     return <SupportInboxPage />
   }
 
