@@ -7,7 +7,12 @@ from models.compatibility_models import (
     BatchCompatibilityRequest,
     BatchCompatibilityResponse,
 )
+from models.station_analysis_models import (
+    StationAnalysisRequest,
+    StationAnalysisResponse,
+)
 from agents.compatibility_agent import VehicleCompatibilityAgent
+from agents.station_analysis_agent import StationAnalysisAgent
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -25,6 +30,7 @@ app.add_middleware(
 )
 
 agent = VehicleCompatibilityAgent()
+station_agent = StationAnalysisAgent()
 
 @app.get("/health", tags=["Health"])
 async def health_check():
@@ -58,6 +64,17 @@ async def batch_evaluate_compatibility(request: BatchCompatibilityRequest):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch evaluation failed: {str(e)}")
+
+@app.post("/api/station-analysis/evaluate", response_model=StationAnalysisResponse, tags=["Station Analysis Agent"])
+async def analyze_station(request: StationAnalysisRequest):
+    """
+    Evaluates live charger status, pricing history, and utilization to supply candidate station scores.
+    """
+    try:
+        response = station_agent.analyze(request)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Station analysis failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
