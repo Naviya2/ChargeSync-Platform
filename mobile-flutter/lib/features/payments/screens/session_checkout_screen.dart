@@ -479,6 +479,11 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
               'LKR ${invoice.grossAmount.toStringAsFixed(2)}',
             ),
             _invoiceRow(
+              'Membership / tier savings',
+              '- LKR ${invoice.discountAmount.toStringAsFixed(2)}',
+              valueColor: AppColors.primary,
+            ),
+            _invoiceRow(
               'Advance credit',
               '- LKR ${invoice.advanceDeducted.toStringAsFixed(2)}',
               valueColor: AppColors.primary,

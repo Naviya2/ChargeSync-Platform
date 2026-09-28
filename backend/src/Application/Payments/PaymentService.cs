@@ -12,7 +12,8 @@ public sealed class PaymentService : IPaymentService
 {
     private readonly IAppDbContext _db;
 
-    public PaymentService(IAppDbContext db) => _db = db;
+    private readonly Application.Memberships.MemberService _members;
+    public PaymentService(IAppDbContext db, Application.Memberships.MemberService members) { _db = db; _members = members; }
 
     public async Task<PaymentInvoice> IssueForSessionAsync(
         ChargingSession session,
@@ -28,7 +29,8 @@ public sealed class PaymentService : IPaymentService
             session,
             reservation.DriverId,
             charger.Tariff,
-            reservation.AdvanceDepositAmount);
+            reservation.AdvanceDepositAmount,
+            reservation.DriverId.HasValue ? await _members.DiscountAsync(reservation.DriverId.Value, cancellationToken) : 0);
 
         var excessAdvance = reservation.AdvanceDepositAmount - invoice.AdvanceDeducted;
         if (excessAdvance > 0 && reservation.DriverId.HasValue)
@@ -40,6 +42,7 @@ public sealed class PaymentService : IPaymentService
         }
 
         _db.PaymentInvoices.Add(invoice);
+        await _members.AwardAsync(invoice, cancellationToken);
         return invoice;
     }
 
@@ -55,6 +58,8 @@ public sealed class PaymentService : IPaymentService
             ?? throw new NotFoundException(nameof(PaymentInvoice), invoiceId);
 
         await EnsureCanSettleAsync(requesterId, requesterRole, invoice, request.PaymentMethod, cancellationToken);
+        if (invoice.Status != InvoiceStatus.Pending)
+            throw new InvalidOperationException("Only a pending invoice can be settled.");
 
         if (request.PaymentMethod == PaymentMethod.Wallet)
         {
@@ -68,6 +73,7 @@ public sealed class PaymentService : IPaymentService
         }
 
         invoice.Settle(request.PaymentMethod);
+        await _members.AwardAsync(invoice, cancellationToken);
         try
         {
             // EF Core wraps this SaveChanges call in one transaction. The invoice
@@ -76,6 +82,10 @@ public sealed class PaymentService : IPaymentService
             await _db.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException)
+        {
+            throw new PaymentConflictException();
+        }
+        catch (DbUpdateException e) when (e.InnerException?.GetType().GetProperty("SqlState")?.GetValue(e.InnerException)?.ToString() == "23505")
         {
             throw new PaymentConflictException();
         }
@@ -148,6 +158,8 @@ public sealed class PaymentService : IPaymentService
             EnergyDeliveredKwh = invoice.Session.FinalEnergyDeliveredKwh ?? 0,
             TariffPerKwh = invoice.TariffPerKwh,
             GrossAmount = invoice.GrossAmount,
+            DiscountAmount = invoice.DiscountAmount,
+            DiscountPercentage = invoice.DiscountPercentage,
             AdvanceDeducted = invoice.AdvanceDeducted,
             NetAmountDue = invoice.NetAmountDue,
             PaymentMethod = invoice.PaymentMethod,

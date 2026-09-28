@@ -17,6 +17,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             "\"Role\" IN ('Driver', 'StationOwner', 'Admin', 'SupportManager')"));
 
         builder.HasKey(u => u.Id);
+        builder.Property(u => u.MembershipVersion).IsConcurrencyToken();
 
         builder.Property(u => u.Id)
             .HasDefaultValueSql("gen_random_uuid()")

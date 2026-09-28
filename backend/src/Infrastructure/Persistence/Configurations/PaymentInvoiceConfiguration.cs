@@ -23,6 +23,8 @@ public sealed class PaymentInvoiceConfiguration : IEntityTypeConfiguration<Payme
         });
 
         builder.HasKey(i => i.Id);
+        builder.Property(i => i.DiscountAmount).HasPrecision(10, 2);
+        builder.Property(i => i.DiscountPercentage).HasPrecision(5, 2);
         builder.Property(i => i.Id).HasDefaultValueSql("gen_random_uuid()").ValueGeneratedOnAdd();
         builder.Property(i => i.TariffPerKwh).HasPrecision(10, 2).IsRequired();
         builder.Property(i => i.GrossAmount).HasPrecision(10, 2).IsRequired();

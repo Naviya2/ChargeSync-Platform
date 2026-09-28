@@ -21,6 +21,13 @@ public class AppDbContext : DbContext, IAppDbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<Domain.Wallets.WalletTopUp> WalletTopUps => Set<Domain.Wallets.WalletTopUp>();
+    public DbSet<Domain.Memberships.MembershipPlan> MembershipPlans => Set<Domain.Memberships.MembershipPlan>();
+    public DbSet<Domain.Memberships.Subscription> Subscriptions => Set<Domain.Memberships.Subscription>();
+    public DbSet<Domain.Loyalty.LoyaltyAccount> LoyaltyAccounts => Set<Domain.Loyalty.LoyaltyAccount>();
+    public DbSet<Domain.Loyalty.LoyaltyEntry> LoyaltyEntries => Set<Domain.Loyalty.LoyaltyEntry>();
+    public DbSet<Domain.Loyalty.Reward> Rewards => Set<Domain.Loyalty.Reward>();
+    public DbSet<Domain.Loyalty.RewardRedemption> RewardRedemptions => Set<Domain.Loyalty.RewardRedemption>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
