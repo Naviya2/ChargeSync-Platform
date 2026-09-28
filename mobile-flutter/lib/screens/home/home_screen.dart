@@ -8,8 +8,8 @@ import 'widgets/smart_recommendation_card.dart';
 import 'widgets/upcoming_reservation_card.dart';
 import 'widgets/rewards_card.dart';
 import '../../features/station_search/screens/station_map_screen.dart';
-import '../auth/sign_in_screen.dart';
 import '../../features/reservations/screens/reservation_list_screen.dart';
+import '../../features/membership/screens/membership_screen.dart';
 import '../../core/api/auth_service.dart';
 import '../profile/profile_screen.dart';
 import 'notifications_screen.dart';
@@ -56,6 +56,13 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Padding(
                     padding: EdgeInsets.only(top: topPadding + 72, bottom: 80),
                     child: const ReservationListScreen(),
+                  ),
+                )
+              : _currentTab == 3
+              ? Positioned.fill(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: topPadding + 72, bottom: 80),
+                    child: const MembershipScreen(embedded: true),
                   ),
                 )
               : _currentTab == 4

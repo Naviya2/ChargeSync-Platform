@@ -75,6 +75,7 @@ class PaymentInvoice {
     required this.energyDeliveredKwh,
     required this.tariffPerKwh,
     required this.grossAmount,
+    this.discountAmount = 0,
     required this.advanceDeducted,
     required this.netAmountDue,
     required this.paymentMethod,
@@ -92,6 +93,7 @@ class PaymentInvoice {
   final double energyDeliveredKwh;
   final double tariffPerKwh;
   final double grossAmount;
+  final double discountAmount;
   final double advanceDeducted;
   final double netAmountDue;
   final String? paymentMethod;
@@ -114,6 +116,7 @@ class PaymentInvoice {
       energyDeliveredKwh: number('energyDeliveredKwh'),
       tariffPerKwh: number('tariffPerKwh'),
       grossAmount: number('grossAmount'),
+      discountAmount: number('discountAmount'),
       advanceDeducted: number('advanceDeducted'),
       netAmountDue: number('netAmountDue'),
       paymentMethod: json['paymentMethod'] as String?,

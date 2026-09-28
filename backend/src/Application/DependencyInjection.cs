@@ -11,6 +11,8 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<Application.Memberships.MemberService>();
+        services.AddScoped<Application.Wallets.WalletService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IResourceGuard, ResourceGuard>();
 

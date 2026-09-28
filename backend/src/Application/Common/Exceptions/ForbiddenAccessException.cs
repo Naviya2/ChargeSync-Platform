@@ -6,6 +6,7 @@ namespace Application.Common.Exceptions;
 /// </summary>
 public sealed class ForbiddenAccessException : Exception
 {
+    public ForbiddenAccessException(string message) : base(message) { }
     public ForbiddenAccessException()
         : base("You do not have permission to access this resource.")
     {

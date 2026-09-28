@@ -25,6 +25,8 @@ public sealed class PaymentInvoiceDto
     public decimal EnergyDeliveredKwh { get; set; }
     public decimal TariffPerKwh { get; set; }
     public decimal GrossAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public decimal DiscountPercentage { get; set; }
     public decimal AdvanceDeducted { get; set; }
     public decimal NetAmountDue { get; set; }
     public PaymentMethod? PaymentMethod { get; set; }

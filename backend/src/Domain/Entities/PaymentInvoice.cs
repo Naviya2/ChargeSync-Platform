@@ -39,6 +39,8 @@ public sealed class PaymentInvoice : AuditableEntity
     public Guid? DriverId { get; private set; }
     public decimal TariffPerKwh { get; private set; }
     public decimal GrossAmount { get; private set; }
+    public decimal DiscountAmount { get; private set; }
+    public decimal DiscountPercentage { get; private set; }
     public decimal AdvanceDeducted { get; private set; }
     public decimal NetAmountDue { get; private set; }
     public PaymentMethod? PaymentMethod { get; private set; }
@@ -53,7 +55,8 @@ public sealed class PaymentInvoice : AuditableEntity
         ChargingSession session,
         Guid? driverId,
         decimal tariffPerKwh,
-        decimal advanceDeposit)
+        decimal advanceDeposit,
+        decimal discountPercentage = 0)
     {
         ArgumentNullException.ThrowIfNull(session);
         if (session.Status == ChargingSessionStatus.InProgress || session.FinalEnergyDeliveredKwh is null)
@@ -67,10 +70,13 @@ public sealed class PaymentInvoice : AuditableEntity
             session.FinalEnergyDeliveredKwh.Value * tariffPerKwh,
             2,
             MidpointRounding.AwayFromZero);
-        var appliedAdvance = Math.Min(advanceDeposit, gross);
-        var netDue = gross - appliedAdvance;
+        if (discountPercentage is < 0 or > 100) throw new ArgumentException("Invalid discount percentage.");
+        var discount = decimal.Round(gross * discountPercentage / 100m, 2, MidpointRounding.AwayFromZero);
+        var appliedAdvance = Math.Min(advanceDeposit, gross - discount);
+        var netDue = gross - discount - appliedAdvance;
 
-        return new PaymentInvoice(session, driverId, tariffPerKwh, gross, appliedAdvance, netDue);
+        return new PaymentInvoice(session, driverId, tariffPerKwh, gross, appliedAdvance, netDue)
+        { DiscountAmount = discount, DiscountPercentage = discountPercentage };
     }
 
     public void Settle(PaymentMethod paymentMethod, DateTimeOffset? settledAt = null)
