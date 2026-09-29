@@ -48,6 +48,16 @@ public sealed class ReservationService : IReservationService
         if (!chargerExists)
             throw new NotFoundException(nameof(Charger), request.ChargerId);
 
+        // 3.5 Verify the driver doesn't already have an active reservation for this vehicle on this day.
+        var existingReservation = await _db.Reservations
+            .AnyAsync(r => r.DriverId == driverId 
+                        && r.VehicleId == request.VehicleId
+                        && r.StartTime.Date == request.StartTime.Date 
+                        && r.Status != ReservationStatus.Cancelled 
+                        && r.Status != ReservationStatus.Completed, cancellationToken);
+        if (existingReservation)
+            throw new InvalidOperationException("You already have an incomplete reservation for this vehicle today.");
+
         // 4. Create the reservation domain object.
         var reservation = Reservation.Create(
             driverId,
@@ -100,7 +110,7 @@ public sealed class ReservationService : IReservationService
 
     // ── List reservations ─────────────────────────────────────────────────────
 
-    public async Task<PagedResult<ReservationSummaryDto>> GetListAsync(
+    public async Task<PagedResult<ReservationDto>> GetListAsync(
         Guid requesterId,
         string requesterRole,
         ReservationFilter filter,
@@ -133,19 +143,28 @@ public sealed class ReservationService : IReservationService
             .OrderByDescending(r => r.StartTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(r => new ReservationSummaryDto
+            .Select(r => new ReservationDto
             {
                 Id = r.Id,
                 DriverId = r.DriverId,
                 ChargerId = r.ChargerId,
+                VehicleId = r.VehicleId,
                 StartTime = r.StartTime,
                 EndTime = r.EndTime,
+                ReservationQRCode = r.ReservationQRCode,
+                AdvanceDepositAmount = r.AdvanceDepositAmount,
                 Status = r.Status,
-                IsWalkIn = r.DriverId == null
+                CreatedAt = r.CreatedAt,
+                StationName = r.Charger.Station.Name,
+                StationLatitude = r.Charger.Station.Latitude,
+                StationLongitude = r.Charger.Station.Longitude,
+                ChargerName = r.Charger.Identifier,
+                VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
+                DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
             })
             .ToListAsync(cancellationToken);
 
-        return new PagedResult<ReservationSummaryDto>
+        return new PagedResult<ReservationDto>
         {
             Items = items,
             TotalCount = totalCount,
@@ -163,6 +182,9 @@ public sealed class ReservationService : IReservationService
         CancellationToken cancellationToken = default)
     {
         var reservation = await _db.Reservations
+            .Include(r => r.Charger)
+                .ThenInclude(c => c.Station)
+            .Include(r => r.Vehicle)
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
@@ -418,6 +440,12 @@ public sealed class ReservationService : IReservationService
         ReservationQRCode = r.ReservationQRCode,
         AdvanceDepositAmount = r.AdvanceDepositAmount,
         Status = r.Status,
-        CreatedAt = r.CreatedAt
+        CreatedAt = r.CreatedAt,
+        StationName = r.Charger?.Station?.Name ?? string.Empty,
+        StationLatitude = r.Charger?.Station?.Latitude ?? 0,
+        StationLongitude = r.Charger?.Station?.Longitude ?? 0,
+        ChargerName = r.Charger?.Identifier ?? string.Empty,
+        VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
+        DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
     };
 }

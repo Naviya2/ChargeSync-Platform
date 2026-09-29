@@ -30,7 +30,7 @@ public sealed class ChargeSyncApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:AccessTokenMinutes", "60");
         builder.UseSetting("Seed:AdminEmail", AdminEmail);
         builder.UseSetting("Seed:AdminPassword", AdminPassword);
-        builder.UseSetting("Gemini:ApiKey", "mock-integration-test-key-gemini");
+        builder.UseSetting("Groq:ApiKey", "mock-integration-test-key-groq");
 
         builder.ConfigureServices(services =>
         {

@@ -106,6 +106,28 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
   Future<void> _makeReservation() async {
     if (_selectedCharger == null || _selectedSlot == null || _selectedVehicle == null) return;
 
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirm Reservation'),
+          content: const Text('An advance fee of 500 LKR will be deducted from your wallet. Do you want to proceed?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
     setState(() => _isSubmitting = true);
 
     try {
@@ -114,20 +136,53 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
         vehicleId: _selectedVehicle!.id,
         startTime: _selectedSlot!.startTime,
         endTime: _selectedSlot!.endTime,
-        advanceDepositAmount: 5.0, // Default deposit
+        advanceDepositAmount: 500.0,
       );
 
       await ReservationApiClient.instance.createReservation(request);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reservation created successfully!')),
+      
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Success'),
+          content: const Text('Reservation placed successfully!'),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
+
+      if (!mounted) return;
       Navigator.pop(context); // Go back to map
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to make reservation: $e')),
+      
+      String errorMessage = e.toString();
+      if (errorMessage.contains('incomplete reservation')) {
+        errorMessage = 'You already have an incomplete reservation for this vehicle today. Please complete or cancel it first.';
+      } else {
+        // Strip out the "ApiException" prefix if it exists to make it cleaner
+        errorMessage = errorMessage.replaceAll(RegExp(r'ApiException.*:\s*'), '');
+      }
+
+      // Show failure message directly in a popup as well for better visibility
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Reservation Failed'),
+          content: Text(errorMessage),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
     } finally {
       if (mounted) {

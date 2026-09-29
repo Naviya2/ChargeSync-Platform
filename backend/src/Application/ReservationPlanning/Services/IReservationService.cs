@@ -34,7 +34,7 @@ public interface IReservationService
     /// Drivers see only their own reservations.
     /// Staff and Admins can see all reservations, optionally filtered.
     /// </summary>
-    Task<PagedResult<ReservationSummaryDto>> GetListAsync(
+    Task<PagedResult<ReservationDto>> GetListAsync(
         Guid requesterId,
         string requesterRole,
         ReservationFilter filter,

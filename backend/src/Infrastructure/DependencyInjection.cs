@@ -43,7 +43,7 @@ public static class DependencyInjection
         // Register OpenRouteService HTTP Client
         services.AddHttpClient<Application.ReservationPlanning.Services.IRoutingService, Infrastructure.ExternalServices.OpenRouteService>(client =>
         {
-            client.BaseAddress = new Uri("https://api.heigit.org/");
+            client.BaseAddress = new Uri("https://api.openrouteservice.org/");
             var apiKey = configuration["OpenRouteService:ApiKey"];
             if (!string.IsNullOrEmpty(apiKey))
             {

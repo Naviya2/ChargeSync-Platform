@@ -8,6 +8,11 @@ class ReservationDto {
   final String? reservationQRCode;
   final double advanceDepositAmount;
   final String status;
+  final String stationName;
+  final double stationLatitude;
+  final double stationLongitude;
+  final String chargerName;
+  final String vehicleName;
 
   ReservationDto({
     required this.id,
@@ -19,6 +24,11 @@ class ReservationDto {
     this.reservationQRCode,
     required this.advanceDepositAmount,
     required this.status,
+    this.stationName = '',
+    this.stationLatitude = 0.0,
+    this.stationLongitude = 0.0,
+    this.chargerName = '',
+    this.vehicleName = '',
   });
 
   factory ReservationDto.fromJson(Map<String, dynamic> json) {
@@ -32,6 +42,11 @@ class ReservationDto {
       reservationQRCode: json['reservationQRCode'],
       advanceDepositAmount: (json['advanceDepositAmount'] as num).toDouble(),
       status: json['status'],
+      stationName: json['stationName'] ?? '',
+      stationLatitude: (json['stationLatitude'] as num?)?.toDouble() ?? 0.0,
+      stationLongitude: (json['stationLongitude'] as num?)?.toDouble() ?? 0.0,
+      chargerName: json['chargerName'] ?? '',
+      vehicleName: json['vehicleName'] ?? '',
     );
   }
 }

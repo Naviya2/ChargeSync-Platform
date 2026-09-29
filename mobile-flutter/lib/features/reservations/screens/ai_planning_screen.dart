@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../core/api/planning_api_client.dart';
 import '../../../core/api/planning_models.dart';
+import '../../../core/api/station_api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import 'create_reservation_screen.dart';
-import '../../stations/models/station.dart'; // We may need a dummy station conversion or to pass only IDs
+import '../../stations/models/station.dart';
+import '../../stations/models/charger.dart';
 
 class AiPlanningScreen extends StatefulWidget {
   const AiPlanningScreen({super.key});
@@ -55,6 +58,28 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
     });
 
     try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      double? currentLat;
+      double? currentLon;
+
+      if (serviceEnabled && (permission == LocationPermission.whileInUse || permission == LocationPermission.always)) {
+        try {
+          Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.high,
+            timeLimit: const Duration(seconds: 5),
+          );
+          currentLat = position.latitude;
+          currentLon = position.longitude;
+        } catch (_) {
+          // ignore timeout or failure to get location
+        }
+      }
+
       final deadline = DateTime(
         _selectedDate.year,
         _selectedDate.month,
@@ -67,6 +92,8 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
         deadline: deadline,
         maxDistanceKm: _maxDistance,
         pricePreference: _pricePreference,
+        currentLat: currentLat,
+        currentLon: currentLon,
       );
 
       final res = await PlanningApiClient.instance.generateChargingPlan(req);
@@ -280,23 +307,50 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => CreateReservationScreen(
-                                    station: Station(
-                                      id: itinerary.stationId,
-                                      name: itinerary.stationName,
-                                      address: 'Selected from AI Plan',
-                                      latitude: 0.0,
-                                      longitude: 0.0,
-                                      ownerId: '',
-                                      status: 'Active',
+                            onPressed: () async {
+                              try {
+                                // Fetch real station to avoid mock data
+                                final allStations = await StationApiClient.instance.getAllStations();
+                                final realStation = allStations.firstWhere(
+                                  (s) => s.id == itinerary.stationId,
+                                  orElse: () => throw Exception('Station not found in active directory'),
+                                );
+
+                                if (mounted) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => CreateReservationScreen(
+                                        station: Station(
+                                          id: realStation.id,
+                                          name: realStation.name,
+                                          address: realStation.address,
+                                          latitude: realStation.latitude,
+                                          longitude: realStation.longitude,
+                                          ownerId: realStation.ownerId,
+                                          status: realStation.status.name,
+                                          chargers: realStation.chargers.map<Charger>((c) => Charger(
+                                            id: c.id,
+                                            stationId: c.stationId,
+                                            identifier: c.identifier,
+                                            connector: c.connector.name,
+                                            powerKw: c.powerKw,
+                                            tariff: c.tariff,
+                                            status: c.status.name,
+                                            bayLabel: c.bayLabel,
+                                          )).toList(),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              );
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Failed to load station details: $e')),
+                                  );
+                                }
+                              }
                             },
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primary,

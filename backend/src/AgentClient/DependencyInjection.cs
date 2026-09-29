@@ -8,20 +8,20 @@ public static class DependencyInjection
     public static IServiceCollection AddAgentClient(this IServiceCollection services, IConfiguration configuration)
     {
         var agentBaseUrl = configuration["AgenticAi:BaseUrl"] ?? "http://localhost:8000";
-        var geminiApiKey = configuration["Gemini:ApiKey"];
-        var geminiModel = configuration["Gemini:Model"];
+        var groqApiKey = configuration["Groq:ApiKey"];
+        var groqModel = configuration["Groq:Model"];
 
         services.AddHttpClient<IVehicleAgentClient, VehicleAgentClient>(client =>
         {
             client.BaseAddress = new Uri(agentBaseUrl);
             client.Timeout = TimeSpan.FromSeconds(120);
-            if (!string.IsNullOrWhiteSpace(geminiApiKey))
+            if (!string.IsNullOrWhiteSpace(groqApiKey))
             {
-                client.DefaultRequestHeaders.Add("X-Gemini-Api-Key", geminiApiKey);
+                client.DefaultRequestHeaders.Add("X-Groq-Api-Key", groqApiKey);
             }
-            if (!string.IsNullOrWhiteSpace(geminiModel))
+            if (!string.IsNullOrWhiteSpace(groqModel))
             {
-                client.DefaultRequestHeaders.Add("X-Gemini-Model", geminiModel);
+                client.DefaultRequestHeaders.Add("X-Groq-Model", groqModel);
             }
         });
 
@@ -29,13 +29,13 @@ public static class DependencyInjection
         {
             client.BaseAddress = new Uri(agentBaseUrl);
             client.Timeout = TimeSpan.FromSeconds(120);
-            if (!string.IsNullOrWhiteSpace(geminiApiKey))
+            if (!string.IsNullOrWhiteSpace(groqApiKey))
             {
-                client.DefaultRequestHeaders.Add("X-Gemini-Api-Key", geminiApiKey);
+                client.DefaultRequestHeaders.Add("X-Groq-Api-Key", groqApiKey);
             }
-            if (!string.IsNullOrWhiteSpace(geminiModel))
+            if (!string.IsNullOrWhiteSpace(groqModel))
             {
-                client.DefaultRequestHeaders.Add("X-Gemini-Model", geminiModel);
+                client.DefaultRequestHeaders.Add("X-Groq-Model", groqModel);
             }
         });
 

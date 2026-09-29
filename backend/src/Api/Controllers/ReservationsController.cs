@@ -49,7 +49,7 @@ public sealed class ReservationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResult<ReservationSummaryDto>>> GetList([FromQuery] ReservationFilter filter, CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<ReservationDto>>> GetList([FromQuery] ReservationFilter filter, CancellationToken cancellationToken)
     {
         var result = await _reservationService.GetListAsync(RequesterId, RequesterRole, filter, cancellationToken);
         return Ok(result);

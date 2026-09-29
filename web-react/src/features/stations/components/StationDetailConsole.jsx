@@ -7,6 +7,7 @@ import MaintenanceTab from './tabs/MaintenanceTab'
 import { cn } from '../../../lib/cn'
 import { useUpdateStation } from '../hooks/useStations'
 import MapLocationPicker from '../../../components/shared/MapLocationPicker'
+import useDialogStore from '../../../store/dialogStore'
 
 export default function StationDetailConsole({ station }) {
   const [activeTab, setActiveTab] = useState('chargers')
@@ -55,7 +56,7 @@ export default function StationDetailConsole({ station }) {
         onSuccess: () => {
           setShowEdit(false)
         },
-        onError: () => alert('Failed to update station info')
+        onError: () => useDialogStore.getState().alert({ title: 'Error', message: 'Failed to update station info.', variant: 'danger' })
       }
     )
   }

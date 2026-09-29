@@ -2,6 +2,7 @@ import { useAuthStore } from '../../../store/authStore'
 import { ROLES } from '../../../lib/constants'
 import PlaceholderPage from '../../../components/shared/PlaceholderPage'
 import AdminDashboardPage from './AdminDashboardPage'
+import StationOwnerDashboardPage from './StationOwnerDashboardPage'
 
 /**
  * Role-aware dashboard entry point at /dashboard.
@@ -13,6 +14,10 @@ export default function DashboardPage() {
 
   if (role === ROLES.ADMIN) {
     return <AdminDashboardPage />
+  }
+
+  if (role === ROLES.STATION_OWNER) {
+    return <StationOwnerDashboardPage />
   }
 
   return (

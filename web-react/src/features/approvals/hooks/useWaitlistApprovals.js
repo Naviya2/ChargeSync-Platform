@@ -4,26 +4,8 @@ export function useWaitlistApprovals() {
   return useQuery({
     queryKey: ['waitlist-approvals'],
     queryFn: async () => {
-      // Simulated delay for fetching AI agent override requests
-      await new Promise(resolve => setTimeout(resolve, 800))
-      return [
-        {
-          id: 'w-1',
-          driverName: 'Emergency Medical Vehicle',
-          stationName: 'Downtown FastHub',
-          requestedTime: new Date(Date.now() + 1000 * 60 * 30).toISOString(),
-          reason: 'Urgent charging needed. High priority waitlist override triggered by AI Agent.',
-          status: 'PendingApproval'
-        },
-        {
-          id: 'w-2',
-          driverName: 'John Doe (VIP Tier)',
-          stationName: 'Suburban Eco Charge',
-          requestedTime: new Date(Date.now() + 1000 * 60 * 60).toISOString(),
-          reason: 'Loyalty status override attempt for peak hour slot.',
-          status: 'PendingApproval'
-        }
-      ]
+      // Return real data here once API is ready, for now empty as no real requests exist for this user.
+      return []
     }
   })
 }

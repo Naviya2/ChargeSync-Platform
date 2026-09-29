@@ -50,6 +50,8 @@ public class ChargingPlansControllerTests
             "Balanced",
             "v-123",
             null,
+            null,
+            null,
             null
         );
 
@@ -85,6 +87,8 @@ public class ChargingPlansControllerTests
             20,
             "Balanced",
             "v-123",
+            null,
+            null,
             null,
             null
         );

@@ -6,6 +6,8 @@ import '../../../core/api/planning_api_client.dart';
 import '../../../core/api/planning_models.dart';
 import '../../../features/reservations/screens/ai_planning_screen.dart';
 
+import 'package:geolocator/geolocator.dart';
+
 class SmartRecommendationCard extends StatefulWidget {
   const SmartRecommendationCard({super.key});
 
@@ -14,21 +16,53 @@ class SmartRecommendationCard extends StatefulWidget {
 }
 
 class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
+  static Future<PlanningResponse>? _cachedPlanFuture;
   Future<PlanningResponse>? _planFuture;
 
   @override
   void initState() {
     super.initState();
-    _fetchRecommendation();
+    if (_cachedPlanFuture != null) {
+      _planFuture = _cachedPlanFuture;
+    } else {
+      _fetchRecommendation();
+    }
   }
 
   void _fetchRecommendation() {
+    setState(() {
+      _planFuture = _fetchAndCachePlan();
+      _cachedPlanFuture = _planFuture;
+    });
+  }
+
+  Future<PlanningResponse> _fetchAndCachePlan() async {
+    double? currentLat;
+    double? currentLon;
+    
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (serviceEnabled) {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        try {
+          Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low,
+            timeLimit: const Duration(seconds: 3),
+          );
+          currentLat = position.latitude;
+          currentLon = position.longitude;
+        } catch (_) {}
+      }
+    }
+
     final req = PlanningRequest(
       deadline: DateTime.now().add(const Duration(hours: 2)),
       maxDistanceKm: 15.0,
       pricePreference: 'Balanced',
+      currentLat: currentLat,
+      currentLon: currentLon,
     );
-    _planFuture = PlanningApiClient.instance.generateChargingPlan(req);
+    return PlanningApiClient.instance.generateChargingPlan(req);
   }
 
   @override
@@ -103,26 +137,37 @@ class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
                           ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.tertiaryContainer.withValues(
-                            alpha: 0.20,
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.refresh, size: 16, color: AppColors.tertiary),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: _fetchRecommendation,
                           ),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'Score: ${topItinerary.matchScore}/100',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.tertiary,
-                            letterSpacing: 0.06,
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.tertiaryContainer.withValues(
+                                alpha: 0.20,
+                              ),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              'Score: ${topItinerary.matchScore}/100',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.tertiary,
+                                letterSpacing: 0.06,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),

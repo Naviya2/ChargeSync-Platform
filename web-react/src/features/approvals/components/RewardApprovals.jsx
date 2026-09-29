@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '../../../api/client'
+import useDialogStore from '../../../store/dialogStore'
 
 export default function RewardApprovals() {
   const cache = useQueryClient()
@@ -11,7 +12,7 @@ export default function RewardApprovals() {
   return (
     <section className="rounded-xl bg-surface-container-lowest p-space-xl text-on-surface">
       <h2 className="text-xl font-bold mb-2">Loyalty reward approvals</h2>
-      <p className="text-on-surface-variant mb-4">Approval credits the driver’s wallet. Rejection releases the reserved points.</p>
+      <p className="text-on-surface-variant mb-4">Approval credits the driver's wallet. Rejection releases the reserved points.</p>
       {query.isPending && <p>Loading reward requests…</p>}
       {(query.error || review.error) && <p role="alert" className="text-red-500">{(review.error || query.error)?.response?.data?.detail || 'Unable to process rewards. Refresh and try again.'}</p>}
       <button onClick={() => query.refetch()} disabled={review.isPending} className="text-primary mb-4">Refresh rewards</button>
@@ -23,8 +24,14 @@ export default function RewardApprovals() {
           <p>{row.pointsRedeemed.toLocaleString()} points • LKR {row.walletCredit.toFixed(2)} wallet credit</p>
           <p className="text-sm">Requested {new Date(row.createdAt).toLocaleString()}</p>
           {row.status === 'Pending' && <div className="flex gap-4 mt-3">
-            <button className="text-primary" disabled={review.isPending} onClick={() => { if (window.confirm(`Credit LKR ${row.walletCredit.toFixed(2)} to this driver?`)) review.mutate({ id: row.id, approve: true }) }}>Approve credit</button>
-            <button className="text-red-500" disabled={review.isPending} onClick={() => { if (window.confirm('Reject this request and return its points?')) review.mutate({ id: row.id, approve: false }) }}>Reject & return points</button>
+            <button className="text-primary" disabled={review.isPending} onClick={async () => {
+              const ok = await useDialogStore.getState().confirm({ title: 'Approve Reward', message: `Credit LKR ${row.walletCredit.toFixed(2)} to this driver's wallet?`, confirmLabel: 'Approve', variant: 'success' })
+              if (ok) review.mutate({ id: row.id, approve: true })
+            }}>Approve credit</button>
+            <button className="text-red-500" disabled={review.isPending} onClick={async () => {
+              const ok = await useDialogStore.getState().confirm({ title: 'Reject Reward', message: 'Reject this request and return its points?', confirmLabel: 'Reject', variant: 'danger' })
+              if (ok) review.mutate({ id: row.id, approve: false })
+            }}>Reject & return points</button>
           </div>}
         </article>)}
       </div>
