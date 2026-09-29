@@ -5,6 +5,7 @@ using Api.Common;
 using Application;
 using Infrastructure;
 using Infrastructure.Authentication;
+using AgentClient;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
@@ -31,6 +32,12 @@ if (string.IsNullOrWhiteSpace(jwtSettings.Key))
 {
     throw new InvalidOperationException(
         "Jwt:Key is not configured. Set it with: dotnet user-secrets set \"Jwt:Key\" \"<32+ char secret>\" --project src/Api");
+}
+
+var geminiApiKey = builder.Configuration["Gemini:ApiKey"];
+if (string.IsNullOrWhiteSpace(geminiApiKey))
+{
+    throw new InvalidOperationException("GEMINI_API_KEY is not configured.");
 }
 
 builder.Services

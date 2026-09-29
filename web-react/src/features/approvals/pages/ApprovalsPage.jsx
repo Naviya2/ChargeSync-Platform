@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { usePendingStations, useApproveStation, useRejectStation } from '../hooks/useAdminStations'
 import { cn } from '../../../lib/cn'
+import RewardApprovals from '../components/RewardApprovals'
+import WaitlistApprovals from '../components/WaitlistApprovals'
 
 export default function ApprovalsPage() {
   const { data: pendingStations = [], isLoading } = usePendingStations()
@@ -41,6 +43,8 @@ export default function ApprovalsPage() {
 
   return (
     <div className="flex w-full flex-col gap-space-xl p-space-xl">
+      <WaitlistApprovals />
+      <RewardApprovals />
       <div className="flex flex-col gap-space-2xs">
         <h1 className="font-headline-lg text-headline-lg text-on-surface">Station Approvals</h1>
         <p className="font-body-md text-body-md text-on-surface-variant">

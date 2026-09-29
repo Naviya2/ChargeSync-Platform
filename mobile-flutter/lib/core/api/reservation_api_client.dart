@@ -72,8 +72,8 @@ class ReservationApiClient {
   Future<ReservationDto> createWalkIn(String chargerId, DateTime startTime, DateTime endTime) async {
     final result = await _post('/api/reservations/walk-in', {
       'chargerId': chargerId,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
+      'startTime': startTime.toUtc().toIso8601String(),
+      'endTime': endTime.toUtc().toIso8601String(),
     });
     return ReservationDto.fromJson(result);
   }

@@ -2,27 +2,52 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/api/vehicle_service.dart';
+import '../../../core/api/planning_api_client.dart';
+import '../../../core/api/planning_models.dart';
+import '../../../features/reservations/screens/ai_planning_screen.dart';
 
-class SmartRecommendationCard extends StatelessWidget {
+class SmartRecommendationCard extends StatefulWidget {
   const SmartRecommendationCard({super.key});
 
   @override
+  State<SmartRecommendationCard> createState() => _SmartRecommendationCardState();
+}
+
+class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
+  Future<PlanningResponse>? _planFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecommendation();
+  }
+
+  void _fetchRecommendation() {
+    final req = PlanningRequest(
+      deadline: DateTime.now().add(const Duration(hours: 2)),
+      maxDistanceKm: 15.0,
+      pricePreference: 'Balanced',
+    );
+    _planFuture = PlanningApiClient.instance.generateChargingPlan(req);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: VehicleService.instance,
-      builder: (context, _) {
-        final vehicle = VehicleService.instance.activeVehicle;
-        
-        // Dynamic calculations based on active vehicle (hub has 150 kW DC Fast Charger, $0.22/kWh base)
-        final batteryCapacity = vehicle?.batteryCapacityKwh ?? 75.0;
-        final maxChargeRate = vehicle?.maxChargeRateKw ?? 150.0;
-        final effectiveRate = maxChargeRate > 150.0 ? 150.0 : (maxChargeRate <= 0 ? 50.0 : maxChargeRate);
-        
-        // 10% to 80% SOC delta (70% capacity)
-        final energyNeededKwh = batteryCapacity * 0.70;
-        final durationMins = ((energyNeededKwh / effectiveRate) * 60).round().clamp(10, 180);
-        final estCost = (energyNeededKwh * 0.22) + 2.50; // tariff + connection fee
+    return FutureBuilder<PlanningResponse>(
+      future: _planFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.rankedItineraries.isEmpty) {
+          return const SizedBox.shrink(); // Hide if error or no data
+        }
+
+        final response = snapshot.data!;
+        final topItinerary = response.rankedItineraries.first;
+        final durationMins = topItinerary.estimatedChargeDurationMins;
+        final estCost = topItinerary.costEstimate;
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -68,7 +93,7 @@ class SmartRecommendationCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Smart Recommendation',
+                            'AI Smart Recommendation',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -90,7 +115,7 @@ class SmartRecommendationCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          'Save \$4.20',
+                          'Score: ${topItinerary.matchScore}/100',
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -103,7 +128,7 @@ class SmartRecommendationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Electrify Metro Hub',
+                    topItinerary.stationName,
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -122,8 +147,8 @@ class SmartRecommendationCard extends StatelessWidget {
                     child: Row(
                       children: [
                         const _MetricItem(
-                          label: 'Distance',
-                          value: '1.2 mi',
+                          label: 'Arrival',
+                          value: 'Soon',
                           valueColor: AppColors.onSurface,
                         ),
                         const SizedBox(width: 8),
@@ -135,7 +160,7 @@ class SmartRecommendationCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         _MetricItem(
                           label: 'Est. Cost',
-                          value: '\$${estCost.toStringAsFixed(2)}',
+                          value: 'LKR ${estCost.toStringAsFixed(2)}',
                           valueColor: AppColors.primary,
                         ),
                       ],
@@ -143,7 +168,7 @@ class SmartRecommendationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Rates increase in 45 mins. Charging ${vehicle?.make != null ? "${vehicle!.make} ${vehicle.model}" : "now"} saves \$4.20 and comfortably secures your evening commute.',
+                    response.agentReasoning,
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -157,7 +182,12 @@ class SmartRecommendationCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AiPlanningScreen()),
+                        );
+                      },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -167,7 +197,7 @@ class SmartRecommendationCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'View Optimal Plan',
+                              'Open AI Route Planner',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,

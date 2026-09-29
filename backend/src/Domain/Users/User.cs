@@ -49,6 +49,8 @@ public class User : AuditableEntity
 
     /// <summary>Prepaid wallet balance used for advance reservation deposits.</summary>
     public decimal WalletBalance { get; private set; }
+    public Guid MembershipVersion { get; private set; }
+    public void TouchMembership() => MembershipVersion = Guid.NewGuid();
 
     /// <summary>
     /// Creates a new active user. <paramref name="passwordHash"/> must already be hashed.

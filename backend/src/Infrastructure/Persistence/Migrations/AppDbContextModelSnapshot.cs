@@ -76,6 +76,75 @@ namespace Infrastructure.Persistence.Migrations
                     b.ToTable("Chargers");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ChargingSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal?>("AutoCalculatedKwh")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTimeOffset?>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("FinalEnergyDeliveredKwh")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
+
+                    b.Property<byte[]>("MeterPhoto")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("MeterPhotoContentType")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ReservationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("StaffOverriddenKwh")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
+
+                    b.Property<Guid?>("StaffUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("InProgress");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReservationId")
+                        .IsUnique();
+
+                    b.HasIndex("StaffUserId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ChargingSessions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ChargingSessions_Status", "\"Status\" IN ('InProgress', 'Completed', 'DiscrepancyFlagged')");
+                        });
+                });
+
             modelBuilder.Entity("Domain.Entities.MaintenanceWindow", b =>
                 {
                     b.Property<Guid>("Id")
@@ -152,6 +221,90 @@ namespace Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("OperatingHours");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PaymentInvoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal>("AdvanceDeducted")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<decimal>("DiscountPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<Guid?>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("GrossAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTimeOffset>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("NetAmountDue")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("SettledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Pending");
+
+                    b.Property<decimal>("TariffPerKwh")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("SessionId")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("PaymentInvoices", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PaymentInvoices_Amounts", "\"GrossAmount\" >= 0 AND \"AdvanceDeducted\" >= 0 AND \"NetAmountDue\" >= 0");
+
+                            t.HasCheckConstraint("CK_PaymentInvoices_PaymentMethod", "\"PaymentMethod\" IS NULL OR \"PaymentMethod\" IN ('Wallet', 'Cash')");
+
+                            t.HasCheckConstraint("CK_PaymentInvoices_Status", "\"Status\" IN ('Pending', 'Paid', 'Refunded')");
+                        });
                 });
 
             modelBuilder.Entity("Domain.Entities.Reservation", b =>
@@ -422,6 +575,415 @@ namespace Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Domain.Loyalty.LoyaltyAccount", b =>
+                {
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("LifetimePoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PointsBalance")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.HasKey("DriverId");
+
+                    b.ToTable("LoyaltyAccounts", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Loyalty_Balances", "\"PointsBalance\" >= 0 AND \"LifetimePoints\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Loyalty.LoyaltyEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid?>("RedemptionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId")
+                        .IsUnique();
+
+                    b.HasIndex("RedemptionId");
+
+                    b.HasIndex("DriverId", "CreatedAt");
+
+                    b.ToTable("LoyaltyEntries", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Loyalty.Reward", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PointsCost")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("WalletCredit")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Rewards", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Rewards_Values", "\"PointsCost\" > 0 AND \"WalletCredit\" > 0");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000001"),
+                            IsActive = true,
+                            Name = "LKR 100 wallet credit",
+                            PointsCost = 100,
+                            RequiresApproval = false,
+                            WalletCredit = 100m
+                        },
+                        new
+                        {
+                            Id = new Guid("20000000-0000-0000-0000-000000000002"),
+                            IsActive = true,
+                            Name = "LKR 6,000 wallet credit",
+                            PointsCost = 6000,
+                            RequiresApproval = true,
+                            WalletCredit = 6000m
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Loyalty.RewardRedemption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("PointsRedeemed")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RewardDescription")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RewardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("WalletCredit")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewedBy");
+
+                    b.HasIndex("RewardId");
+
+                    b.HasIndex("DriverId", "RequestId")
+                        .IsUnique();
+
+                    b.ToTable("RewardRedemptions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Redemptions_Status", "\"Status\" IN ('Pending', 'Approved', 'Rejected')");
+
+                            t.HasCheckConstraint("CK_Redemptions_Values", "\"PointsRedeemed\" > 0 AND \"WalletCredit\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Memberships.MembershipPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("DiscountPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("MonthlyFee")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MembershipPlans", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_MembershipPlans_Amounts", "\"MonthlyFee\" >= 0 AND \"DiscountPercentage\" BETWEEN 0 AND 100");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000001"),
+                            Description = "30 days of 5% charging savings",
+                            DiscountPercentage = 5m,
+                            IsActive = true,
+                            MonthlyFee = 500m,
+                            Name = "Plus"
+                        },
+                        new
+                        {
+                            Id = new Guid("10000000-0000-0000-0000-000000000002"),
+                            Description = "30 days of 10% charging savings",
+                            DiscountPercentage = 10m,
+                            IsActive = true,
+                            MonthlyFee = 1000m,
+                            Name = "Premium"
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Memberships.Subscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CreditApplied")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<decimal>("DiscountPercentage")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("FeePaid")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("PlanId");
+
+                    b.ToTable("Subscriptions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Subscriptions_Amounts", "\"FeePaid\" >= 0 AND \"CreditApplied\" >= 0 AND \"DiscountPercentage\" BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("CK_Subscriptions_Dates", "\"EndDate\" > \"StartDate\"");
+
+                            t.HasCheckConstraint("CK_Subscriptions_Status", "\"Status\" IN ('Active', 'Cancelled', 'Expired', 'Changed')");
+                        });
+                });
+
+            modelBuilder.Entity("Domain.Support.SupportMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AuthorRole")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("TicketId", "CreatedAt");
+
+                    b.ToTable("SupportMessages", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Support.SupportTicket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AssignedToUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("InvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("RefundReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RefundReviewedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RefundStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<decimal?>("RequestedRefundAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedToUserId");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("InvoiceId")
+                        .IsUnique()
+                        .HasFilter("\"InvoiceId\" IS NOT NULL AND \"RefundStatus\" IN ('PendingReview','Approved')");
+
+                    b.HasIndex("RefundReviewedBy");
+
+                    b.HasIndex("Status", "Priority", "UpdatedAt");
+
+                    b.ToTable("SupportTickets", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SupportTickets_Category", "\"Category\" IN ('Charging','Reservation','Payment','Refund','Technical','Membership','Other')");
+
+                            t.HasCheckConstraint("CK_SupportTickets_Priority", "\"Priority\" IN ('Low','Medium','High','Urgent')");
+
+                            t.HasCheckConstraint("CK_SupportTickets_RefundAmount", "\"RequestedRefundAmount\" IS NULL OR \"RequestedRefundAmount\" > 0");
+
+                            t.HasCheckConstraint("CK_SupportTickets_RefundStatus", "\"RefundStatus\" IN ('NotRequested','PendingReview','Approved','Rejected','Cancelled')");
+
+                            t.HasCheckConstraint("CK_SupportTickets_Status", "\"Status\" IN ('Open','InProgress','Resolved','Closed','Withdrawn')");
+                        });
+                });
+
             modelBuilder.Entity("Domain.Users.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -501,6 +1063,10 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
+                    b.Property<Guid>("MembershipVersion")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PasswordHash")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -520,6 +1086,7 @@ namespace Infrastructure.Persistence.Migrations
                         .HasDefaultValueSql("now()");
 
                     b.Property<decimal>("WalletBalance")
+                        .IsConcurrencyToken()
                         .ValueGeneratedOnAdd()
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)")
@@ -536,6 +1103,80 @@ namespace Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Domain.Wallets.WalletTopUp", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("CreditedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PaymentId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("character varying(25)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Sandbox")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaymentId")
+                        .IsUnique();
+
+                    b.HasIndex("DriverId", "RequestId")
+                        .IsUnique();
+
+                    b.ToTable("WalletTopUps", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_WalletTopUps_Amount", "\"Amount\" >= 100 AND \"Amount\" <= 50000");
+
+                            t.HasCheckConstraint("CK_WalletTopUps_Currency", "\"Currency\" = 'LKR'");
+                        });
+                });
+
             modelBuilder.Entity("Domain.Entities.Charger", b =>
                 {
                     b.HasOne("Domain.Entities.Station", "Station")
@@ -545,6 +1186,24 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Station");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ChargingSession", b =>
+                {
+                    b.HasOne("Domain.Entities.Reservation", "Reservation")
+                        .WithOne("ChargingSession")
+                        .HasForeignKey("Domain.Entities.ChargingSession", "ReservationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Users.User", "StaffUser")
+                        .WithMany()
+                        .HasForeignKey("StaffUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Reservation");
+
+                    b.Navigation("StaffUser");
                 });
 
             modelBuilder.Entity("Domain.Entities.MaintenanceWindow", b =>
@@ -567,6 +1226,24 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Station");
+                });
+
+            modelBuilder.Entity("Domain.Entities.PaymentInvoice", b =>
+                {
+                    b.HasOne("Domain.Users.User", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Entities.ChargingSession", "Session")
+                        .WithOne("Invoice")
+                        .HasForeignKey("Domain.Entities.PaymentInvoice", "SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("Domain.Entities.Reservation", b =>
@@ -630,6 +1307,114 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("Driver");
                 });
 
+            modelBuilder.Entity("Domain.Loyalty.LoyaltyAccount", b =>
+                {
+                    b.HasOne("Domain.Users.User", null)
+                        .WithOne()
+                        .HasForeignKey("Domain.Loyalty.LoyaltyAccount", "DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Loyalty.LoyaltyEntry", b =>
+                {
+                    b.HasOne("Domain.Loyalty.LoyaltyAccount", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.PaymentInvoice", "Invoice")
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Loyalty.RewardRedemption", null)
+                        .WithMany()
+                        .HasForeignKey("RedemptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("Domain.Loyalty.RewardRedemption", b =>
+                {
+                    b.HasOne("Domain.Loyalty.LoyaltyAccount", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Loyalty.Reward", null)
+                        .WithMany()
+                        .HasForeignKey("RewardId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Domain.Memberships.Subscription", b =>
+                {
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Memberships.MembershipPlan", "Plan")
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("Domain.Support.SupportMessage", b =>
+                {
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Support.SupportTicket", "Ticket")
+                        .WithMany("Messages")
+                        .HasForeignKey("TicketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ticket");
+                });
+
+            modelBuilder.Entity("Domain.Support.SupportTicket", b =>
+                {
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssignedToUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.PaymentInvoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("RefundReviewedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("Domain.Users.RefreshToken", b =>
                 {
                     b.HasOne("Domain.Users.User", "User")
@@ -641,13 +1426,29 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Wallets.WalletTopUp", b =>
+                {
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Domain.Entities.Charger", b =>
                 {
                     b.Navigation("MaintenanceWindows");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ChargingSession", b =>
+                {
+                    b.Navigation("Invoice");
+                });
+
             modelBuilder.Entity("Domain.Entities.Reservation", b =>
                 {
+                    b.Navigation("ChargingSession");
+
                     b.Navigation("StatusHistory");
                 });
 
@@ -656,6 +1457,11 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("Chargers");
 
                     b.Navigation("OperatingHours");
+                });
+
+            modelBuilder.Entity("Domain.Support.SupportTicket", b =>
+                {
+                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }
