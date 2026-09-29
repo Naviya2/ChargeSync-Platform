@@ -67,7 +67,7 @@ Full agent contracts, tool lists, and the minimum acceptance workflow are docume
 | Web App | React (functional components, hooks, React Router) |
 | Mobile App | Flutter (Dart) |
 | Agentic AI | Python + LangGraph, served via FastAPI (internal service only) |
-| LLM Provider | Ollama (local, development) → Groq / Gemini free-tier API (deployed) |
+| LLM Provider | Ollama (local, development) → Groq API (deployed) |
 | Auth | JWT + role-based authorization |
 | Third-Party Services | Google Maps API (station discovery), Firebase Cloud Messaging (push notifications) |
 | CI/CD | GitHub Actions |
@@ -116,7 +116,7 @@ API runs at `https://localhost:5001` — Swagger UI at `https://localhost:5001/s
 cd agentic-ai
 python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env        # set LLM_PROVIDER=ollama (default) or groq / gemini + API key
+cp .env.example .env        # set LLM_PROVIDER=ollama (default) or groq + API key
 uvicorn api.main:app --reload --port 8000
 ```
 Ensure Ollama is running locally (`ollama serve`) before starting the service if `LLM_PROVIDER=ollama`.
@@ -154,8 +154,8 @@ Update the API base URL in `lib/services/api_client.dart` (or via `--dart-define
 | `AgentService__BaseUrl` | Backend | Internal URL of the agentic-ai service |
 | `GoogleMaps__ApiKey` | Backend | Google Maps API key |
 | `Firebase__ServerKey` | Backend | FCM server key for push notifications |
-| `LLM_PROVIDER` | agentic-ai | `ollama` \| `groq` \| `gemini` |
-| `GROQ_API_KEY` / `GEMINI_API_KEY` | agentic-ai | API key for the selected hosted provider |
+| `LLM_PROVIDER` | agentic-ai | `ollama` \| `groq` |
+| `GROQ_API_KEY` | agentic-ai | API key for the selected hosted provider |
 | `VITE_API_BASE_URL` | web-react | Base URL of the deployed/local API |
 
 Never commit real `.env` / `appsettings.Development.json` files — only the `.example` templates are tracked in Git.

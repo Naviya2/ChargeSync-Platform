@@ -21,6 +21,12 @@ public sealed class ReservationDto
     public decimal AdvanceDepositAmount { get; set; }
     public ReservationStatus Status { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+
+    public string StationName { get; set; } = string.Empty;
+    public double StationLatitude { get; set; }
+    public double StationLongitude { get; set; }
+    public string ChargerName { get; set; } = string.Empty;
+    public string VehicleName { get; set; } = string.Empty;
 }
 
 /// <summary>Lightweight item used in paginated list responses.</summary>

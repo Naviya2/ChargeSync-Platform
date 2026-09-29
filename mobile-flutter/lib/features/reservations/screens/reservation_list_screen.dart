@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/api/reservation_api_client.dart';
 import '../../../../core/api/reservation_models.dart';
@@ -167,10 +168,11 @@ class _ReservationListScreenState extends State<ReservationListScreen>
                   children: [
                     Expanded(
                       child: Text(
-                        'Charger: ${res.chargerId.substring(0, 8)}…',
+                        res.stationName.isNotEmpty ? res.stationName : 'Station',
                         style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
                           color: AppColors.onSurface,
+                          fontSize: 16,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -193,6 +195,15 @@ class _ReservationListScreenState extends State<ReservationListScreen>
                   ],
                 ),
                 const SizedBox(height: 8),
+                Text(
+                  'Charger: ${res.chargerName.isNotEmpty ? res.chargerName : res.chargerId.substring(0, 8)}',
+                  style: GoogleFonts.inter(color: AppColors.onSurfaceVariant, fontSize: 13),
+                ),
+                Text(
+                  'Vehicle: ${res.vehicleName.isNotEmpty ? res.vehicleName : 'N/A'}',
+                  style: GoogleFonts.inter(color: AppColors.onSurfaceVariant, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     const Icon(Icons.access_time_rounded, size: 14, color: AppColors.onSurfaceVariant),
@@ -205,35 +216,78 @@ class _ReservationListScreenState extends State<ReservationListScreen>
                 ),
                 if (isActive) ...[
                   const SizedBox(height: 12),
-                  if (res.reservationQRCode != null && res.reservationQRCode!.isNotEmpty) ...[
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Column(
-                        children: [
-                          Text('Scan at Station', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppColors.onSurface)),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            color: Colors.white,
-                            child: QrImageView(
-                              data: res.reservationQRCode!,
-                              version: QrVersions.auto,
-                              size: 150.0,
-                            ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (res.reservationQRCode != null && res.reservationQRCode!.isNotEmpty)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Reservation QR Code'),
+                                content: SizedBox(
+                                  width: 200,
+                                  height: 200,
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: QrImageView(
+                                        data: res.reservationQRCode!,
+                                        version: QrVersions.auto,
+                                        size: 200.0,
+                                        backgroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Close'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.qr_code),
+                          label: const Text('View QR'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: AppColors.onPrimary,
                           ),
-                        ],
+                        ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final query = '${res.stationLatitude},${res.stationLongitude}';
+                          final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } else {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch maps')));
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.directions),
+                        label: const Text('Directions'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.secondary,
+                          foregroundColor: AppColors.onSecondary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => _cancelReservation(res.id),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      child: const Text('Cancel Reservation'),
-                    ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () => _cancelReservation(res.id),
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text('Cancel'),
+                      ),
+                    ],
                   ),
                 ],
               ],

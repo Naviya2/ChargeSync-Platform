@@ -33,24 +33,24 @@ app.add_middleware(
 )
 
 from fastapi import Request, Depends
-from llm_provider import get_gemini_provider
+from llm_provider import get_groq_provider
 
 def get_vehicle_agent(request: Request):
-    api_key = request.headers.get("x-gemini-api-key")
-    model = request.headers.get("x-gemini-model")
-    llm = get_gemini_provider(api_key, model) if api_key else None
+    api_key = request.headers.get("x-groq-api-key")
+    model = request.headers.get("x-groq-model")
+    llm = get_groq_provider(api_key, model) if api_key else None
     return VehicleCompatibilityAgent(llm)
 
 def get_station_agent(request: Request):
-    api_key = request.headers.get("x-gemini-api-key")
-    model = request.headers.get("x-gemini-model")
-    llm = get_gemini_provider(api_key, model) if api_key else None
+    api_key = request.headers.get("x-groq-api-key")
+    model = request.headers.get("x-groq-model")
+    llm = get_groq_provider(api_key, model) if api_key else None
     return StationAnalysisAgent(llm)
 
 def get_planning_agent(request: Request):
-    api_key = request.headers.get("x-gemini-api-key")
-    model = request.headers.get("x-gemini-model")
-    llm = get_gemini_provider(api_key, model) if api_key else None
+    api_key = request.headers.get("x-groq-api-key")
+    model = request.headers.get("x-groq-model")
+    llm = get_groq_provider(api_key, model) if api_key else None
     return PlanningCoordinatorAgent(llm)
 
 @app.get("/health", tags=["Health"])
@@ -92,6 +92,8 @@ async def generate_charging_plan(request: PlanningRequest, agent: PlanningCoordi
         response = agent.generate_plan(request)
         return response
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Charging plan generation failed: {str(e)}")
 
 if __name__ == "__main__":

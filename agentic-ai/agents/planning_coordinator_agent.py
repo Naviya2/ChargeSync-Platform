@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime, timedelta
 from models.planning_models import PlanningRequest, PlanningResponse, ItineraryStep
 from models.compatibility_models import VehicleInput, StationInput, ChargerInput
-from models.station_analysis_models import StationAnalysisRequest, StationData, PricingData, ChargerStatus
+from models.station_analysis_models import StationAnalysisRequest, StationDataInput, PricingHistory, ChargerStatus, TimeWindow
 from langchain_core.prompts import PromptTemplate
 from config import settings
 import traceback
@@ -44,10 +44,12 @@ class PlanningCoordinatorAgent:
         
         return StationAnalysisRequest(
             station_id=station.station_id,
-            station_data=StationData(
+            time_window=TimeWindow(start_time=datetime.utcnow(), end_time=datetime.utcnow() + timedelta(hours=1)),
+            station_data=StationDataInput(
+                station_id=station.station_id,
                 historical_utilization_percent=real_utilization,
                 live_chargers=[ChargerStatus(charger_id=c.charger_id, status=c.status) for c in station.chargers],
-                pricing=PricingData(
+                pricing=PricingHistory(
                     current_price_per_kwh=avg_tariff, 
                     average_price_per_kwh=100.0, 
                     competitor_average_price=110.0
@@ -110,6 +112,7 @@ class PlanningCoordinatorAgent:
         Price Preference: {request.price_preference}
         Max Distance: {request.max_distance_km} km
         Is Urgent: {is_urgent}
+        User Current Location: {request.current_lat}, {request.current_lon}
         
         AVAILABLE VETTED STATIONS (Filtered by Compatibility & Congestion Agents):
         {viable_stations_context}

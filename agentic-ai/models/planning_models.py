@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
+from models.compatibility_models import VehicleInput, StationInput
 
 class PlanningRequest(BaseModel):
     driver_id: Optional[str] = Field(None, description="Driver ID (null for walk-in)")
@@ -8,6 +9,10 @@ class PlanningRequest(BaseModel):
     max_distance_km: Optional[float] = Field(None, description="Max search radius in km")
     price_preference: Optional[str] = Field(None, description="Budget or speed priority (e.g., 'Budget', 'Speed')")
     vehicle_id: Optional[str] = Field(None, description="Vehicle ID")
+    current_lat: Optional[float] = Field(None, description="Current latitude of the user")
+    current_lon: Optional[float] = Field(None, description="Current longitude of the user")
+    vehicle: Optional[VehicleInput] = Field(None, description="Vehicle data")
+    candidate_stations: Optional[List[StationInput]] = Field(None, description="Candidate stations")
 
 class ItineraryStep(BaseModel):
     station_id: str = Field(..., description="Target station ID")

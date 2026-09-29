@@ -64,7 +64,7 @@ public sealed class AuthService : IAuthService
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
 
-        if (user is null || !user.IsActive
+        if (user is null || !user.IsActive || user.PasswordHash is null
             || !_passwordHasher.Verify(request.Password, user.PasswordHash))
         {
             throw new InvalidCredentialsException();

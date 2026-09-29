@@ -127,6 +127,10 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       setState(() => _error = 'Enter a valid physical meter reading.');
       return;
     }
+    if (_useOverride && _meterPhoto == null) {
+      setState(() => _error = 'Meter photo is required when using a physical meter reading.');
+      return;
+    }
     setState(() {
       _submitting = true;
       _error = null;
@@ -233,7 +237,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Meter photo (optional)',
+                    _useOverride ? 'Meter photo (required)' : 'Meter photo (optional)',
                     style: _text(14, FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
