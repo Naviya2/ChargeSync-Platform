@@ -159,7 +159,8 @@ public sealed class ReservationService : IReservationService
                 StationLatitude = r.Charger.Station.Latitude,
                 StationLongitude = r.Charger.Station.Longitude,
                 ChargerName = r.Charger.Identifier,
-                VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in"
+                VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
+                DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
             })
             .ToListAsync(cancellationToken);
 
@@ -444,6 +445,7 @@ public sealed class ReservationService : IReservationService
         StationLatitude = r.Charger?.Station?.Latitude ?? 0,
         StationLongitude = r.Charger?.Station?.Longitude ?? 0,
         ChargerName = r.Charger?.Identifier ?? string.Empty,
-        VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in"
+        VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
+        DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
     };
 }
