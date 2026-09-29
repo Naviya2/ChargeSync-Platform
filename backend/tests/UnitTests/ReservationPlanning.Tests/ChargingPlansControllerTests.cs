@@ -15,6 +15,7 @@ public class ChargingPlansControllerTests
     private readonly Mock<IPlanningAgentClient> _mockAgentClient;
     private readonly Mock<ICurrentUser> _mockCurrentUser;
     private readonly Mock<ILogger<ChargingPlansController>> _mockLogger;
+    private readonly Mock<IAppDbContext> _mockDbContext;
     private readonly ChargingPlansController _controller;
 
     public ChargingPlansControllerTests()
@@ -22,11 +23,13 @@ public class ChargingPlansControllerTests
         _mockAgentClient = new Mock<IPlanningAgentClient>();
         _mockCurrentUser = new Mock<ICurrentUser>();
         _mockLogger = new Mock<ILogger<ChargingPlansController>>();
+        _mockDbContext = new Mock<IAppDbContext>();
 
         _controller = new ChargingPlansController(
             _mockAgentClient.Object,
             _mockCurrentUser.Object,
-            _mockLogger.Object);
+            _mockLogger.Object,
+            _mockDbContext.Object);
     }
 
     [Fact]
@@ -41,7 +44,9 @@ public class ChargingPlansControllerTests
             DateTime.UtcNow.AddHours(2),
             20,
             "Balanced",
-            "v-123"
+            "v-123",
+            null,
+            null
         );
 
         var expectedResponse = new PlanningResponse(
@@ -75,12 +80,14 @@ public class ChargingPlansControllerTests
             DateTime.UtcNow.AddHours(2),
             20,
             "Balanced",
-            "v-123"
+            "v-123",
+            null,
+            null
         );
 
         _mockAgentClient
             .Setup(c => c.GenerateChargingPlanAsync(It.IsAny<PlanningRequest>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((PlanningResponse)null);
+            .ReturnsAsync((PlanningResponse?)null);
 
         // Act
         var result = await _controller.GenerateChargingPlan(request, CancellationToken.None);
