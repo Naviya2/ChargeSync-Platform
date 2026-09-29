@@ -5,6 +5,7 @@ import '../api/station_service.dart';
 import '../models/station.dart';
 import 'add_edit_station_screen.dart';
 import 'station_detail_screen.dart';
+import 'pending_station_screen.dart';
 
 class StationManagementScreen extends StatefulWidget {
   const StationManagementScreen({super.key});
@@ -116,13 +117,22 @@ class _StationManagementScreenState extends State<StationManagementScreen> {
                             color: AppColors.onSurfaceVariant,
                           ),
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    StationDetailScreen(stationId: station.id),
-                              ),
-                            ).then((_) => _loadStations());
+                            if (station.status.toLowerCase() == 'pending') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PendingStationScreen(station: station),
+                                ),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      StationDetailScreen(stationId: station.id),
+                                ),
+                              ).then((_) => _loadStations());
+                            }
                           },
                         ),
                       );
