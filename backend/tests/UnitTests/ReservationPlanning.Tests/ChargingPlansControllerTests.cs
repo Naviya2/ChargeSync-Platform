@@ -3,7 +3,9 @@ using AgentClient.Models;
 using Api.Authentication;
 using Api.Controllers;
 using Application.Common.Interfaces;
+using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -15,7 +17,7 @@ public class ChargingPlansControllerTests
     private readonly Mock<IPlanningAgentClient> _mockAgentClient;
     private readonly Mock<ICurrentUser> _mockCurrentUser;
     private readonly Mock<ILogger<ChargingPlansController>> _mockLogger;
-    private readonly Mock<IAppDbContext> _mockDbContext;
+    private readonly AppDbContext _dbContext;
     private readonly ChargingPlansController _controller;
 
     public ChargingPlansControllerTests()
@@ -23,13 +25,15 @@ public class ChargingPlansControllerTests
         _mockAgentClient = new Mock<IPlanningAgentClient>();
         _mockCurrentUser = new Mock<ICurrentUser>();
         _mockLogger = new Mock<ILogger<ChargingPlansController>>();
-        _mockDbContext = new Mock<IAppDbContext>();
+        _dbContext = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
 
         _controller = new ChargingPlansController(
             _mockAgentClient.Object,
             _mockCurrentUser.Object,
             _mockLogger.Object,
-            _mockDbContext.Object);
+            _dbContext);
     }
 
     [Fact]
