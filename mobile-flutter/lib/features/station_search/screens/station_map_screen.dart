@@ -176,6 +176,27 @@ class _StationMapScreenState extends State<StationMapScreen> {
     }
   }
 
+  List<Station> get _filteredStations {
+    return _stations.where((s) {
+      if (_activeFilters.contains('available')) {
+        if (s.chargers == null || !s.chargers!.any((c) => c.status == 'Available')) return false;
+      }
+      if (_activeFilters.contains('compatible')) {
+        final activeVehicle = VehicleService.instance.activeVehicle;
+        if (activeVehicle != null) {
+          if (s.chargers == null) return false;
+          final hasCompatible = s.chargers!.any((c) {
+            final connStr = c.connector.toUpperCase().replaceAll(' ', '').replaceAll('-', '');
+            final vehConn = activeVehicle.connector.toBackendString().toUpperCase();
+            return connStr.contains(vehConn) || vehConn.contains(connStr);
+          });
+          if (!hasCompatible) return false;
+        }
+      }
+      return true;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -216,7 +237,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
                         size: 30,
                       ),
                     ),
-                  ..._stations.map(
+                  ..._filteredStations.map(
                     (s) => Marker(
                       point: LatLng(s.latitude, s.longitude),
                       width: 40,
