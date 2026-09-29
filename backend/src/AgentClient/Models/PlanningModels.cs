@@ -7,7 +7,9 @@ public record PlanningRequest(
     [property: JsonPropertyName("deadline")] DateTime Deadline,
     [property: JsonPropertyName("max_distance_km")] double? MaxDistanceKm,
     [property: JsonPropertyName("price_preference")] string? PricePreference,
-    [property: JsonPropertyName("vehicle_id")] string? VehicleId
+    [property: JsonPropertyName("vehicle_id")] string? VehicleId,
+    [property: JsonPropertyName("vehicle")] AgentVehicleInput? Vehicle,
+    [property: JsonPropertyName("candidate_stations")] List<AgentStationInput>? CandidateStations
 );
 
 public record ItineraryStep(
