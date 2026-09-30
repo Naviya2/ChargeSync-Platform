@@ -24,9 +24,9 @@ export const STATION_KPIS = [
     key: 'revenue',
     label: 'Daily Net Revenue',
     icon: 'payments',
-    value: '$3,420.50',
+    value: 'LKR 3,420.50',
     highlight: '+12.4%',
-    sub: 'vs $3,042.80 preceding 7d avg',
+    sub: 'vs LKR 3,042.80 preceding 7d avg',
   },
   {
     key: 'utilization',
@@ -66,7 +66,7 @@ export const STATIONS = [
     trendLabel: '24h Utilization Profile',
     trendValue: 'Peak: 380 kW',
     footerLabel: 'Delivered Today',
-    footerValue: '2,840 kWh · $1,248.30',
+    footerValue: '2,840 kWh · LKR 1,248.30',
     sparkTone: 'text-primary',
   },
   {
@@ -83,7 +83,7 @@ export const STATIONS = [
     trendLabel: '24h Utilization Profile',
     trendValue: 'Peak: 220 kW',
     footerLabel: 'Delivered Today',
-    footerValue: '1,910 kWh · $783.10',
+    footerValue: '1,910 kWh · LKR 783.10',
     sparkTone: 'text-secondary',
   },
   {
@@ -111,8 +111,8 @@ const STANDARD_HOURS = [
   { day: 'Wednesday', enabled: true, open: '06:00', close: '23:30', note: 'Peak window: 16:00 – 20:00', noteTone: 'primary' },
   { day: 'Thursday', enabled: true, open: '06:00', close: '23:30', note: 'Peak window: 16:00 – 20:00', noteTone: 'primary' },
   { day: 'Friday', enabled: true, open: '06:00', close: '23:30', note: 'Peak window: 16:00 – 20:00', noteTone: 'primary' },
-  { day: 'Saturday', enabled: true, open: '07:00', close: '22:00', note: 'Weekend Flat Rate ($0.39)', noteTone: 'secondary' },
-  { day: 'Sunday', enabled: true, open: '07:00', close: '22:00', note: 'Weekend Flat Rate ($0.39)', noteTone: 'secondary' },
+  { day: 'Saturday', enabled: true, open: '07:00', close: '22:00', note: 'Weekend Flat Rate (LKR 0.39)', noteTone: 'secondary' },
+  { day: 'Sunday', enabled: true, open: '07:00', close: '22:00', note: 'Weekend Flat Rate (LKR 0.39)', noteTone: 'secondary' },
 ]
 
 /** Per-station deep-dive console data, keyed by station id. */
@@ -125,7 +125,7 @@ export const STATION_DETAILS = {
     overview: {
       stats: [
         { label: 'Instantaneous Grid Load', value: '312', sub: '/ 400 kW Cap', progress: 78 },
-        { label: 'Revenue Today', value: '$1,248.30', delta: '+18.2%', sub: '2,840 kWh distributed' },
+        { label: 'Revenue Today', value: 'LKR 1,248.30', delta: '+18.2%', sub: '2,840 kWh distributed' },
         { label: 'Avg Dwell Session', value: '38', sub: 'Minutes', note: 'Fast turnaround (Target <45m)' },
         {
           label: 'Hardware Reliability',
@@ -143,11 +143,11 @@ export const STATION_DETAILS = {
       ],
     },
     chargers: [
-      { id: 'CH-01', bay: 'Bay 1A · HyperCharge Ultra-Liquid', connector: 'CCS Combo 1 / NACS', power: '350 kW', voltage: '800V DC', tariff: '$0.42 / kWh', tariffType: 'Dynamic Peak Tariff', tariffTone: 'text-tertiary', state: 'dispensing', stateLabel: 'Dispensing (285 kW)' },
-      { id: 'CH-02', bay: 'Bay 1B · FastPro DC Line', connector: 'CCS Combo 1', power: '150 kW', voltage: '400V DC', tariff: '$0.38 / kWh', tariffType: 'Standard Flat Base', tariffTone: 'text-on-surface-variant', state: 'dispensing', stateLabel: 'Dispensing (112 kW)' },
-      { id: 'CH-03', bay: 'Bay 2A · HyperCharge Ultra-Liquid', connector: 'NACS (Tesla Native)', power: '350 kW', voltage: '800V DC', tariff: '$0.42 / kWh', tariffType: 'Dynamic Peak Tariff', tariffTone: 'text-tertiary', state: 'available', stateLabel: 'Available (Idle)' },
-      { id: 'CH-04', bay: 'Bay 2B · HyperCharge Ultra-Liquid', connector: 'CCS Combo 1 / NACS', power: '350 kW', voltage: '800V DC', tariff: '$0.42 / kWh', tariffType: 'Dynamic Peak Tariff', tariffTone: 'text-tertiary', state: 'reserved', stateLabel: 'Reserved (Driver en route)' },
-      { id: 'CH-07', bay: 'Bay 4A · AC Destination Post', connector: 'J1772 / Type 1', power: '22 kW', voltage: '240V AC', tariff: '$0.24 / kWh', tariffType: 'Destination Long-Dwell', tariffTone: 'text-on-surface-variant', state: 'dispensing', stateLabel: 'Dispensing (19 kW)' },
+      { id: 'CH-01', bay: 'Bay 1A · HyperCharge Ultra-Liquid', connector: 'CCS Combo 1 / NACS', power: '350 kW', voltage: '800V DC', tariff: 'LKR 0.42 / kWh', tariffType: 'Dynamic Peak Tariff', tariffTone: 'text-tertiary', state: 'dispensing', stateLabel: 'Dispensing (285 kW)' },
+      { id: 'CH-02', bay: 'Bay 1B · FastPro DC Line', connector: 'CCS Combo 1', power: '150 kW', voltage: '400V DC', tariff: 'LKR 0.38 / kWh', tariffType: 'Standard Flat Base', tariffTone: 'text-on-surface-variant', state: 'dispensing', stateLabel: 'Dispensing (112 kW)' },
+      { id: 'CH-03', bay: 'Bay 2A · HyperCharge Ultra-Liquid', connector: 'NACS (Tesla Native)', power: '350 kW', voltage: '800V DC', tariff: 'LKR 0.42 / kWh', tariffType: 'Dynamic Peak Tariff', tariffTone: 'text-tertiary', state: 'available', stateLabel: 'Available (Idle)' },
+      { id: 'CH-04', bay: 'Bay 2B · HyperCharge Ultra-Liquid', connector: 'CCS Combo 1 / NACS', power: '350 kW', voltage: '800V DC', tariff: 'LKR 0.42 / kWh', tariffType: 'Dynamic Peak Tariff', tariffTone: 'text-tertiary', state: 'reserved', stateLabel: 'Reserved (Driver en route)' },
+      { id: 'CH-07', bay: 'Bay 4A · AC Destination Post', connector: 'J1772 / Type 1', power: '22 kW', voltage: '240V AC', tariff: 'LKR 0.24 / kWh', tariffType: 'Destination Long-Dwell', tariffTone: 'text-on-surface-variant', state: 'dispensing', stateLabel: 'Dispensing (19 kW)' },
     ],
     hours: STANDARD_HOURS,
     maintenance: [
@@ -194,7 +194,7 @@ export const STATION_DETAILS = {
     overview: {
       stats: [
         { label: 'Instantaneous Grid Load', value: '148', sub: '/ 300 kW Cap', progress: 49 },
-        { label: 'Revenue Today', value: '$783.10', delta: '+6.1%', sub: '1,910 kWh distributed' },
+        { label: 'Revenue Today', value: 'LKR 783.10', delta: '+6.1%', sub: '1,910 kWh distributed' },
         { label: 'Avg Dwell Session', value: '52', sub: 'Minutes', note: 'Campus long-dwell profile' },
         { label: 'Hardware Reliability', value: '99.4%', sub: '30d SLA', note: 'One soft fault auto-cleared', accent: 'text-tertiary' },
       ],
@@ -205,9 +205,9 @@ export const STATION_DETAILS = {
       ],
     },
     chargers: [
-      { id: 'CH-01', bay: 'Bay 1 · FastPro DC Dual', connector: 'CCS Combo 1', power: '150 kW', voltage: '400V DC', tariff: '$0.36 / kWh', tariffType: 'Standard Flat Base', tariffTone: 'text-on-surface-variant', state: 'dispensing', stateLabel: 'Dispensing (96 kW)' },
-      { id: 'CH-02', bay: 'Bay 2 · FastPro DC Dual', connector: 'CCS Combo 1', power: '150 kW', voltage: '400V DC', tariff: '$0.36 / kWh', tariffType: 'Standard Flat Base', tariffTone: 'text-on-surface-variant', state: 'dispensing', stateLabel: 'Dispensing (74 kW)' },
-      { id: 'CH-03', bay: 'Bay 3 · FastPro DC Dual', connector: 'CCS Combo 1', power: '150 kW', voltage: '400V DC', tariff: '$0.36 / kWh', tariffType: 'Standard Flat Base', tariffTone: 'text-on-surface-variant', state: 'available', stateLabel: 'Available (Idle)' },
+      { id: 'CH-01', bay: 'Bay 1 · FastPro DC Dual', connector: 'CCS Combo 1', power: '150 kW', voltage: '400V DC', tariff: 'LKR 0.36 / kWh', tariffType: 'Standard Flat Base', tariffTone: 'text-on-surface-variant', state: 'dispensing', stateLabel: 'Dispensing (96 kW)' },
+      { id: 'CH-02', bay: 'Bay 2 · FastPro DC Dual', connector: 'CCS Combo 1', power: '150 kW', voltage: '400V DC', tariff: 'LKR 0.36 / kWh', tariffType: 'Standard Flat Base', tariffTone: 'text-on-surface-variant', state: 'dispensing', stateLabel: 'Dispensing (74 kW)' },
+      { id: 'CH-03', bay: 'Bay 3 · FastPro DC Dual', connector: 'CCS Combo 1', power: '150 kW', voltage: '400V DC', tariff: 'LKR 0.36 / kWh', tariffType: 'Standard Flat Base', tariffTone: 'text-on-surface-variant', state: 'available', stateLabel: 'Available (Idle)' },
     ],
     hours: STANDARD_HOURS,
     maintenance: [
@@ -232,7 +232,7 @@ export const STATION_DETAILS = {
     overview: {
       stats: [
         { label: 'Interconnect Test Load', value: '0', sub: '/ 1,200 kW Cap', progress: 4 },
-        { label: 'Revenue Today', value: '$0.00', sub: 'Not yet operational' },
+        { label: 'Revenue Today', value: 'LKR 0.00', sub: 'Not yet operational' },
         { label: 'Commissioning Progress', value: '25%', sub: 'Phase 2 of 4' },
         { label: 'Permits Cleared', value: '3 / 5', sub: 'Utility approval outstanding', accent: 'text-secondary' },
       ],
