@@ -10,6 +10,8 @@ import { useMyStations } from '../hooks/useStations'
 export default function MyStationsPage() {
   const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState('name_asc')
   const { data: stationsDto = [], isLoading } = useMyStations()
 
   const stations = useMemo(() => {
@@ -37,10 +39,77 @@ export default function MyStationsPage() {
     }))
   }, [stationsDto])
 
+  const counts = useMemo(() => {
+    return {
+      all: stations.length,
+      active: stations.filter(s => s.status.key === 'active').length,
+      pending: stations.filter(s => s.status.key === 'pending').length,
+      maintenance: stations.filter(s => s.status.key === 'maintenance').length,
+    }
+  }, [stations]);
+
+  const kpis = useMemo(() => {
+    const total = stationsDto.length;
+    const active = counts.active;
+    const pending = counts.pending;
+    const maint = counts.maintenance;
+    
+    const allChargers = stationsDto.flatMap(s => s.chargers || []);
+    const totalPorts = allChargers.length;
+    const livePorts = allChargers.filter(c => c.status === 'Available' || c.status === 'Occupied').length;
+    
+    return [
+      {
+        key: 'total',
+        label: 'Total Stations',
+        icon: 'domain',
+        value: total.toString(),
+        highlight: `${active} Active`,
+        sub: `${pending} Pending · ${maint} Maint.`,
+      },
+      {
+        key: 'ports',
+        label: 'Operational Ports',
+        icon: 'power',
+        value: `${livePorts} / ${totalPorts}`,
+        highlight: totalPorts > 0 ? `${Math.round((livePorts/totalPorts)*100)}% Live` : '0% Live',
+        sub: `${totalPorts - livePorts} bays unavailable`,
+      },
+      {
+        key: 'revenue',
+        label: 'Daily Net Revenue',
+        icon: 'payments',
+        value: 'LKR 0.00',
+        highlight: 'Real-time',
+        sub: 'Awaiting transactions',
+      },
+      {
+        key: 'utilization',
+        label: 'Fleet Utilization',
+        icon: 'speed',
+        value: totalPorts > 0 ? `${Math.round((livePorts/totalPorts)*100)}%` : '0%',
+        highlight: 'Target: >75%',
+        progress: totalPorts > 0 ? Math.round((livePorts/totalPorts)*100) : 0,
+      }
+    ];
+  }, [stationsDto, counts]);
+
   const visibleStations = useMemo(() => {
-    if (activeFilter === 'all') return stations
-    return stations.filter((s) => s.filterKey === activeFilter)
-  }, [activeFilter, stations])
+    let filtered = stations;
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter((s) => s.filterKey === activeFilter);
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(s => s.name?.toLowerCase().includes(q) || s.address?.toLowerCase().includes(q) || s.id?.toLowerCase().includes(q));
+    }
+    return [...filtered].sort((a, b) => {
+      if (sortOrder === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+      if (sortOrder === 'name_desc') return (b.name || '').localeCompare(a.name || '');
+      if (sortOrder === 'status') return (a.status.key || '').localeCompare(b.status.key || '');
+      return 0;
+    });
+  }, [activeFilter, searchQuery, sortOrder, stations])
 
   const handleSelectStation = (id) => {
     const station = stations.find((s) => s.id === id)
@@ -59,9 +128,17 @@ export default function MyStationsPage() {
 
   return (
     <div className="flex w-full flex-col gap-space-xl">
-      <StationsHeader />
-      <StationKpiStrip />
-      <StationFilterBar active={activeFilter} onChange={setActiveFilter} />
+      <StationsHeader stations={stations} />
+      <StationKpiStrip kpis={kpis} />
+      <StationFilterBar 
+        active={activeFilter} 
+        onChange={setActiveFilter} 
+        search={searchQuery}
+        onSearchChange={setSearchQuery}
+        sort={sortOrder}
+        onSortChange={setSortOrder}
+        counts={counts}
+      />
       <StationCardGrid
         stations={visibleStations}
         onSelect={handleSelectStation}

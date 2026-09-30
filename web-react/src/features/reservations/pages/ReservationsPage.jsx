@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { format } from 'date-fns'
 import { useReservationsList } from '../hooks/useReservations'
 import PageHeader from '../../../components/shared/PageHeader'
@@ -18,6 +18,7 @@ const STATUS_STYLES = {
 export default function ReservationsPage() {
   const [selectedId, setSelectedId] = useState(null)
   const [search, setSearch] = useState('')
+  const [sortOrder, setSortOrder] = useState('time_desc')
   const notify = useNotificationStore((s) => s.notify)
   const prevCountRef = useRef(0)
 
@@ -33,6 +34,16 @@ export default function ReservationsPage() {
       r.id?.toLowerCase().includes(q)
     )
   })
+
+  const sortedAndFiltered = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      if (sortOrder === 'time_desc') return new Date(b.startTime) - new Date(a.startTime);
+      if (sortOrder === 'time_asc') return new Date(a.startTime) - new Date(b.startTime);
+      if (sortOrder === 'status') return (a.status || '').localeCompare(b.status || '');
+      if (sortOrder === 'customer') return (a.driverName || '').localeCompare(b.driverName || '');
+      return 0;
+    });
+  }, [filtered, sortOrder]);
 
   useEffect(() => {
     if (reservations.length > 0) {
@@ -50,9 +61,9 @@ export default function ReservationsPage() {
         description="Manage upcoming and past charging slot reservations."
       />
 
-      {/* Search bar */}
-      <div className="flex w-full items-center">
-        <div className="relative w-full max-w-md">
+      {/* Search and Sort bar */}
+      <div className="flex w-full flex-col sm:flex-row items-center gap-4">
+        <div className="relative w-full sm:max-w-md">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-gray-400">
             search
           </span>
@@ -72,6 +83,20 @@ export default function ReservationsPage() {
             </button>
           )}
         </div>
+        
+        <div className="flex items-center gap-space-xs rounded-xl border border-gray-200 bg-white px-space-sm py-2 shadow-sm w-full sm:w-auto">
+          <span className="material-symbols-outlined text-base text-gray-400 pl-1">sort</span>
+          <select
+            value={sortOrder}
+            onChange={e => setSortOrder(e.target.value)}
+            className="appearance-none cursor-pointer bg-transparent text-sm text-gray-700 focus:outline-none w-full pr-6"
+          >
+            <option value="time_desc">Newest First</option>
+            <option value="time_asc">Oldest First</option>
+            <option value="status">Status</option>
+            <option value="customer">Customer Name</option>
+          </select>
+        </div>
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -85,7 +110,7 @@ export default function ReservationsPage() {
             <span className="material-symbols-outlined text-4xl text-red-400">error_outline</span>
             <p className="text-red-500 font-medium">Failed to load reservations.</p>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : sortedAndFiltered.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <span className="material-symbols-outlined text-4xl text-gray-300">event_busy</span>
             <p className="text-gray-400 text-sm">{search ? 'No matching reservations found.' : 'No reservations yet.'}</p>
@@ -103,7 +128,7 @@ export default function ReservationsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((res) => {
+                {sortedAndFiltered.map((res) => {
                   const statusStyle = STATUS_STYLES[res.status] || { bg: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' }
                   return (
                     <tr key={res.id} className="bg-white hover:bg-gray-50 transition-colors">

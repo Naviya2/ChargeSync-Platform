@@ -97,8 +97,8 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="flex flex-col gap-space-md p-space-lg">
         <div className="flex items-center gap-space-sm rounded-lg bg-on-surface/5 px-space-md py-space-xs">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-tertiary-fixed" />
-          <span className="font-label-sm text-label-sm text-outline-variant">API 99.98% Operational</span>
+          <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+          <span className="font-label-sm text-label-sm text-outline-variant">System Online</span>
         </div>
         <div className="flex items-center justify-between rounded-xl bg-on-surface/10 p-space-sm">
           <div className="flex items-center gap-space-sm">

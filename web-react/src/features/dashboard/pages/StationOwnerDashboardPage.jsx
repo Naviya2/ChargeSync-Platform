@@ -1,15 +1,19 @@
+import { useState } from 'react'
 import { useMyStations } from '../../stations/hooks/useStations'
 import { useReservationsList } from '../../reservations/hooks/useReservations'
 import DashboardHeader from '../components/DashboardHeader'
 import WaitlistApprovals from '../../approvals/components/WaitlistApprovals'
 import { Card, Spinner } from '../../../components/ui'
 import { format } from 'date-fns'
+import { TIMEFRAMES } from '../data/dashboardData'
 
 export default function StationOwnerDashboardPage() {
+  const [timeframe, setTimeframe] = useState(TIMEFRAMES[0])
+  const [customRange, setCustomRange] = useState({ start: '', end: '' })
   const { data: stations, isLoading: isStationsLoading } = useMyStations()
   const { data: reservationsData, isLoading: isReservationsLoading } = useReservationsList({}, { refetchInterval: 10000 })
 
-  const reservations = reservationsData?.items || []
+  const allReservations = reservationsData?.items || []
   
   if (isStationsLoading || isReservationsLoading) {
     return <div className="flex justify-center p-12"><Spinner size={24} /></div>
@@ -17,6 +21,26 @@ export default function StationOwnerDashboardPage() {
 
   const myStation = stations?.[0]
   
+  // Filter reservations based on timeframe
+  const reservations = allReservations.filter(r => {
+    if (!r.startTime) return false;
+    const resDate = new Date(r.startTime);
+    const now = new Date();
+    const diffHours = (now - resDate) / (1000 * 60 * 60);
+    
+    if (timeframe === '24 Hours') return diffHours <= 24 && diffHours >= -24;
+    if (timeframe === '7 Days') return diffHours <= 24 * 7 && diffHours >= -24 * 7;
+    if (timeframe === '30 Days') return diffHours <= 24 * 30 && diffHours >= -24 * 30;
+    if (timeframe === 'Custom Range') {
+       if (!customRange.start && !customRange.end) return true;
+       const sDate = customRange.start ? new Date(customRange.start) : new Date(0);
+       const eDate = customRange.end ? new Date(customRange.end) : new Date(8640000000000000);
+       if (customRange.end) eDate.setDate(eDate.getDate() + 1); // inclusive end
+       return resDate >= sDate && resDate <= eDate;
+    }
+    return true;
+  });
+
   const completed = reservations.filter(r => r.status === 'Completed').length
   const ongoing = reservations.filter(r => r.status === 'CheckedIn').length
   const cancelled = reservations.filter(r => r.status === 'Cancelled').length
@@ -26,7 +50,13 @@ export default function StationOwnerDashboardPage() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <DashboardHeader />
+      <DashboardHeader 
+        timeframe={timeframe} 
+        setTimeframe={setTimeframe} 
+        reservations={reservations} 
+        customRange={customRange}
+        setCustomRange={setCustomRange}
+      />
       
       <WaitlistApprovals />
 
