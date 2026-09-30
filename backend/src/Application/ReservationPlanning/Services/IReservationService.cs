@@ -20,6 +20,15 @@ public interface IReservationService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Creates a reservation on behalf of a driver by an admin/owner.
+    /// No advance payment is charged.
+    /// </summary>
+    Task<ReservationDto> CreateByAdminAsync(
+        Guid staffUserId,
+        AdminCreateReservationRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Creates an immediate walk-in reservation initiated by station staff.
     /// No driver account or advance payment is required.
     /// The reservation is set to CheckedIn status immediately.

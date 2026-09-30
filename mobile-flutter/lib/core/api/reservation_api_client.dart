@@ -31,7 +31,12 @@ class ReservationApiClient {
       if (response.body.isEmpty) return {};
       return jsonDecode(response.body);
     } else {
-      throw HttpException('HTTP ${response.statusCode}: ${response.body}');
+      String errorMessage = 'HTTP ${response.statusCode}: ${response.body}';
+      try {
+        final jsonError = jsonDecode(response.body);
+        errorMessage = jsonError['detail'] ?? jsonError['message'] ?? jsonError['title'] ?? errorMessage;
+      } catch (_) {}
+      throw Exception(errorMessage);
     }
   }
 
@@ -48,7 +53,12 @@ class ReservationApiClient {
       if (response.body.isEmpty) return {};
       return jsonDecode(response.body);
     } else {
-      throw HttpException('HTTP ${response.statusCode}: ${response.body}');
+      String errorMessage = 'HTTP ${response.statusCode}: ${response.body}';
+      try {
+        final jsonError = jsonDecode(response.body);
+        errorMessage = jsonError['detail'] ?? jsonError['message'] ?? jsonError['title'] ?? errorMessage;
+      } catch (_) {}
+      throw Exception(errorMessage);
     }
   }
 
@@ -58,7 +68,12 @@ class ReservationApiClient {
     final response = await _client.put(url, headers: _headers(token));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw HttpException('HTTP ${response.statusCode}: ${response.body}');
+      String errorMessage = 'HTTP ${response.statusCode}: ${response.body}';
+      try {
+        final jsonError = jsonDecode(response.body);
+        errorMessage = jsonError['detail'] ?? jsonError['message'] ?? jsonError['title'] ?? errorMessage;
+      } catch (_) {}
+      throw Exception(errorMessage);
     }
   }
 

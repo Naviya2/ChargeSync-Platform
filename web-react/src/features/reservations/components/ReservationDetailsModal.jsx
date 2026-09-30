@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useReservationDetail, useReservationHistory, useCancelReservation, useUpdateReservation, useDeleteReservation } from '../hooks/useReservations'
 import { format } from 'date-fns'
 import { Button, Spinner } from '../../../components/ui'
+import { useNotificationStore } from '../../../store/notificationStore'
 
 const STATUS_COLORS = {
   Pending:   'bg-yellow-100 text-yellow-800',
@@ -64,6 +65,8 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
   const { mutate: updateReservation, isPending: isUpdating } = useUpdateReservation()
   const { mutate: deleteReservation, isPending: isDeleting } = useDeleteReservation()
 
+  const notify = useNotificationStore((s) => s.notify)
+
   const [isEditing, setIsEditing] = useState(false)
   const [editStartTime, setEditStartTime] = useState('')
   const [editEndTime, setEditEndTime] = useState('')
@@ -81,10 +84,31 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
     }
   }
 
+  const handleStartTimeChange = (e) => {
+    const newStartStr = e.target.value
+    setEditStartTime(newStartStr)
+    
+    if (reservation && newStartStr) {
+       const originalStart = new Date(reservation.startTime)
+       const originalEnd = new Date(reservation.endTime)
+       const durationMs = originalEnd.getTime() - originalStart.getTime()
+       
+       const newStart = new Date(newStartStr)
+       const newEnd = new Date(newStart.getTime() + durationMs)
+       setEditEndTime(format(newEnd, "yyyy-MM-dd'T'HH:mm"))
+    }
+  }
+
   const handleSaveUpdate = () => {
     updateReservation(
       { id: reservationId, data: { startTime: new Date(editStartTime).toISOString(), endTime: new Date(editEndTime).toISOString() } },
-      { onSuccess: () => setIsEditing(false) }
+      { 
+        onSuccess: () => setIsEditing(false),
+        onError: (error) => {
+          const msg = error.response?.data?.detail || error.response?.data?.message || error.response?.data?.title || error.message || 'Unknown error occurred.';
+          window.alert(`Can't change the reservation time.\n\n${msg}`);
+        }
+      }
     )
   }
 
@@ -167,14 +191,16 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
                       <input
                         type="datetime-local"
                         value={editStartTime}
-                        onChange={(e) => setEditStartTime(e.target.value)}
+                        onChange={handleStartTimeChange}
                         className="block w-full text-sm rounded-lg border border-gray-200 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <input
                         type="datetime-local"
                         value={editEndTime}
-                        onChange={(e) => setEditEndTime(e.target.value)}
-                        className="block w-full text-sm rounded-lg border border-gray-200 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        readOnly
+                        disabled
+                        className="block w-full text-sm rounded-lg border border-gray-200 p-2 bg-gray-100 text-gray-500 cursor-not-allowed"
+                        title="End time is automatically calculated based on vehicle and charger capacity."
                       />
                     </div>
                   ) : (

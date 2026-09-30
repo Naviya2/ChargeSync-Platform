@@ -8,23 +8,45 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Driver")]
+[Authorize]
 public sealed class VehiclesController : ControllerBase
 {
     private readonly IVehicleService _vehicleService;
     private readonly ICurrentUser _currentUser;
+    private readonly IAppDbContext _context;
 
-    public VehiclesController(IVehicleService vehicleService, ICurrentUser currentUser)
+    public VehiclesController(IVehicleService vehicleService, ICurrentUser currentUser, IAppDbContext context)
     {
         _vehicleService = vehicleService;
         _currentUser = currentUser;
+        _context = context;
     }
 
     private Guid OwnerId => _currentUser.Id ?? Guid.Empty;
 
     [HttpGet]
+    [Authorize(Roles = "Driver")]
     public async Task<ActionResult<IReadOnlyList<VehicleDto>>> GetMine(CancellationToken cancellationToken) =>
         Ok(await _vehicleService.GetMineAsync(OwnerId, cancellationToken));
+
+    [HttpGet("user/{userId:guid}")]
+    [Authorize(Roles = "Admin,StationOwner")]
+    public async Task<ActionResult<IReadOnlyList<VehicleDto>>> GetByUser(Guid userId, CancellationToken cancellationToken)
+    {
+        var vehicles = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            _context.Vehicles.Where(v => v.OwnerId == userId), cancellationToken);
+        var dtos = vehicles.Select(v => new VehicleDto
+        {
+            Id = v.Id,
+            Make = v.Make,
+            Model = v.Model,
+            BatteryCapacityKwh = v.BatteryCapacityKwh,
+            MaxChargeRateKw = v.MaxChargeRateKw,
+            Connector = v.Connector,
+            LicensePlate = v.LicensePlate
+        }).ToList();
+        return Ok(dtos);
+    }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<VehicleDto>> GetById(Guid id, CancellationToken cancellationToken)

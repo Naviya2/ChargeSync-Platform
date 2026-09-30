@@ -4,6 +4,7 @@ import { useReservationsList } from '../hooks/useReservations'
 import PageHeader from '../../../components/shared/PageHeader'
 import { Card, Spinner } from '../../../components/ui'
 import ReservationDetailsModal from '../components/ReservationDetailsModal'
+import AddReservationModal from '../components/AddReservationModal'
 import { useNotificationStore } from '../../../store/notificationStore'
 
 // Consistent status badge colors (light & dark mode aware via CSS overrides)
@@ -21,6 +22,8 @@ export default function ReservationsPage() {
   const [sortOrder, setSortOrder] = useState('time_desc')
   const notify = useNotificationStore((s) => s.notify)
   const prevCountRef = useRef(0)
+  const prevStatusRef = useRef({})
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   const { data, isLoading, isError } = useReservationsList({}, { refetchInterval: 10000 })
   const reservations = data?.items || []
@@ -46,13 +49,8 @@ export default function ReservationsPage() {
   }, [filtered, sortOrder]);
 
   useEffect(() => {
-    if (reservations.length > 0) {
-      if (prevCountRef.current > 0 && reservations.length > prevCountRef.current) {
-        notify({ title: 'New Reservation', message: 'A driver just booked a new slot.', type: 'info' })
-      }
-      prevCountRef.current = reservations.length
-    }
-  }, [reservations, notify])
+    // Notifications are now handled globally in AppLayout.jsx via GlobalReservationWatcher
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -97,6 +95,14 @@ export default function ReservationsPage() {
             <option value="customer">Customer Name</option>
           </select>
         </div>
+        
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="ml-auto inline-flex items-center gap-2 rounded-lg bg-primary px-space-md py-1.5 font-label-md text-label-md text-on-primary shadow-sm hover:bg-primary/90 transition-colors"
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          Add Reservation
+        </button>
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -191,6 +197,12 @@ export default function ReservationsPage() {
         <ReservationDetailsModal
           reservationId={selectedId}
           onClose={() => setSelectedId(null)}
+        />
+      )}
+
+      {isAddModalOpen && (
+        <AddReservationModal
+          onClose={() => setIsAddModalOpen(false)}
         />
       )}
     </div>

@@ -75,7 +75,65 @@ class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
         }
 
         if (snapshot.hasError || !snapshot.hasData || snapshot.data!.rankedItineraries.isEmpty) {
-          return const SizedBox.shrink(); // Hide if error or no data
+          String reason = "No recommendations available right now";
+          if (snapshot.hasError) {
+             reason = snapshot.error.toString();
+          } else if (snapshot.hasData && snapshot.data!.agentReasoning.isNotEmpty) {
+             reason = snapshot.data!.agentReasoning;
+          }
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Row(
+                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                   children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.auto_awesome_rounded, color: AppColors.tertiary, size: 18),
+                          const SizedBox(width: 6),
+                          Text(
+                            'AI Smart Recommendation',
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.tertiary, letterSpacing: 0.02),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                         icon: const Icon(Icons.refresh, size: 16, color: AppColors.tertiary),
+                         padding: EdgeInsets.zero,
+                         constraints: const BoxConstraints(),
+                         onPressed: _fetchRecommendation,
+                      ),
+                   ],
+                ),
+                const SizedBox(height: 16),
+                const Icon(Icons.search_off_rounded, size: 48, color: AppColors.onSurfaceVariant),
+                const SizedBox(height: 12),
+                Text('No recommendations available right now', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface), textAlign: TextAlign.center),
+                const SizedBox(height: 8),
+                Text(
+                  reason,
+                  style: GoogleFonts.inter(color: AppColors.onSurfaceVariant, fontSize: 13, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
         }
 
         final response = snapshot.data!;

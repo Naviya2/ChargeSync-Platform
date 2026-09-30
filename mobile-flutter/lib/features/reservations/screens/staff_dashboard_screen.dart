@@ -24,6 +24,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
   late AnimationController _pulseController;
   Timer? _pollingTimer;
   int _lastReservationCount = 0;
+  Map<String, String> _lastStatuses = {};
 
   @override
   void initState() {
@@ -41,20 +42,38 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
       final res = await ReservationApiClient.instance.getMyReservations();
       if (mounted) {
         _lastReservationCount = res.totalCount;
+        for (var r in res.items) {
+          _lastStatuses[r.id] = r.status;
+        }
       }
     } catch (_) {}
 
     _pollingTimer = Timer.periodic(const Duration(seconds: 15), (timer) async {
       try {
         final res = await ReservationApiClient.instance.getMyReservations();
-        if (mounted && res.totalCount > _lastReservationCount) {
+        if (!mounted) return;
+
+        if (res.totalCount > _lastReservationCount) {
           _lastReservationCount = res.totalCount;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('New reservation received!'),
+              content: const Text('New reservation received!'),
               backgroundColor: AppColors.primary,
             ),
           );
+        }
+
+        for (var r in res.items) {
+          final prevStatus = _lastStatuses[r.id];
+          if (prevStatus != null && prevStatus != 'Cancelled' && r.status == 'Cancelled') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('A reservation was cancelled.'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+          _lastStatuses[r.id] = r.status;
         }
       } catch (_) {}
     });

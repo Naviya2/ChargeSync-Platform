@@ -21,6 +21,19 @@ public sealed class CreateReservationRequest
 }
 
 /// <summary>
+/// Payload an admin or station owner submits to book a reservation on behalf of a driver.
+/// No advance deposit is required.
+/// </summary>
+public sealed class AdminCreateReservationRequest
+{
+    public Guid DriverId { get; set; }
+    public Guid VehicleId { get; set; }
+    public Guid ChargerId { get; set; }
+    public DateTimeOffset StartTime { get; set; }
+    public DateTimeOffset EndTime { get; set; }
+}
+
+/// <summary>
 /// Payload to update an existing reservation time window.
 /// </summary>
 public sealed class UpdateReservationRequest
