@@ -1,5 +1,6 @@
 import { useReservationsList } from '../../reservations/hooks/useReservations'
 import { Card, Spinner } from '../../../components/ui'
+import PageHeader from '../../../components/shared/PageHeader'
 import {
   LineChart,
   Line,
@@ -11,6 +12,8 @@ import {
   BarChart,
   Bar,
   Legend,
+  AreaChart,
+  Area
 } from 'recharts'
 import { format, subDays, isSameDay } from 'date-fns'
 
@@ -19,7 +22,7 @@ export default function AnalyticsPage() {
   const reservations = data?.items || []
 
   if (isLoading) {
-    return <div className="flex justify-center py-12"><Spinner size={24} /></div>
+    return <div className="flex justify-center py-16"><Spinner size={32} /></div>
   }
 
   // Prepare chart data for last 7 days
@@ -45,53 +48,83 @@ export default function AnalyticsPage() {
     count
   }))
 
+  const CustomTooltip = ({ active, payload, label, prefix = '' }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="rounded-xl border border-outline-variant bg-surface-container-low/95 p-3 shadow-lg backdrop-blur-md">
+          <p className="font-label-md text-on-surface-variant mb-1">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} className="font-metric-num-sm text-on-surface" style={{ color: entry.color }}>
+              {entry.name}: {prefix}{entry.value}
+            </p>
+          ))}
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Analytics Dashboard</h1>
-        <p className="text-gray-500">Utilization, energy delivered, and revenue trends.</p>
-      </div>
+    <div className="flex w-full flex-col gap-space-xl">
+      <PageHeader
+        title="Network Analytics"
+        description="Comprehensive insights into network utilization, platform-wide revenue, and station telemetry."
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 h-96">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Reservations Trend (Last 7 Days)</h2>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="date" />
-              <YAxis allowDecimals={false} />
-              <Tooltip />
-              <Line type="monotone" dataKey="reservations" stroke="#3b82f6" strokeWidth={2} name="Reservations" />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-space-lg">
+        {/* Reservations Area Chart */}
+        <div className="flex flex-col gap-space-md overflow-hidden rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
+          <h2 className="font-title-md text-title-md text-on-surface">Reservations Trend (Last 7 Days)</h2>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorRes" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.2} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="reservations" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorRes)" name="Reservations" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-        <Card className="p-6 h-96">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Revenue Trend (Rs.)</h2>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip formatter={(value) => [`Rs. ${value}`, 'Revenue']} />
-              <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+        {/* Revenue Bar Chart */}
+        <div className="flex flex-col gap-space-md overflow-hidden rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
+          <h2 className="font-title-md text-title-md text-on-surface">Platform Revenue (LKR)</h2>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.2} />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <Tooltip content={<CustomTooltip prefix="LKR " />} />
+                <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} name="Revenue" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-        <Card className="p-6 h-96">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Reservation Status Distribution</h2>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={statusData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" allowDecimals={false} />
-              <YAxis dataKey="name" type="category" width={100} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="count" fill="#8b5cf6" name="Total Count" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+        {/* Status Distribution */}
+        <div className="flex flex-col gap-space-md overflow-hidden rounded-xl bg-surface-container-lowest p-space-lg shadow-sm lg:col-span-2">
+          <h2 className="font-title-md text-title-md text-on-surface">Reservation Status Distribution</h2>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={statusData} layout="vertical" barSize={32}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#374151" opacity={0.2} />
+                <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <YAxis dataKey="name" type="category" width={100} axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="count" fill="#8b5cf6" name="Total Count" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
     </div>
   )
