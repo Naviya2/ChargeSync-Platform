@@ -1,6 +1,5 @@
 import { create } from 'zustand'
-
-let nextId = 0
+import { persist } from 'zustand/middleware'
 
 /**
  * Lightweight global notification / toast state.
@@ -12,19 +11,26 @@ let nextId = 0
  * @property {string} [title]
  */
 
-export const useNotificationStore = create((set) => ({
-  /** @type {Notification[]} */
-  notifications: [],
+export const useNotificationStore = create(
+  persist(
+    (set) => ({
+      /** @type {Notification[]} */
+      notifications: [],
 
-  /** @param {{ type?: Notification['type'], message: string, title?: string }} input */
-  notify: ({ type = 'info', message, title }) =>
-    set((state) => ({
-      notifications: [...state.notifications, { id: ++nextId, type, message, title }],
-    })),
+      /** @param {{ type?: Notification['type'], message: string, title?: string, transient?: boolean }} input */
+      notify: ({ type = 'info', message, title, transient = false }) =>
+        set((state) => ({
+          notifications: [...state.notifications, { id: Date.now() + Math.random(), type, message, title, transient }],
+        })),
 
-  /** @param {number} id */
-  dismiss: (id) =>
-    set((state) => ({ notifications: state.notifications.filter((n) => n.id !== id) })),
+      /** @param {number} id */
+      dismiss: (id) =>
+        set((state) => ({ notifications: state.notifications.filter((n) => n.id !== id) })),
 
-  clear: () => set({ notifications: [] }),
-}))
+      clear: () => set({ notifications: [] }),
+    }),
+    {
+      name: 'chargesync-notifications',
+    }
+  )
+)

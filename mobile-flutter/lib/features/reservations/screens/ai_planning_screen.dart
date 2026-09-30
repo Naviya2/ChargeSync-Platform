@@ -217,30 +217,50 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
             ],
             if (_planningResponse != null) ...[
               const SizedBox(height: 24),
-              Text('Agent Recommendation', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryContainer.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.5)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.auto_awesome, color: AppColors.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _planningResponse!.agentReasoning,
-                        style: GoogleFonts.inter(fontSize: 14, color: AppColors.onSurface),
+              if (_planningResponse!.rankedItineraries.isEmpty) ...[
+                Center(
+                  child: Column(
+                    children: [
+                      const Icon(Icons.search_off_rounded, size: 64, color: AppColors.onSurfaceVariant),
+                      const SizedBox(height: 16),
+                      Text('No recommendations available right now', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          _planningResponse!.agentReasoning,
+                          style: GoogleFonts.inter(color: AppColors.onSurfaceVariant, height: 1.5),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              ..._planningResponse!.rankedItineraries.map((itinerary) {
+              ] else ...[
+                Text('Agent Recommendation', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.auto_awesome, color: AppColors.primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _planningResponse!.agentReasoning,
+                          style: GoogleFonts.inter(fontSize: 14, color: AppColors.onSurface),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ..._planningResponse!.rankedItineraries.map((itinerary) {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -365,6 +385,7 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                   ),
                 );
               }),
+              ],
             ],
           ],
         ),

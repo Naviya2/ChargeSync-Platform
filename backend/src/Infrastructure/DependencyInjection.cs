@@ -51,6 +51,9 @@ public static class DependencyInjection
             }
         });
 
+        // Register background jobs
+        services.AddHostedService<Infrastructure.BackgroundJobs.ReservationTimeoutService>();
+
         return services;
     }
 

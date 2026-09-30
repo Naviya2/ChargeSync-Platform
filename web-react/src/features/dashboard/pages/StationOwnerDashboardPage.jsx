@@ -6,10 +6,12 @@ import WaitlistApprovals from '../../approvals/components/WaitlistApprovals'
 import { Card, Spinner } from '../../../components/ui'
 import { format } from 'date-fns'
 import { TIMEFRAMES } from '../data/dashboardData'
+import AddReservationModal from '../../reservations/components/AddReservationModal'
 
 export default function StationOwnerDashboardPage() {
   const [timeframe, setTimeframe] = useState(TIMEFRAMES[0])
   const [customRange, setCustomRange] = useState({ start: '', end: '' })
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const { data: stations, isLoading: isStationsLoading } = useMyStations()
   const { data: reservationsData, isLoading: isReservationsLoading } = useReservationsList({}, { refetchInterval: 10000 })
 
@@ -112,7 +114,16 @@ export default function StationOwnerDashboardPage() {
 
         <div className="lg:col-span-2">
           <Card className="p-6 h-full shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Ongoing / Upcoming Reservations</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Ongoing / Upcoming Reservations</h2>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex items-center gap-1 rounded-lg bg-primary px-space-md py-1.5 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary/90"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                Add Reservation
+              </button>
+            </div>
             {activeReservations.length === 0 ? (
               <div className="text-center text-gray-500 py-12 bg-gray-50 rounded-lg">No active reservations at the moment.</div>
             ) : (
@@ -148,6 +159,12 @@ export default function StationOwnerDashboardPage() {
           </Card>
         </div>
       </div>
+      
+      {isAddModalOpen && (
+        <AddReservationModal
+          onClose={() => setIsAddModalOpen(false)}
+        />
+      )}
     </div>
   )
 }

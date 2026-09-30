@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useReservationsList } from '../../reservations/hooks/useReservations'
 import { cn } from '../../../lib/cn'
+import AddReservationModal from '../../reservations/components/AddReservationModal'
 
 const STATUS_TONE = {
   tertiary: 'bg-tertiary-container/15 text-tertiary',
@@ -39,6 +40,7 @@ function StatusPill({ status }) {
 
 export default function ReservationsTable({ timeframe, customRange, preFilteredReservations }) {
   const [activeFilter, setActiveFilter] = useState('all')
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const navigate = useNavigate()
   const { data, isLoading } = useReservationsList()
   const reservations = preFilteredReservations || data?.items || []
@@ -144,6 +146,14 @@ export default function ReservationsTable({ timeframe, customRange, preFilteredR
             <span className="material-symbols-outlined text-base">sort</span>
             <span>Sort: Recent</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center gap-1 rounded-lg bg-primary px-space-md py-1.5 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary/90"
+          >
+            <span className="material-symbols-outlined text-base">add</span>
+            <span>Add Reservation</span>
+          </button>
         </div>
       </div>
 
@@ -235,7 +245,12 @@ export default function ReservationsTable({ timeframe, customRange, preFilteredR
             )}
           </tbody>
         </table>
-      </div>
+    </div>
+      {isAddModalOpen && (
+        <AddReservationModal
+          onClose={() => setIsAddModalOpen(false)}
+        />
+      )}
     </div>
   )
 }
