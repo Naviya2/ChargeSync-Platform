@@ -36,4 +36,24 @@ public sealed class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserDto>> GetById(Guid id, CancellationToken cancellationToken)
         => Ok(await _userService.GetByIdAsync(id, cancellationToken));
+
+    [HttpGet]
+    [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<UserDto>>> GetAll(CancellationToken cancellationToken)
+        => Ok(await _userService.GetAllAsync(cancellationToken));
+
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserDto>> Update(Guid id, UpdateUserRequest request, CancellationToken cancellationToken)
+        => Ok(await _userService.UpdateAsync(id, request, cancellationToken));
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await _userService.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

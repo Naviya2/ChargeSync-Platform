@@ -2,7 +2,7 @@ import { TIMEFRAMES } from '../data/dashboardData'
 import { cn } from '../../../lib/cn'
 import { useNavigate } from 'react-router-dom'
 
-export default function DashboardHeader({ timeframe, setTimeframe, reservations = [], customRange, setCustomRange }) {
+export default function DashboardHeader({ timeframe, setTimeframe, reservations = [], customRange, setCustomRange, hideAddStation }) {
   const navigate = useNavigate()
 
   return (
@@ -85,14 +85,16 @@ export default function DashboardHeader({ timeframe, setTimeframe, reservations 
             <span className="material-symbols-outlined text-base">download</span>
             <span>Export Reports</span>
           </button>
-          <button
-            type="button"
-            onClick={() => navigate('/stations/new')}
-            className="inline-flex items-center gap-space-xs rounded-xl bg-gradient-to-r from-primary to-tertiary px-space-lg py-space-xs font-label-md text-label-md text-on-primary shadow-md transition-all hover:brightness-105"
-          >
-            <span className="material-symbols-outlined text-base">add_circle</span>
-            <span>Add New Station</span>
-          </button>
+          {!hideAddStation && (
+            <button
+              type="button"
+              onClick={() => navigate('/stations/new')}
+              className="inline-flex items-center gap-space-xs rounded-xl bg-gradient-to-r from-primary to-tertiary px-space-lg py-space-xs font-label-md text-label-md text-on-primary shadow-md transition-all hover:brightness-105"
+            >
+              <span className="material-symbols-outlined text-base">add_circle</span>
+              <span>Add New Station</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useNotificationStore } from '../../store/notificationStore'
-import { useMyStations } from '../../features/stations/hooks/useStations'
+import { useMyStations, useStations } from '../../features/stations/hooks/useStations'
 import { ROUTES } from '../../lib/constants'
 import useDialogStore from '../../store/dialogStore'
 
@@ -15,8 +15,12 @@ export default function Topbar() {
   const dismissNotification = useNotificationStore((s) => s.dismiss)
   const notify = useNotificationStore((s) => s.notify)
 
-  const { data: stations = [] } = useMyStations()
-  const activeChargersCount = stations.reduce((acc, st) => acc + (st.chargers?.length || 0), 0)
+  const { data: myStations = [] } = useMyStations()
+  const { data: allStations = [] } = useStations()
+  
+  const role = user?.role
+  const stationsList = (role === 'Admin' || role === 2) ? allStations : myStations;
+  const activeChargersCount = stationsList.reduce((acc, st) => acc + (st.chargers?.length || 0), 0)
 
   const [showProfile, setShowProfile] = useState(false)
   const [showNotifs, setShowNotifs] = useState(false)

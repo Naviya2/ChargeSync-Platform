@@ -118,6 +118,13 @@ public class User : AuditableEntity
         PhoneNumber = NormalisePhone(phoneNumber);
     }
 
+    public void ChangeEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required.", nameof(email));
+        Email = NormaliseEmail(email);
+    }
+
     public void ChangeRole(UserRole role) => Role = role;
 
     public void Activate() => IsActive = true;

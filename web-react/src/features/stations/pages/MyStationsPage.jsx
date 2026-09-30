@@ -5,14 +5,18 @@ import StationFilterBar from '../components/StationFilterBar'
 import StationCardGrid from '../components/StationCardGrid'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '../../../lib/constants'
-import { useMyStations } from '../hooks/useStations'
+import { useMyStations, useStations } from '../hooks/useStations'
 
-export default function MyStationsPage() {
+export default function MyStationsPage({ isAdmin = false }) {
   const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('name_asc')
-  const { data: stationsDto = [], isLoading } = useMyStations()
+  
+  const myStationsQuery = useMyStations()
+  const allStationsQuery = useStations()
+  
+  const { data: stationsDto = [], isLoading } = isAdmin ? allStationsQuery : myStationsQuery
 
   const stations = useMemo(() => {
     return stationsDto.map(dto => ({
@@ -128,7 +132,7 @@ export default function MyStationsPage() {
 
   return (
     <div className="flex w-full flex-col gap-space-xl">
-      <StationsHeader stations={stations} />
+      <StationsHeader stations={stations} hideAddStation={isAdmin} />
       <StationKpiStrip kpis={kpis} />
       <StationFilterBar 
         active={activeFilter} 

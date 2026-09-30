@@ -99,10 +99,10 @@ function MetricCard({ metric }) {
   )
 }
 
-export default function MetricsGrid() {
+export default function MetricsGrid({ metrics = METRICS }) {
   return (
     <div className="grid grid-cols-1 gap-space-lg sm:grid-cols-2 lg:grid-cols-4">
-      {METRICS.map((metric) => (
+      {metrics.map((metric) => (
         <MetricCard key={metric.key} metric={metric} />
       ))}
     </div>

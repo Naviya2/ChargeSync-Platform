@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { NAV_SECTIONS, ROLE_LABELS } from '../../lib/constants'
+import { ROUTES, NAV_SECTIONS, ROLE_LABELS } from '../../lib/constants'
 import { useAuthStore } from '../../store/authStore'
 import { cn } from '../../lib/cn'
 
@@ -23,14 +23,28 @@ function NavBadge({ badge }) {
   )
 }
 
+import { usePendingStations } from '../../features/approvals/hooks/useAdminStations'
+
 export default function Sidebar() {
   const user = useAuthStore((s) => s.user)
   const role = user?.role
   const roleLabel = role ? (ROLE_LABELS[role] ?? role) : 'Guest'
+  
+  const { data: pendingStations = [] } = usePendingStations()
 
   const sections = NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => !role || item.roles.includes(role)),
+    items: section.items.filter((item) => !role || item.roles.includes(role)).map(item => {
+      if (item.to === ROUTES.APPROVALS) {
+        return {
+          ...item,
+          badge: pendingStations.length > 0 
+            ? { text: `${pendingStations.length} pending`, tone: 'secondary' }
+            : null
+        }
+      }
+      return item
+    }),
   })).filter((section) => section.items.length > 0)
 
   return (

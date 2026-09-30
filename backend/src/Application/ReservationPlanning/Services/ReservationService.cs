@@ -122,6 +122,10 @@ public sealed class ReservationService : IReservationService
         if (requesterRole == UserRole.Driver.ToString())
             query = query.Where(r => r.DriverId == requesterId);
 
+        // Station Owners can only see reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString())
+            query = query.Where(r => r.Charger.Station.OwnerId == requesterId);
+
         if (filter.ChargerId.HasValue)
             query = query.Where(r => r.ChargerId == filter.ChargerId.Value);
 
@@ -192,6 +196,10 @@ public sealed class ReservationService : IReservationService
 
         // Drivers may only view their own reservations.
         if (requesterRole == UserRole.Driver.ToString() && reservation.DriverId != requesterId)
+            return null;
+
+        // Station Owners may only view reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString() && reservation.Charger.Station.OwnerId != requesterId)
             return null;
 
         return ToDto(reservation);
@@ -309,6 +317,18 @@ public sealed class ReservationService : IReservationService
         // Only admins or station owners can update this.
         if (requesterRole == UserRole.Driver.ToString())
             throw new ForbiddenAccessException();
+            
+        // Station Owners can only update reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString())
+        {
+            var stationOwnerId = await _db.Chargers
+                .Where(c => c.Id == reservation.ChargerId)
+                .Select(c => c.Station.OwnerId)
+                .FirstOrDefaultAsync(cancellationToken);
+                
+            if (stationOwnerId != requesterId)
+                throw new ForbiddenAccessException();
+        }
 
         // Business logic to update the time window would be handled in the Domain object.
         // For now, we update it via the entity directly if it exposes a setter or method.
@@ -349,6 +369,18 @@ public sealed class ReservationService : IReservationService
         // Only Admins or Station Owners should be able to hard delete
         if (requesterRole == UserRole.Driver.ToString())
             throw new ForbiddenAccessException();
+
+        // Station Owners can only delete reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString())
+        {
+            var stationOwnerId = await _db.Chargers
+                .Where(c => c.Id == reservation.ChargerId)
+                .Select(c => c.Station.OwnerId)
+                .FirstOrDefaultAsync(cancellationToken);
+                
+            if (stationOwnerId != requesterId)
+                throw new ForbiddenAccessException();
+        }
 
         // Also delete associated history
         var history = await _db.ReservationStatusHistories
