@@ -63,11 +63,28 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     } catch (e) {
       setState(() {
         _isSuccess = false;
-        _message = 'Check-in failed: $e';
         _isLoading = false;
-        // Allow scanning again if it failed
-        _hasScanned = false; 
+        _hasScanned = false; // Allow scanning again
       });
+
+      String errorMessage = e.toString();
+      errorMessage = errorMessage.replaceAll(RegExp(r'Exception:\s*'), '');
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Check-in Failed'),
+            content: Text(errorMessage),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme/app_theme.dart';
 import 'core/api/auth_service.dart';
 import 'screens/home/home_screen.dart';
@@ -8,6 +9,7 @@ import 'features/reservations/screens/staff_dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
 
   // Force dark status bar icons to match the dark theme
   SystemChrome.setSystemUIOverlayStyle(

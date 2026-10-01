@@ -106,6 +106,28 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
   Future<void> _makeReservation() async {
     if (_selectedCharger == null || _selectedSlot == null || _selectedVehicle == null) return;
 
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirm Reservation'),
+          content: const Text('An advance fee of 500 LKR will be deducted from your wallet. Do you want to proceed?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
     setState(() => _isSubmitting = true);
 
     try {
@@ -114,20 +136,55 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
         vehicleId: _selectedVehicle!.id,
         startTime: _selectedSlot!.startTime,
         endTime: _selectedSlot!.endTime,
-        advanceDepositAmount: 5.0, // Default deposit
+        advanceDepositAmount: 500.0,
       );
 
       await ReservationApiClient.instance.createReservation(request);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reservation created successfully!')),
+      
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Success'),
+          content: const Text('Reservation placed successfully!'),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
+
+      if (!mounted) return;
       Navigator.pop(context); // Go back to map
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to make reservation: $e')),
+      
+      String errorMessage = e.toString();
+      if (errorMessage.contains('incomplete reservation')) {
+        errorMessage = 'You already have an incomplete reservation for this vehicle today. Please complete or cancel it first.';
+      } else if (errorMessage.contains('Insufficient wallet balance')) {
+        errorMessage = 'Balance is not sufficient to make the advance payment, go to wallet and topup your wallet please.';
+      } else {
+        // Strip out the "ApiException" prefix if it exists to make it cleaner
+        errorMessage = errorMessage.replaceAll(RegExp(r'ApiException.*:\s*'), '');
+      }
+
+      // Show failure message directly in a popup as well for better visibility
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Reservation Failed'),
+          content: Text(errorMessage),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
     } finally {
       if (mounted) {
@@ -274,46 +331,28 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                   if (_isLoadingSlots)
                     const Center(child: CircularProgressIndicator())
                   else if (_availableSlots.isEmpty)
-                    const Text('No slots available for this date.')
+                    const Text('No slots available for this date at this time. Come back later.')
                   else
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerLowest,
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(12),
+                    DropdownButtonFormField<TimeSlotDto>(
+                      value: _selectedSlot,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: AppColors.surfaceContainer,
+                        hintText: 'Choose a Time Slot',
                       ),
-                      child: Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: _availableSlots.map((slot) {
-                          final isSelected = _selectedSlot == slot;
-                          final timeString = '${DateFormat('HH:mm').format(slot.startTime.toLocal())} - ${DateFormat('HH:mm').format(slot.endTime.toLocal())}';
-                          
-                          return ChoiceChip(
-                            label: Text(timeString),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(() => _selectedSlot = slot);
-                              }
-                            },
-                            selectedColor: AppColors.primary,
-                            labelStyle: GoogleFonts.inter(
-                              color: isSelected ? AppColors.onPrimary : AppColors.onSurface,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                            backgroundColor: AppColors.surfaceContainer,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: BorderSide(
-                                color: isSelected ? AppColors.primary : Colors.transparent,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                      items: _availableSlots.map((slot) {
+                        final timeString = '${DateFormat('HH:mm').format(slot.startTime.toLocal())} - ${DateFormat('HH:mm').format(slot.endTime.toLocal())}';
+                        return DropdownMenuItem(
+                          value: slot,
+                          child: Text(timeString),
+                        );
+                      }).toList(),
+                      onChanged: (slot) {
+                        if (slot != null) {
+                          setState(() => _selectedSlot = slot);
+                        }
+                      },
                     ),
 
                   const SizedBox(height: 40),

@@ -30,6 +30,9 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
 
+    - name: Create Mock .env
+      run: cp .env.example .env
+
     - name: Analyze project source
       run: flutter analyze --no-fatal-infos --no-fatal-warnings
 

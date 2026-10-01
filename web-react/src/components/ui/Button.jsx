@@ -2,6 +2,7 @@ import { cn } from '../../lib/cn'
 
 const VARIANTS = {
   brand: 'bg-brand-gradient text-white hover:opacity-90 focus:ring-brand',
+  secondary: 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 focus:ring-gray-200 dark:bg-[#1a1c20] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#16181b]',
   outline: 'border border-slate-300 text-slate-700 hover:bg-slate-100 focus:ring-slate-400',
   ghost: 'text-slate-600 hover:bg-slate-100 focus:ring-slate-300',
   danger: 'bg-red-600 text-white hover:bg-red-500 focus:ring-red-500',

@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:typed_data';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../../core/theme/app_colors.dart';
 import '../api/station_service.dart';
 import '../models/station.dart';
@@ -26,6 +30,9 @@ class _AddEditStationScreenState extends State<AddEditStationScreen> {
   LatLng? _selectedLocation;
   Timer? _debounce;
   
+  List<String> _documentUrls = [];
+  bool _isUploadingImage = false;
+  
   bool _isLoading = false;
 
   @override
@@ -44,7 +51,10 @@ class _AddEditStationScreenState extends State<AddEditStationScreen> {
       _nameController.text = widget.station!.name;
       _addressController.text = widget.station!.address;
       _selectedLocation = LatLng(widget.station!.latitude, widget.station!.longitude);
+      _documentUrls = widget.station!.documentUrls != null ? List<String>.from(widget.station!.documentUrls!) : [];
     } else {
+      // Default to Colombo
+      _selectedLocation = const LatLng(6.9271, 79.8612);
       _getLocation();
     }
   }
@@ -105,6 +115,64 @@ class _AddEditStationScreenState extends State<AddEditStationScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+    if (await picked.length() > 5 * 1024 * 1024) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Choose a photo smaller than 5 MB.')),
+        );
+      }
+      return;
+    }
+    final bytes = await picked.readAsBytes();
+    await _uploadImage(bytes);
+  }
+
+  Future<void> _uploadImage(Uint8List imageBytes) async {
+    setState(() => _isUploadingImage = true);
+    try {
+      final timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round().toString();
+      final apiKey = dotenv.env['CLOUDINARY_API_KEY']!;
+      final apiSecret = dotenv.env['CLOUDINARY_API_SECRET']!;
+      final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME']!;
+      
+      final signatureString = 'timestamp=$timestamp$apiSecret';
+      final bytes = utf8.encode(signatureString);
+      final digest = sha1.convert(bytes);
+      final signature = digest.toString();
+
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      final request = http.MultipartRequest('POST', uri)
+        ..fields['api_key'] = apiKey
+        ..fields['timestamp'] = timestamp
+        ..fields['signature'] = signature
+        ..files.add(http.MultipartFile.fromBytes('file', imageBytes, filename: 'upload.jpg'));
+        
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      if (response.statusCode == 200) {
+        final data = jsonDecode(responseBody);
+        setState(() {
+          _documentUrls.add(data['secure_url']);
+        });
+      } else {
+        throw Exception('Upload failed');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading image: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     
@@ -115,13 +183,21 @@ class _AddEditStationScreenState extends State<AddEditStationScreen> {
       return;
     }
 
+    if (_documentUrls.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload at least one document or image')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     final request = {
-      'name': _nameController.text,
-      'address': _addressController.text,
+      'name': _nameController.text.trim(),
+      'address': _addressController.text.trim(),
       'latitude': _selectedLocation!.latitude,
       'longitude': _selectedLocation!.longitude,
+      'documentUrls': _documentUrls,
     };
 
     try {
@@ -164,13 +240,21 @@ class _AddEditStationScreenState extends State<AddEditStationScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Station Name'),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'Required';
+                  if (val.trim().length < 3) return 'Name must be at least 3 characters';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _addressController,
                 decoration: const InputDecoration(labelText: 'Address'),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'Required';
+                  if (val.trim().length < 5) return 'Address must be at least 5 characters';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               Align(
@@ -229,6 +313,66 @@ class _AddEditStationScreenState extends State<AddEditStationScreen> {
               Text(
                 'Drag the map or tap to place the station marker',
                 style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 12),
+              ),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Documents / Images', style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 14)),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final url in _documentUrls)
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            url,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          right: -4,
+                          top: -4,
+                          child: IconButton(
+                            icon: const Icon(Icons.cancel, color: Colors.red),
+                            onPressed: () {
+                              setState(() {
+                                _documentUrls.remove(url);
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  GestureDetector(
+                    onTap: _isUploadingImage ? null : _pickImage,
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.outlineVariant, style: BorderStyle.solid),
+                      ),
+                      child: _isUploadingImage
+                          ? const Center(child: CircularProgressIndicator())
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_photo_alternate, color: AppColors.onSurfaceVariant),
+                                SizedBox(height: 4),
+                                Text('Upload', style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant)),
+                              ],
+                            ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
               SizedBox(

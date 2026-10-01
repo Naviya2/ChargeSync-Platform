@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/api/vehicle_service.dart';
 
 class StationsAppBar extends StatefulWidget {
   final TextEditingController searchController;
@@ -31,18 +32,21 @@ class _StationsAppBarState extends State<StationsAppBar> {
     super.dispose();
   }
 
-  static const _filters = [
-    _FilterChipData('compatible', Icons.check_circle_rounded, 'Model Y Compatible'),
-    _FilterChipData('available', Icons.electric_bolt_rounded, 'Available Now'),
-    _FilterChipData('speed', Icons.speed_rounded, 'Fast (150kW+)'),
-    _FilterChipData('dist', null, '< 3 mi'),
-    _FilterChipData('nacs', null, 'NACS / CCS'),
-    _FilterChipData('price', null, '< \$0.35/kWh'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
+    final activeVehicle = VehicleService.instance.activeVehicle;
+    final vehicleName = activeVehicle?.fullName ?? 'Vehicle';
+    final connectorName = activeVehicle?.connector.shortName ?? 'Connector';
+
+    final filters = [
+      _FilterChipData('compatible', Icons.check_circle_rounded, '$vehicleName Compatible'),
+      _FilterChipData('available', Icons.electric_bolt_rounded, 'Available Now'),
+      _FilterChipData('speed', Icons.speed_rounded, 'Fast (150kW+)'),
+      _FilterChipData('dist', null, '< 3 km'),
+      _FilterChipData('conn', null, '$connectorName Only'),
+      _FilterChipData('price', null, '< LKR 100/kWh'),
+    ];
 
     return Container(
       color: AppColors.surface.withValues(alpha: 0.95),
@@ -152,57 +156,64 @@ class _StationsAppBarState extends State<StationsAppBar> {
           // Filter chips row
           SizedBox(
             height: 44,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              itemCount: _filters.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, i) {
-                final f = _filters[i];
-                final isActive = widget.activeFilters.contains(f.key);
-                return GestureDetector(
-                  onTap: () => widget.onFilterToggle(f.key),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? AppColors.primaryContainer.withValues(alpha: 0.2)
-                          : AppColors.surfaceContainer,
-                      borderRadius: BorderRadius.circular(999),
-                      border: isActive
-                          ? Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.4),
-                              width: 1)
-                          : null,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (f.icon != null) ...[
-                          Icon(f.icon,
-                              size: 14,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: filters.asMap().entries.map((entry) {
+                  final int i = entry.key;
+                  final f = entry.value;
+                  final isActive = widget.activeFilters.contains(f.key);
+                  final chip = GestureDetector(
+                    onTap: () => widget.onFilterToggle(f.key),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? AppColors.primaryContainer.withValues(alpha: 0.2)
+                            : AppColors.surfaceContainer,
+                        borderRadius: BorderRadius.circular(999),
+                        border: isActive
+                            ? Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.4),
+                                width: 1)
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (f.icon != null) ...[
+                            Icon(f.icon,
+                                size: 14,
+                                color: isActive
+                                    ? AppColors.primary
+                                    : AppColors.onSurfaceVariant),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            f.label,
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                               color: isActive
                                   ? AppColors.primary
-                                  : AppColors.onSurfaceVariant),
-                          const SizedBox(width: 4),
-                        ],
-                        Text(
-                          f.label,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isActive
-                                ? AppColors.primary
-                                : AppColors.onSurfaceVariant,
+                                  : AppColors.onSurfaceVariant,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+
+                  if (i == filters.length - 1) return chip;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: chip,
+                  );
+                }).toList(),
+              ),
             ),
           ),
           const SizedBox(height: 4),

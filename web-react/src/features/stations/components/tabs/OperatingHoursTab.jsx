@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useUpdateOperatingHours } from '../../hooks/useStations'
+import useDialogStore from '../../../../store/dialogStore'
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -98,8 +99,8 @@ export default function OperatingHoursTab({ stationId, hours = [] }) {
     }))
     
     updateHoursMutation.mutate({ stationId, data }, {
-      onSuccess: () => alert('Schedule saved successfully'),
-      onError: () => alert('Failed to save schedule')
+      onSuccess: () => useDialogStore.getState().alert({ title: 'Saved', message: 'Operating schedule saved successfully.', variant: 'success' }),
+      onError: () => useDialogStore.getState().alert({ title: 'Error', message: 'Failed to save schedule.', variant: 'danger' })
     })
   }
 

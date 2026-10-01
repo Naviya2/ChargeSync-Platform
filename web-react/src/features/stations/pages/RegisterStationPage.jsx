@@ -31,8 +31,23 @@ export default function RegisterStationPage() {
             return
         }
 
+        if (form.name.trim().length < 3) {
+            setError('Station name must be at least 3 characters.')
+            return
+        }
+
+        if (form.address.trim().length < 5) {
+            setError('Address must be at least 5 characters.')
+            return
+        }
+
         if (isNaN(lat) || isNaN(lng)) {
             setError('Latitude and Longitude must be valid numbers.')
+            return
+        }
+
+        if (form.documents.length === 0) {
+            setError('Please upload at least one document or image.')
             return
         }
 

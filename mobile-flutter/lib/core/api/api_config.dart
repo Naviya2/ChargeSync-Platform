@@ -1,20 +1,22 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Central config for all backend API calls.
 class ApiConfig {
   ApiConfig._();
 
-  /// Dynamically use 10.0.2.2 for Android emulators, and localhost for Web/iOS/Desktop.
-  /// When hosting in production, pass the API_URL via:
-  /// flutter build apk --dart-define=API_URL=https://api.chargesync.network
+  /// Reads API_URL from .env file, falls back to compile-time env or local defaults
   static String get baseUrl {
-    // 1. Check for production URL passed during build
-    const envUrl = String.fromEnvironment('API_URL');
-    if (envUrl.isNotEmpty) {
+    final envUrl = dotenv.env['API_URL'];
+    if (envUrl != null && envUrl.isNotEmpty) {
       return envUrl;
     }
 
-    // 2. Fallback to local development URLs
+    const buildUrl = String.fromEnvironment('API_URL');
+    if (buildUrl.isNotEmpty) {
+      return buildUrl;
+    }
+
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return 'http://10.0.2.2:5035';
     }

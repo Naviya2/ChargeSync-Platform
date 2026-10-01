@@ -13,6 +13,13 @@ export const useMyStations = () => {
     })
 }
 
+export const useStations = () => {
+    return useQuery({
+        queryKey: ['all-stations'],
+        queryFn: stationsApi.getAll,
+    })
+}
+
 export const useStationDetail = (id) => {
     return useQuery({
         queryKey: STATIONS_KEYS.detail(id),

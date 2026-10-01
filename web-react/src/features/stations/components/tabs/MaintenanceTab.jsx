@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { cn } from '../../../../lib/cn'
 import { useAddMaintenanceWindow } from '../../hooks/useStations'
-
 import { useUpdateMaintenanceWindow, useDeleteMaintenanceWindow } from '../../hooks/useStations'
+import useDialogStore from '../../../../store/dialogStore'
 
 const toLocalDatetimeString = (dateStr) => {
   if (!dateStr) return '';
@@ -39,7 +39,7 @@ function MaintenanceItem({ item, stationId }) {
         onSuccess: () => setIsEditing(false),
         onError: (err) => {
           const msg = err.response?.data?.title || err.response?.data?.message || JSON.stringify(err.response?.data) || err.message;
-          alert(`Failed to update maintenance window: ${msg}`);
+          useDialogStore.getState().alert({ title: 'Update Failed', message: `Failed to update maintenance window: ${msg}`, variant: 'danger' })
         }
       }
     )
@@ -146,11 +146,18 @@ function MaintenanceItem({ item, stationId }) {
         </button>
         <button
           type="button"
-          onClick={() => {
-            if (window.confirm('Are you sure you want to delete this maintenance window?')) {
+          onClick={async () => {
+            const ok = await useDialogStore.getState().confirm({
+              title: 'Delete Maintenance Window',
+              message: 'Are you sure you want to delete this maintenance window?',
+              confirmLabel: 'Delete',
+              cancelLabel: 'Cancel',
+              variant: 'danger',
+            })
+            if (ok) {
               deleteMaintenance.mutate(
                 { maintenanceId: item.id, stationId },
-                { onError: () => alert('Failed to delete maintenance window') }
+                { onError: () => useDialogStore.getState().alert({ title: 'Error', message: 'Failed to delete maintenance window.', variant: 'danger' }) }
               )
             }
           }}
@@ -196,7 +203,7 @@ export default function MaintenanceTab({ stationId, maintenance = [], chargers =
         },
         onError: (err) => {
           console.error(err)
-          alert('Failed to schedule maintenance window')
+          useDialogStore.getState().alert({ title: 'Error', message: 'Failed to schedule maintenance window.', variant: 'danger' })
         }
       }
     )
@@ -237,7 +244,7 @@ export default function MaintenanceTab({ stationId, maintenance = [], chargers =
               >
                 <option value="" disabled>Select a charger</option>
                 {chargers.map(ch => (
-                  <option key={ch.id} value={ch.id}>{ch.id} ({ch.power || ch.maxOutputKw} kW)</option>
+                  <option key={ch.id} value={ch.id}>{ch.identifier} ({ch.powerKw} kW)</option>
                 ))}
               </select>
             </div>

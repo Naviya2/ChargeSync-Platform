@@ -2,27 +2,144 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/api/vehicle_service.dart';
+import '../../../core/api/planning_api_client.dart';
+import '../../../core/api/planning_models.dart';
+import '../../../features/reservations/screens/ai_planning_screen.dart';
 
-class SmartRecommendationCard extends StatelessWidget {
+import 'package:geolocator/geolocator.dart';
+
+class SmartRecommendationCard extends StatefulWidget {
   const SmartRecommendationCard({super.key});
 
   @override
+  State<SmartRecommendationCard> createState() => _SmartRecommendationCardState();
+}
+
+class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
+  static Future<PlanningResponse>? _cachedPlanFuture;
+  Future<PlanningResponse>? _planFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_cachedPlanFuture != null) {
+      _planFuture = _cachedPlanFuture;
+    } else {
+      _fetchRecommendation();
+    }
+  }
+
+  void _fetchRecommendation() {
+    setState(() {
+      _planFuture = _fetchAndCachePlan();
+      _cachedPlanFuture = _planFuture;
+    });
+  }
+
+  Future<PlanningResponse> _fetchAndCachePlan() async {
+    double? currentLat;
+    double? currentLon;
+    
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (serviceEnabled) {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        try {
+          Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low,
+            timeLimit: const Duration(seconds: 3),
+          );
+          currentLat = position.latitude;
+          currentLon = position.longitude;
+        } catch (_) {}
+      }
+    }
+
+    final req = PlanningRequest(
+      deadline: DateTime.now().add(const Duration(hours: 2)),
+      maxDistanceKm: 15.0,
+      pricePreference: 'Balanced',
+      currentLat: currentLat,
+      currentLon: currentLon,
+    );
+    return PlanningApiClient.instance.generateChargingPlan(req);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: VehicleService.instance,
-      builder: (context, _) {
-        final vehicle = VehicleService.instance.activeVehicle;
-        
-        // Dynamic calculations based on active vehicle (hub has 150 kW DC Fast Charger, $0.22/kWh base)
-        final batteryCapacity = vehicle?.batteryCapacityKwh ?? 75.0;
-        final maxChargeRate = vehicle?.maxChargeRateKw ?? 150.0;
-        final effectiveRate = maxChargeRate > 150.0 ? 150.0 : (maxChargeRate <= 0 ? 50.0 : maxChargeRate);
-        
-        // 10% to 80% SOC delta (70% capacity)
-        final energyNeededKwh = batteryCapacity * 0.70;
-        final durationMins = ((energyNeededKwh / effectiveRate) * 60).round().clamp(10, 180);
-        final estCost = (energyNeededKwh * 0.22) + 2.50; // tariff + connection fee
+    return FutureBuilder<PlanningResponse>(
+      future: _planFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.rankedItineraries.isEmpty) {
+          String reason = "No recommendations available right now";
+          if (snapshot.hasError) {
+             reason = snapshot.error.toString();
+          } else if (snapshot.hasData && snapshot.data!.agentReasoning.isNotEmpty) {
+             reason = snapshot.data!.agentReasoning;
+          }
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Row(
+                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                   children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.auto_awesome_rounded, color: AppColors.tertiary, size: 18),
+                          const SizedBox(width: 6),
+                          Text(
+                            'AI Smart Recommendation',
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.tertiary, letterSpacing: 0.02),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                         icon: const Icon(Icons.refresh, size: 16, color: AppColors.tertiary),
+                         padding: EdgeInsets.zero,
+                         constraints: const BoxConstraints(),
+                         onPressed: _fetchRecommendation,
+                      ),
+                   ],
+                ),
+                const SizedBox(height: 16),
+                const Icon(Icons.search_off_rounded, size: 48, color: AppColors.onSurfaceVariant),
+                const SizedBox(height: 12),
+                Text('No recommendations available right now', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface), textAlign: TextAlign.center),
+                const SizedBox(height: 8),
+                Text(
+                  reason,
+                  style: GoogleFonts.inter(color: AppColors.onSurfaceVariant, fontSize: 13, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        }
+
+        final response = snapshot.data!;
+        final topItinerary = response.rankedItineraries.first;
+        final durationMins = topItinerary.estimatedChargeDurationMins;
+        final estCost = topItinerary.costEstimate;
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -68,7 +185,7 @@ class SmartRecommendationCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Smart Recommendation',
+                            'AI Smart Recommendation',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -78,32 +195,43 @@ class SmartRecommendationCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.tertiaryContainer.withValues(
-                            alpha: 0.20,
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.refresh, size: 16, color: AppColors.tertiary),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: _fetchRecommendation,
                           ),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          'Save \$4.20',
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.tertiary,
-                            letterSpacing: 0.06,
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.tertiaryContainer.withValues(
+                                alpha: 0.20,
+                              ),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              'Score: ${topItinerary.matchScore}/100',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.tertiary,
+                                letterSpacing: 0.06,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Electrify Metro Hub',
+                    topItinerary.stationName,
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -122,8 +250,8 @@ class SmartRecommendationCard extends StatelessWidget {
                     child: Row(
                       children: [
                         const _MetricItem(
-                          label: 'Distance',
-                          value: '1.2 mi',
+                          label: 'Arrival',
+                          value: 'Soon',
                           valueColor: AppColors.onSurface,
                         ),
                         const SizedBox(width: 8),
@@ -135,7 +263,7 @@ class SmartRecommendationCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         _MetricItem(
                           label: 'Est. Cost',
-                          value: '\$${estCost.toStringAsFixed(2)}',
+                          value: 'LKR ${estCost.toStringAsFixed(2)}',
                           valueColor: AppColors.primary,
                         ),
                       ],
@@ -143,7 +271,7 @@ class SmartRecommendationCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Rates increase in 45 mins. Charging ${vehicle?.make != null ? "${vehicle!.make} ${vehicle.model}" : "now"} saves \$4.20 and comfortably secures your evening commute.',
+                    response.agentReasoning,
                     style: GoogleFonts.inter(
                       fontSize: 14,
                       fontWeight: FontWeight.w400,
@@ -157,7 +285,12 @@ class SmartRecommendationCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AiPlanningScreen()),
+                        );
+                      },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -167,7 +300,7 @@ class SmartRecommendationCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'View Optimal Plan',
+                              'Open AI Route Planner',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,

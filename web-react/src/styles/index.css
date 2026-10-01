@@ -11,7 +11,264 @@
 
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
+    transition: background-color 0.25s ease, color 0.2s ease;
   }
+}
+
+/* =============================================================
+   DARK MODE — Unified Inverse-Surface Palette
+   
+   Sidebar token : inverse-surface = #2f3035
+   
+   Color scale (all same hue family, minimal lightness steps):
+     --dk-base    : #2f3035   ← sidebar exact match  (page bg)
+     --dk-raised  : #35383e   ← cards / panels       (+4 L)
+     --dk-float   : #3b3e45   ← inputs / hover       (+8 L)
+     --dk-line    : #44474f   ← borders / dividers
+     --dk-subtle  : #52565f   ← muted text, placeholders
+   ============================================================= */
+
+/* ── Page & root ── */
+.dark body,
+.dark #root {
+  background-color: #2f3035 !important;   /* = inverse-surface */
+  color: #e8eaf0 !important;
+}
+
+/* ── Topbar ── */
+.dark header {
+  background-color: #2f3035 !important;   /* seamless with page */
+  border-bottom: 1px solid #44474f !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* Topbar circular icon buttons */
+.dark header button.rounded-full {
+  background-color: #3b3e45 !important;
+  border-color: #44474f !important;
+  color: #c4c8d4 !important;
+}
+.dark header button.rounded-full:hover {
+  background-color: #44474f !important;
+  color: #ffffff !important;
+}
+/* Profile pill button */
+.dark header [class*="rounded-full"][class*="border"][class*="bg-white"] {
+  background-color: #3b3e45 !important;
+  border-color: #44474f !important;
+}
+
+/* ── Card & panel surfaces ── */
+.dark .bg-white,
+.dark .bg-surface-container-lowest {
+  background-color: #35383e !important;   /* raised */
+  color: #e8eaf0 !important;
+}
+
+/* Sub-panels, alternating rows, gray-50 areas */
+.dark .bg-gray-50,
+.dark .bg-slate-50,
+.dark .bg-surface-container-low {
+  background-color: #35383e !important;   /* same raised — no contrast jump */
+  color: #d0d3dc !important;
+}
+
+/* Deeper nested containers */
+.dark .bg-surface-container,
+.dark .bg-surface-container-high,
+.dark .bg-surface-container-highest {
+  background-color: #3b3e45 !important;   /* float */
+  color: #d0d3dc !important;
+}
+
+/* ── Table ── */
+.dark thead,
+.dark thead tr,
+.dark thead th {
+  background-color: #2f3035 !important;   /* base — blends with page */
+  color: #8a8fa0 !important;
+  border-bottom-color: #44474f !important;
+}
+
+.dark tbody tr {
+  background-color: #35383e !important;
+  border-color: #44474f !important;
+}
+.dark tbody tr:hover {
+  background-color: #3b3e45 !important;
+}
+
+/* ── Text ── */
+.dark .text-gray-900,
+.dark .text-slate-900,
+.dark .text-on-surface   { color: #eceef4 !important; }
+
+.dark .text-gray-700,
+.dark .text-slate-700    { color: #c4c8d4 !important; }
+
+.dark .text-gray-600,
+.dark .text-slate-600,
+.dark .text-on-surface-variant { color: #9aa0b0 !important; }
+
+.dark .text-gray-500,
+.dark .text-slate-500    { color: #6e7385 !important; }
+
+.dark .text-gray-400,
+.dark .text-slate-400    { color: #52565f !important; }
+
+/* ── Borders & dividers ── */
+.dark .border,
+.dark .border-b,
+.dark .border-t,
+.dark .border-l,
+.dark .border-r,
+.dark [class*="border-gray-"],
+.dark [class*="border-slate-"],
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #44474f !important;
+}
+
+/* Ring */
+.dark .ring-1,
+.dark .ring-black { --tw-ring-color: #44474f !important; }
+
+/* ── Shadows ── */
+.dark .shadow-sm,
+.dark .shadow-md,
+.dark .shadow-lg,
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* ── Inputs, selects, textareas ── */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #3b3e45 !important;   /* float */
+  color: #e8eaf0 !important;
+  border-color: #44474f !important;
+}
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  background-color: #35383e !important;
+  border-color: #00897b !important;       /* teal accent */
+  outline: none !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #6e7385 !important;
+}
+
+/* Keyboard shortcut labels */
+.dark kbd {
+  background-color: #3b3e45 !important;
+  color: #6e7385 !important;
+  border-color: #44474f !important;
+}
+
+/* ── Status badge tints (semi-transparent on unified bg) ── */
+.dark .bg-blue-100   { background-color: rgba(59, 130, 246, 0.18) !important; }
+.dark .text-blue-800 { color: #93c5fd !important; }
+.dark .bg-green-100  { background-color: rgba(34, 197, 94, 0.18) !important; }
+.dark .text-green-800{ color: #86efac !important; }
+.dark .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.18) !important; }
+.dark .text-yellow-800{ color: #fde047 !important; }
+.dark .bg-red-100    { background-color: rgba(239, 68, 68, 0.18) !important; }
+.dark .text-red-800  { color: #fca5a5 !important; }
+.dark .bg-indigo-100 { background-color: rgba(99, 102, 241, 0.18) !important; }
+.dark .text-indigo-800{ color: #a5b4fc !important; }
+
+/* ── Inline confirm banners ── */
+.dark .border-amber-200.bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.28) !important;
+}
+.dark .text-amber-800 { color: #fcd34d !important; }
+.dark .text-amber-600 { color: #fbbf24 !important; }
+.dark .text-amber-500 { color: #f59e0b !important; }
+
+.dark .border-red-200.bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.28) !important;
+}
+.dark .text-red-600 { color: #f87171 !important; }
+.dark .text-red-500 { color: #ef4444 !important; }
+
+/* ── Emerald deposit card ── */
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.22) !important;
+}
+.dark .bg-emerald-100  { background-color: rgba(16, 185, 129, 0.18) !important; }
+.dark .text-emerald-700{ color: #6ee7b7 !important; }
+.dark .text-emerald-800{ color: #a7f3d0 !important; }
+.dark .text-emerald-600{ color: #34d399 !important; }
+
+/* ── Blue info tint ── */
+.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1) !important; }
+
+/* ── Dropdown / notification panel ── */
+.dark .absolute.bg-white,
+.dark .absolute.rounded-xl,
+.dark [class*="absolute"][class*="bg-white"] {
+  background-color: #35383e !important;
+  border: 1px solid #44474f !important;
+}
+.dark .bg-gray-50.border-b {
+  background-color: #3b3e45 !important;
+}
+
+/* ── Hover states ── */
+.dark button:not(.rounded-full):hover,
+.dark a:hover {
+  background-color: transparent !important;
+}
+.dark .hover\:bg-gray-50:hover  { background-color: #3b3e45 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: #44474f !important; }
+.dark .hover\:bg-red-50:hover   { background-color: rgba(239,68,68,0.1) !important; }
+
+/* ── Dialogs / Modals ── */
+.dark .bg-white.shadow-2xl,
+.dark .rounded-2xl.bg-white {
+  background-color: #35383e !important;
+}
+
+/* Profile modal gradient header */
+.dark .bg-gradient-to-br.from-blue-50 {
+  background: linear-gradient(135deg, #2c3d52 0%, #2a3248 100%) !important;
+}
+
+/* Avatar circle in profile modal */
+.dark .bg-white.shadow-sm.border.border-gray-200 {
+  background-color: #3b3e45 !important;
+  border-color: #44474f !important;
+}
+
+/* Profile info row card */
+.dark .bg-gray-50.p-4.rounded-xl {
+  background-color: #3b3e45 !important;
+  border-color: #44474f !important;
+}
+
+/* Modal footer strip */
+.dark .bg-gray-50\/50 {
+  background-color: #2f3035 !important;   /* back to base */
+}
+
+/* ── Charts ── */
+.dark .recharts-wrapper,
+.dark .recharts-surface {
+  background-color: transparent !important;
+}
+
+/* ── Smooth transitions ── */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
 }
 
 @layer components {

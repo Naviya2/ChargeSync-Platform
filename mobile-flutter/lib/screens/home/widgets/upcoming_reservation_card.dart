@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/api/reservation_api_client.dart';
 import '../../../core/api/reservation_models.dart';
@@ -77,10 +79,13 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.qr_code_2,
-                  size: 200,
-                  color: Colors.black,
+                child: SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: QrImageView(
+                    data: _upcomingReservation!.reservationQRCode!,
+                    version: QrVersions.auto,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -308,7 +313,17 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: () {},
+                  onTap: () async {
+                    final query = '${res.stationLatitude},${res.stationLongitude}';
+                    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    } else {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch maps')));
+                      }
+                    }
+                  },
                   child: const SizedBox(
                     width: 44,
                     height: 44,

@@ -48,6 +48,30 @@ public sealed class ReservationService : IReservationService
         if (!chargerExists)
             throw new NotFoundException(nameof(Charger), request.ChargerId);
 
+        // 3.5 Verify the driver doesn't already have an active reservation for this vehicle on this day.
+        var existingReservation = await _db.Reservations
+            .AnyAsync(r => r.DriverId == driverId 
+                        && r.VehicleId == request.VehicleId
+                        && r.StartTime.Date == request.StartTime.Date 
+                        && r.Status != ReservationStatus.Cancelled 
+                        && r.Status != ReservationStatus.Completed, cancellationToken);
+        if (existingReservation)
+            throw new InvalidOperationException("You already have an incomplete reservation for this vehicle today.");
+
+        // 3.7 Validate Operating Hours
+        await ValidateOperatingHoursAsync(request.ChargerId, request.StartTime, request.EndTime, cancellationToken);
+
+        // 3.8 Verify the requested time slot has at least a 30-minute buffer from existing reservations.
+        var overlapping = await _db.Reservations
+            .AnyAsync(r => r.ChargerId == request.ChargerId 
+                        && r.Status != ReservationStatus.Cancelled 
+                        && r.Status != ReservationStatus.Completed
+                        && r.StartTime < request.EndTime.AddMinutes(30)
+                        && r.EndTime > request.StartTime.AddMinutes(-30), cancellationToken);
+
+        if (overlapping)
+            throw new InvalidOperationException("The requested time slot overlaps or does not have the required 30-minute buffer from an existing reservation.");
+
         // 4. Create the reservation domain object.
         var reservation = Reservation.Create(
             driverId,
@@ -73,6 +97,54 @@ public sealed class ReservationService : IReservationService
         return ToDto(reservation);
     }
 
+    // ── Admin/Owner reservation creation ──────────────────────────────────────
+
+    public async Task<ReservationDto> CreateByAdminAsync(
+        Guid staffUserId,
+        AdminCreateReservationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var driverExists = await _db.Users
+            .AnyAsync(u => u.Id == request.DriverId, cancellationToken);
+        if (!driverExists)
+            throw new NotFoundException("Driver", request.DriverId);
+
+        var chargerExists = await _db.Chargers
+            .AnyAsync(c => c.Id == request.ChargerId, cancellationToken);
+        if (!chargerExists)
+            throw new NotFoundException(nameof(Charger), request.ChargerId);
+
+        await ValidateOperatingHoursAsync(request.ChargerId, request.StartTime, request.EndTime, cancellationToken);
+
+        var overlapping = await _db.Reservations
+            .AnyAsync(r => r.ChargerId == request.ChargerId 
+                        && r.Status != ReservationStatus.Cancelled 
+                        && r.Status != ReservationStatus.Completed
+                        && r.StartTime < request.EndTime.AddMinutes(30)
+                        && r.EndTime > request.StartTime.AddMinutes(-30), cancellationToken);
+
+        if (overlapping)
+            throw new InvalidOperationException("The requested time slot overlaps or does not have the required 30-minute buffer from an existing reservation.");
+
+        var reservation = Reservation.Create(
+            request.DriverId,
+            request.ChargerId,
+            request.StartTime,
+            request.EndTime,
+            0m, // No advance payment for admin reservations
+            request.VehicleId);
+
+        var qrToken = GenerateQrToken();
+        reservation.ConfirmWithQrCode(qrToken);
+
+        _db.Reservations.Add(reservation);
+        RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.Pending, actorId: staffUserId);
+        RecordHistory(reservation, oldStatus: ReservationStatus.Pending, newStatus: ReservationStatus.Confirmed, actorId: staffUserId);
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return ToDto(reservation);
+    }
+
     // ── Walk-in admission ─────────────────────────────────────────────────────
 
     public async Task<ReservationDto> CreateWalkInAsync(
@@ -85,6 +157,18 @@ public sealed class ReservationService : IReservationService
         if (!chargerExists)
             throw new NotFoundException(nameof(Charger), request.ChargerId);
 
+        await ValidateOperatingHoursAsync(request.ChargerId, request.StartTime, request.EndTime, cancellationToken);
+
+        var overlapping = await _db.Reservations
+            .AnyAsync(r => r.ChargerId == request.ChargerId 
+                        && r.Status != ReservationStatus.Cancelled 
+                        && r.Status != ReservationStatus.Completed
+                        && r.StartTime < request.EndTime.AddMinutes(30)
+                        && r.EndTime > request.StartTime.AddMinutes(-30), cancellationToken);
+
+        if (overlapping)
+            throw new InvalidOperationException("The requested walk-in time slot overlaps or does not have the required 30-minute buffer from an existing reservation.");
+
         var reservation = Reservation.CreateWalkIn(
             request.ChargerId,
             request.StartTime,
@@ -95,12 +179,20 @@ public sealed class ReservationService : IReservationService
         await _sessions.StartForCheckedInReservationAsync(reservation, staffUserId, cancellationToken);
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        // Load navigation properties for ToDto
+        reservation = await _db.Reservations
+            .Include(r => r.Charger).ThenInclude(c => c.Station)
+            .Include(r => r.Vehicle)
+            .Include(r => r.Driver)
+            .FirstOrDefaultAsync(r => r.Id == reservation.Id, cancellationToken) ?? reservation;
+
         return ToDto(reservation);
     }
 
     // ── List reservations ─────────────────────────────────────────────────────
 
-    public async Task<PagedResult<ReservationSummaryDto>> GetListAsync(
+    public async Task<PagedResult<ReservationDto>> GetListAsync(
         Guid requesterId,
         string requesterRole,
         ReservationFilter filter,
@@ -111,6 +203,10 @@ public sealed class ReservationService : IReservationService
         // Drivers can only see their own reservations.
         if (requesterRole == UserRole.Driver.ToString())
             query = query.Where(r => r.DriverId == requesterId);
+
+        // Station Owners can only see reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString())
+            query = query.Where(r => r.Charger.Station.OwnerId == requesterId);
 
         if (filter.ChargerId.HasValue)
             query = query.Where(r => r.ChargerId == filter.ChargerId.Value);
@@ -133,19 +229,28 @@ public sealed class ReservationService : IReservationService
             .OrderByDescending(r => r.StartTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(r => new ReservationSummaryDto
+            .Select(r => new ReservationDto
             {
                 Id = r.Id,
                 DriverId = r.DriverId,
                 ChargerId = r.ChargerId,
+                VehicleId = r.VehicleId,
                 StartTime = r.StartTime,
                 EndTime = r.EndTime,
+                ReservationQRCode = r.ReservationQRCode,
+                AdvanceDepositAmount = r.AdvanceDepositAmount,
                 Status = r.Status,
-                IsWalkIn = r.DriverId == null
+                CreatedAt = r.CreatedAt,
+                StationName = r.Charger.Station.Name,
+                StationLatitude = r.Charger.Station.Latitude,
+                StationLongitude = r.Charger.Station.Longitude,
+                ChargerName = r.Charger.Identifier,
+                VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
+                DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
             })
             .ToListAsync(cancellationToken);
 
-        return new PagedResult<ReservationSummaryDto>
+        return new PagedResult<ReservationDto>
         {
             Items = items,
             TotalCount = totalCount,
@@ -163,6 +268,10 @@ public sealed class ReservationService : IReservationService
         CancellationToken cancellationToken = default)
     {
         var reservation = await _db.Reservations
+            .Include(r => r.Charger)
+                .ThenInclude(c => c.Station)
+            .Include(r => r.Vehicle)
+            .Include(r => r.Driver)
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
@@ -170,6 +279,10 @@ public sealed class ReservationService : IReservationService
 
         // Drivers may only view their own reservations.
         if (requesterRole == UserRole.Driver.ToString() && reservation.DriverId != requesterId)
+            return null;
+
+        // Station Owners may only view reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString() && reservation.Charger.Station.OwnerId != requesterId)
             return null;
 
         return ToDto(reservation);
@@ -233,6 +346,12 @@ public sealed class ReservationService : IReservationService
             .FirstOrDefaultAsync(r => r.ReservationQRCode == request.QrCode.Trim(), cancellationToken)
             ?? throw new NotFoundException("Reservation with QR code", request.QrCode);
 
+        var now = DateTimeOffset.UtcNow;
+        if (now < reservation.StartTime || now > reservation.EndTime)
+        {
+            throw new InvalidOperationException($"Check-in is only allowed during the scheduled reservation window: {reservation.StartTime.ToLocalTime():t} - {reservation.EndTime.ToLocalTime():t}.");
+        }
+
         var oldStatus = reservation.Status;
         reservation.CheckIn();
 
@@ -281,29 +400,49 @@ public sealed class ReservationService : IReservationService
         CancellationToken cancellationToken = default)
     {
         var reservation = await _db.Reservations
+            .Include(r => r.Charger)
+                .ThenInclude(c => c.Station)
+            .Include(r => r.Vehicle)
+            .Include(r => r.Driver)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new NotFoundException(nameof(Reservation), id);
 
         // Only admins or station owners can update this.
         if (requesterRole == UserRole.Driver.ToString())
             throw new ForbiddenAccessException();
+            
+        // Station Owners can only update reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString())
+        {
+            var stationOwnerId = await _db.Chargers
+                .Where(c => c.Id == reservation.ChargerId)
+                .Select(c => c.Station.OwnerId)
+                .FirstOrDefaultAsync(cancellationToken);
+                
+            if (stationOwnerId != requesterId)
+                throw new ForbiddenAccessException();
+        }
 
         // Business logic to update the time window would be handled in the Domain object.
         // For now, we update it via the entity directly if it exposes a setter or method.
         // Wait, the properties might be private setters.
         // We will assume a method UpdateTimeWindow exists on Reservation entity, or just use private setters reflection if needed.
         
-        // Ensure no overlapping reservations exist in the new time window
+        // Validate Operating Hours
+        await ValidateOperatingHoursAsync(reservation.ChargerId, request.StartTime, request.EndTime, cancellationToken);
+
+        // Ensure no overlapping reservations exist in the new time window (with 30 min buffer)
         var overlapping = await _db.Reservations
             .AnyAsync(r => r.ChargerId == reservation.ChargerId 
                         && r.Id != id 
                         && r.Status != ReservationStatus.Cancelled
-                        && r.StartTime < request.EndTime 
-                        && r.EndTime > request.StartTime, 
+                        && r.Status != ReservationStatus.Completed
+                        && r.StartTime < request.EndTime.AddMinutes(30)
+                        && r.EndTime > request.StartTime.AddMinutes(-30), 
                       cancellationToken);
         
         if (overlapping)
-            throw new InvalidOperationException("The requested time window overlaps with an existing reservation.");
+            throw new InvalidOperationException("The requested time window overlaps or does not have the required 30-minute buffer from an existing reservation.");
 
         reservation.GetType().GetProperty("StartTime")?.SetValue(reservation, request.StartTime);
         reservation.GetType().GetProperty("EndTime")?.SetValue(reservation, request.EndTime);
@@ -327,6 +466,18 @@ public sealed class ReservationService : IReservationService
         // Only Admins or Station Owners should be able to hard delete
         if (requesterRole == UserRole.Driver.ToString())
             throw new ForbiddenAccessException();
+
+        // Station Owners can only delete reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString())
+        {
+            var stationOwnerId = await _db.Chargers
+                .Where(c => c.Id == reservation.ChargerId)
+                .Select(c => c.Station.OwnerId)
+                .FirstOrDefaultAsync(cancellationToken);
+                
+            if (stationOwnerId != requesterId)
+                throw new ForbiddenAccessException();
+        }
 
         // Also delete associated history
         var history = await _db.ReservationStatusHistories
@@ -369,14 +520,33 @@ public sealed class ReservationService : IReservationService
         int durationMinutes,
         CancellationToken cancellationToken = default)
     {
-        var startOfDay = new DateTimeOffset(date.Date, TimeSpan.Zero);
+        var charger = await _db.Chargers
+            .Include(c => c.Station)
+                .ThenInclude(s => s.OperatingHours)
+            .Include(c => c.MaintenanceWindows)
+            .FirstOrDefaultAsync(c => c.Id == chargerId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Charger), chargerId);
+
+        var dayOfWeek = (int)date.DayOfWeek;
+        var operatingHour = charger.Station.OperatingHours.FirstOrDefault(o => o.DayOfWeek == dayOfWeek);
+        if (operatingHour == null || !operatingHour.IsEnabled)
+        {
+            return new List<TimeSlotDto>(); // Station is closed
+        }
+
+        // Operating hours are stored as local time. Assuming Sri Lanka Time (+05:30) for the platform.
+        var timeZoneOffset = TimeSpan.FromHours(5.5);
+        var startOfDay = new DateTimeOffset(date.Date, timeZoneOffset);
         var endOfDay = startOfDay.AddDays(1);
+
+        var startOfDayUtc = startOfDay.ToUniversalTime();
+        var endOfDayUtc = endOfDay.ToUniversalTime();
 
         var reservations = await _db.Reservations
             .Where(r => r.ChargerId == chargerId &&
                         r.Status != ReservationStatus.Cancelled &&
-                        r.StartTime < endOfDay &&
-                        r.EndTime > startOfDay)
+                        r.StartTime < endOfDayUtc &&
+                        r.EndTime > startOfDayUtc)
             .OrderBy(r => r.StartTime)
             .ToListAsync(cancellationToken);
 
@@ -394,11 +564,17 @@ public sealed class ReservationService : IReservationService
         while (searchStart.AddMinutes(durationMinutes) <= endOfDay)
         {
             var searchEnd = searchStart.AddMinutes(durationMinutes);
-            bool isOverlap = reservations.Any(r => r.StartTime < searchEnd && r.EndTime > searchStart);
+            bool isOverlap = reservations.Any(r => r.StartTime < searchEnd.AddMinutes(30) && r.EndTime > searchStart.AddMinutes(-30));
+            bool isMaintenanceOverlap = charger.MaintenanceWindows?.Any(m => m.StartTime < searchEnd && m.EndTime > searchStart) == true;
 
-            if (!isOverlap)
+            if (!isOverlap && !isMaintenanceOverlap)
             {
-                availableSlots.Add(new TimeSlotDto(searchStart, searchEnd));
+                var timeOfDayStart = searchStart.TimeOfDay;
+                var timeOfDayEnd = searchEnd.TimeOfDay;
+                if (timeOfDayStart >= operatingHour.OpenTime && timeOfDayEnd <= operatingHour.CloseTime)
+                {
+                    availableSlots.Add(new TimeSlotDto(searchStart, searchEnd));
+                }
             }
 
             searchStart = searchStart.AddMinutes(15);
@@ -418,6 +594,31 @@ public sealed class ReservationService : IReservationService
         ReservationQRCode = r.ReservationQRCode,
         AdvanceDepositAmount = r.AdvanceDepositAmount,
         Status = r.Status,
-        CreatedAt = r.CreatedAt
+        CreatedAt = r.CreatedAt,
+        StationName = r.Charger?.Station?.Name ?? string.Empty,
+        StationLatitude = r.Charger?.Station?.Latitude ?? 0,
+        StationLongitude = r.Charger?.Station?.Longitude ?? 0,
+        ChargerName = r.Charger?.Identifier ?? string.Empty,
+        VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
+        DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
     };
+
+    private async Task ValidateOperatingHoursAsync(Guid chargerId, DateTimeOffset startTime, DateTimeOffset endTime, CancellationToken cancellationToken)
+    {
+        var charger = await _db.Chargers
+            .Include(c => c.Station)
+                .ThenInclude(s => s.OperatingHours)
+            .FirstOrDefaultAsync(c => c.Id == chargerId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Charger), chargerId);
+
+        var dayOfWeek = (int)startTime.DayOfWeek;
+        var operatingHour = charger.Station.OperatingHours.FirstOrDefault(o => o.DayOfWeek == dayOfWeek);
+        if (operatingHour == null || !operatingHour.IsEnabled)
+            throw new InvalidOperationException("The charging station is closed on this time.");
+
+        var timeOfDay = startTime.TimeOfDay;
+        var endTimeOfDay = endTime.TimeOfDay;
+        if (timeOfDay < operatingHour.OpenTime || endTimeOfDay > operatingHour.CloseTime)
+            throw new InvalidOperationException($"The requested time falls outside the station's operating hours ({operatingHour.OpenTime:hh\\:mm} - {operatingHour.CloseTime:hh\\:mm}).");
+    }
 }

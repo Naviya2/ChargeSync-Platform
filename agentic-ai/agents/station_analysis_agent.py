@@ -13,8 +13,8 @@ class StationAnalysisAgent:
     to supply candidate station scores.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, llm=None):
+        self.llm = llm
 
     def evaluate_availability(self, live_chargers: List[ChargerStatus], historical_utilization: float) -> float:
         """

@@ -40,6 +40,21 @@ public sealed class ReservationsController : ControllerBase
         }
     }
 
+    [HttpPost("admin")]
+    [Authorize(Policy = AuthorizationPolicies.StationOwner)]
+    public async Task<ActionResult<ReservationDto>> CreateByAdmin([FromBody] AdminCreateReservationRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var reservation = await _reservationService.CreateByAdminAsync(RequesterId, request, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { id = reservation.Id }, reservation);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPost("walk-in")]
     [Authorize(Policy = AuthorizationPolicies.StationOwner)]
     public async Task<ActionResult<ReservationDto>> CreateWalkIn([FromBody] WalkInRequest request, CancellationToken cancellationToken)
@@ -49,7 +64,7 @@ public sealed class ReservationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResult<ReservationSummaryDto>>> GetList([FromQuery] ReservationFilter filter, CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<ReservationDto>>> GetList([FromQuery] ReservationFilter filter, CancellationToken cancellationToken)
     {
         var result = await _reservationService.GetListAsync(RequesterId, RequesterRole, filter, cancellationToken);
         return Ok(result);

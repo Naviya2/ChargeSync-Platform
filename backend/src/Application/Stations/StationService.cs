@@ -195,7 +195,7 @@ public class StationService : IStationService
         if (charger == null)
             throw new UnauthorizedAccessException("Charger not found or you are not the owner.");
 
-        var maintenance = MaintenanceWindow.Create(charger.Id, request.Reason, request.StartTime, request.EndTime);
+        var maintenance = MaintenanceWindow.Create(charger.Id, request.Reason ?? string.Empty, request.StartTime, request.EndTime);
         
         _context.MaintenanceWindows.Add(maintenance);
         await _context.SaveChangesAsync(cancellationToken);
@@ -219,7 +219,7 @@ public class StationService : IStationService
         if (maintenance == null)
             throw new UnauthorizedAccessException("Maintenance window not found or you are not the owner.");
 
-        maintenance.Update(request.Reason, request.StartTime, request.EndTime);
+        maintenance.Update(request.Reason ?? string.Empty, request.StartTime, request.EndTime);
         
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -274,6 +274,13 @@ public class StationService : IStationService
 
     private static ChargerDto MapChargerToDto(Charger charger)
     {
+        var status = charger.Status;
+        var now = DateTimeOffset.UtcNow;
+        if (charger.MaintenanceWindows?.Any(m => now >= m.StartTime && now <= m.EndTime) == true)
+        {
+            status = ChargerStatus.Maintenance;
+        }
+
         return new ChargerDto
         {
             Id = charger.Id,
@@ -283,7 +290,7 @@ public class StationService : IStationService
             Connector = charger.Connector,
             PowerKw = charger.PowerKw,
             Tariff = charger.Tariff,
-            Status = charger.Status,
+            Status = status,
             MaintenanceWindows = charger.MaintenanceWindows?.Select(m => new MaintenanceWindowDto
             {
                 Id = m.Id,
