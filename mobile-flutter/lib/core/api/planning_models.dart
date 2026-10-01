@@ -2,11 +2,15 @@ class PlanningRequest {
   final DateTime deadline;
   final double? maxDistanceKm;
   final String? pricePreference;
+  final double? currentLat;
+  final double? currentLon;
 
   PlanningRequest({
     required this.deadline,
     this.maxDistanceKm,
     this.pricePreference,
+    this.currentLat,
+    this.currentLon,
   });
 
   Map<String, dynamic> toJson() {
@@ -14,6 +18,8 @@ class PlanningRequest {
       'deadline': deadline.toUtc().toIso8601String(),
       'max_distance_km': maxDistanceKm,
       'price_preference': pricePreference,
+      if (currentLat != null) 'current_lat': currentLat,
+      if (currentLon != null) 'current_lon': currentLon,
     };
   }
 }

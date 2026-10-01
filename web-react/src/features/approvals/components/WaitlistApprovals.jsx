@@ -18,7 +18,15 @@ export default function WaitlistApprovals() {
     )
   }
 
-  if (requests.length === 0) return null
+  if (requests.length === 0) {
+    return (
+      <div className="flex flex-col gap-space-2xs mb-space-2xl bg-white p-6 rounded-xl border border-gray-100 shadow-sm text-center">
+        <span className="material-symbols-outlined text-4xl text-gray-300 mb-2">check_circle</span>
+        <h2 className="font-headline-sm text-gray-900">No Waitlist Requests</h2>
+        <p className="font-body-md text-gray-500">There are no pending waitlist requests or AI overrides at the moment.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-space-md mb-space-2xl">

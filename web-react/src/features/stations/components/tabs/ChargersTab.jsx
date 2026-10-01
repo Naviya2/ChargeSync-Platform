@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { cn } from '../../../../lib/cn'
 import { CONNECTOR_TYPES, CONNECTOR_TYPE_OPTIONS } from '../../../../lib/constants'
 import { useAddCharger, useUpdateCharger, useDeleteCharger } from '../../hooks/useStations'
+import useDialogStore from '../../../../store/dialogStore'
 
 const STATE_STYLE = {
   dispensing: { cls: 'bg-secondary/10 text-secondary', dot: 'bg-secondary animate-pulse' },
@@ -61,7 +62,7 @@ export default function ChargersTab({ stationId, chargers }) {
           },
           onError: (err) => {
             console.error(err)
-            alert('Failed to update charger')
+            useDialogStore.getState().alert({ title: 'Error', message: 'Failed to update charger.', variant: 'danger' })
           }
         }
       )
@@ -74,7 +75,7 @@ export default function ChargersTab({ stationId, chargers }) {
           },
           onError: (err) => {
             console.error(err)
-            alert('Failed to add charger')
+            useDialogStore.getState().alert({ title: 'Error', message: 'Failed to add charger.', variant: 'danger' })
           }
         }
       )
@@ -94,12 +95,19 @@ export default function ChargersTab({ stationId, chargers }) {
     setShowAddForm(true)
   }
 
-  const handleDelete = (ch) => {
-    if (window.confirm(`Are you sure you want to delete charger ${ch.identifier}?`)) {
+  const handleDelete = async (ch) => {
+    const ok = await useDialogStore.getState().confirm({
+      title: 'Delete Charger',
+      message: `Are you sure you want to delete charger "${ch.identifier}"? This action cannot be undone.`,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      variant: 'danger',
+    })
+    if (ok) {
       deleteCharger.mutate(
         { stationId, chargerId: ch.id },
         {
-          onError: () => alert('Failed to delete charger')
+          onError: () => useDialogStore.getState().alert({ title: 'Error', message: 'Failed to delete charger.', variant: 'danger' })
         }
       )
     }
@@ -193,7 +201,7 @@ export default function ChargersTab({ stationId, chargers }) {
               />
             </div>
             <div className="flex flex-col gap-space-2xs">
-              <label className="font-label-sm text-label-sm text-on-surface">Price per kWh ($)</label>
+              <label className="font-label-sm text-label-sm text-on-surface">Price per kWh (LKR)</label>
               <input
                 type="number"
                 step="0.01"
@@ -255,7 +263,7 @@ export default function ChargersTab({ stationId, chargers }) {
                   {ch.powerKw || ch.maxOutputKw || ch.power} kW
                 </td>
                 <td className="px-space-md py-space-sm font-body-sm text-body-sm">
-                  <span className="font-semibold text-on-surface">${ch.tariff || ch.pricePerKwh || '0.00'} / kWh</span>
+                  <span className="font-semibold text-on-surface">LKR {ch.tariff || ch.pricePerKwh || '0.00'} / kWh</span>
                 </td>
                 <td className="px-space-md py-space-sm">
                   <ChargerState state={ch.status?.toLowerCase() || ch.state} label={ch.status || ch.stateLabel || 'Available'} />

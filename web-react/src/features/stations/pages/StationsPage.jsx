@@ -15,6 +15,10 @@ export default function StationsPage() {
     return <MyStationsPage />
   }
 
+  if (role === ROLES.ADMIN) {
+    return <MyStationsPage isAdmin={true} />
+  }
+
   return (
     <PlaceholderPage
       title="Stations"

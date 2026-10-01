@@ -75,7 +75,7 @@ export default function OverviewTab({ chargers = [], stationName }) {
     },
     {
       label: 'Total Revenue (Today)',
-      value: '$0.00',
+      value: 'LKR 0.00',
       note: 'Updated just now'
     }
   ]

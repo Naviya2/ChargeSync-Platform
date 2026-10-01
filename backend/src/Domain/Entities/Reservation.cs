@@ -85,6 +85,8 @@ public class Reservation : AuditableEntity
 
     // ── Navigation properties (populated by EF Core) ─────────────────────────
     public User? Driver { get; private set; }
+    public Charger? Charger { get; private set; }
+    public Vehicle? Vehicle { get; private set; }
     public ICollection<ReservationStatusHistory> StatusHistory { get; private set; } = [];
     public ChargingSession? ChargingSession { get; private set; }
 

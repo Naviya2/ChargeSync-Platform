@@ -33,6 +33,8 @@ class ChargerInput(BaseModel):
     connector: str = Field(..., description="Connector standard string, e.g. CCS2, NACS, Type2")
     power_kw: float = Field(..., ge=0, description="Rated peak power in kW")
     tariff: Optional[float] = Field(None, description="Price per kWh if available")
+    status: Optional[str] = Field("AVAILABLE", description="Charger Status")
+    bay_label: Optional[str] = Field("", description="Bay Label")
 
 class StationInput(BaseModel):
     station_id: str = Field(..., description="Station UUID")

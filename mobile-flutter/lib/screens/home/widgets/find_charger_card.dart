@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/station_search/screens/station_map_screen.dart';
+import '../../../features/stations/api/station_service.dart';
 
 class FindChargerCard extends StatefulWidget {
   const FindChargerCard({super.key});
@@ -13,6 +14,8 @@ class FindChargerCard extends StatefulWidget {
 class _FindChargerCardState extends State<FindChargerCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _pingController;
+  int _availableBays = 0;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -21,6 +24,31 @@ class _FindChargerCardState extends State<FindChargerCard>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final stations = await StationService.instance.getAllStations();
+      int count = 0;
+      for (var s in stations) {
+        if (s.chargers != null) {
+          count += s.chargers!.where((c) => c.status == 'Available').length;
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _availableBays = count;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -123,7 +151,9 @@ class _FindChargerCardState extends State<FindChargerCard>
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '4 bays ready nearby • 1.2 mi',
+                            _isLoading 
+                                ? 'Finding bays...' 
+                                : '$_availableBays bays ready nearby',
                             style: GoogleFonts.inter(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,

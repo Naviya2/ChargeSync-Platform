@@ -1,10 +1,10 @@
 using System.Text;
 using System.Text.Json.Serialization;
-using AgentClient;
 using Api.Common;
 using Application;
 using Infrastructure;
 using Infrastructure.Authentication;
+using AgentClient;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
@@ -33,11 +33,10 @@ if (string.IsNullOrWhiteSpace(jwtSettings.Key))
         "Jwt:Key is not configured. Set it with: dotnet user-secrets set \"Jwt:Key\" \"<32+ char secret>\" --project src/Api");
 }
 
-var geminiApiKey = builder.Configuration["Gemini:ApiKey"] ?? builder.Configuration["GEMINI_API_KEY"];
-if (string.IsNullOrWhiteSpace(geminiApiKey))
+var groqApiKey = builder.Configuration["Groq:ApiKey"];
+if (string.IsNullOrWhiteSpace(groqApiKey))
 {
-    throw new InvalidOperationException(
-        "Gemini:ApiKey is not configured. Set it in appsettings.json, environment variable GEMINI_API_KEY, or with: dotnet user-secrets set \"Gemini:ApiKey\" \"<your-gemini-api-key>\" --project src/Api");
+    throw new InvalidOperationException("GROQ_API_KEY is not configured.");
 }
 
 builder.Services

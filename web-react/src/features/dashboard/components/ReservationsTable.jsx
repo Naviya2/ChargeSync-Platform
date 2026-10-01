@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { RESERVATION_FILTERS, RESERVATIONS } from '../data/dashboardData'
+import { useNavigate } from 'react-router-dom'
+import { useReservationsList } from '../../reservations/hooks/useReservations'
 import { cn } from '../../../lib/cn'
 
 const STATUS_TONE = {
@@ -36,29 +37,93 @@ function StatusPill({ status }) {
   )
 }
 
-export default function ReservationsTable() {
+export default function ReservationsTable({ timeframe, customRange, preFilteredReservations }) {
   const [activeFilter, setActiveFilter] = useState('all')
+  const navigate = useNavigate()
+  const { data, isLoading } = useReservationsList()
+  const reservations = preFilteredReservations || data?.items || []
+
+  const filteredReservations = reservations.filter(r => {
+    // Time filter (skip if preFiltered)
+    if (!preFilteredReservations && timeframe) {
+      const resDate = new Date(r.startTime);
+      const now = new Date();
+      const diffHours = (now - resDate) / (1000 * 60 * 60);
+      
+      if (timeframe === '24 Hours' && (diffHours > 24 || diffHours < -24)) return false;
+      if (timeframe === '7 Days' && (diffHours > 24 * 7 || diffHours < -24 * 7)) return false;
+      if (timeframe === '30 Days' && (diffHours > 24 * 30 || diffHours < -24 * 30)) return false;
+      if (timeframe === 'Custom Range') {
+         if (customRange?.start) {
+           const sDate = new Date(customRange.start);
+           if (resDate < sDate) return false;
+         }
+         if (customRange?.end) {
+           const eDate = new Date(customRange.end);
+           eDate.setDate(eDate.getDate() + 1);
+           if (resDate > eDate) return false;
+         }
+      }
+    }
+
+    // Status filter
+    if (activeFilter === 'all') return true
+    return r.status === activeFilter
+  })
 
   return (
     <div className="flex flex-col gap-space-md rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
       {/* Header controls */}
       <div className="flex flex-col justify-between gap-space-md lg:flex-row lg:items-center">
         <div className="flex flex-wrap items-center gap-space-xs">
-          {RESERVATION_FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setActiveFilter(f.key)}
-              className={cn(
-                'rounded-lg px-space-md py-space-xs font-label-md text-label-md transition-colors',
-                activeFilter === f.key
-                  ? 'bg-on-surface text-surface-container-lowest shadow-sm'
-                  : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface',
-              )}
-            >
-              {f.label} ({f.count.toLocaleString()})
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => setActiveFilter('all')}
+            className={cn(
+              'rounded-lg px-space-md py-space-xs font-label-md text-label-md transition-colors',
+              activeFilter === 'all'
+                ? 'bg-on-surface text-surface-container-lowest shadow-sm'
+                : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface',
+            )}
+          >
+            All ({reservations.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('Confirmed')}
+            className={cn(
+              'rounded-lg px-space-md py-space-xs font-label-md text-label-md transition-colors',
+              activeFilter === 'Confirmed'
+                ? 'bg-on-surface text-surface-container-lowest shadow-sm'
+                : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface',
+            )}
+          >
+            Confirmed ({reservations.filter(r => r.status === 'Confirmed').length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('CheckedIn')}
+            className={cn(
+              'rounded-lg px-space-md py-space-xs font-label-md text-label-md transition-colors',
+              activeFilter === 'CheckedIn'
+                ? 'bg-on-surface text-surface-container-lowest shadow-sm'
+                : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface',
+            )}
+          >
+            In-Progress ({reservations.filter(r => r.status === 'CheckedIn').length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter('Pending')}
+            className={cn(
+              'rounded-lg px-space-md py-space-xs font-label-md text-label-md transition-colors',
+              activeFilter === 'Pending'
+                ? 'bg-on-surface text-surface-container-lowest shadow-sm'
+                : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface',
+            )}
+          >
+            Pending Review ({reservations.filter(r => r.status === 'Pending').length})
+          </button>
         </div>
 
         <div className="flex items-center gap-space-sm">
@@ -97,109 +162,79 @@ export default function ReservationsTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-container font-body-sm text-body-sm text-on-surface">
-            {RESERVATIONS.map((row) => (
+            {isLoading ? (
+              <tr><td colSpan="7" className="p-8 text-center text-on-surface-variant">Loading reservations...</td></tr>
+            ) : filteredReservations.map((row) => {
+              const statusPill = { 
+                label: row.status, 
+                tone: row.status === 'CheckedIn' ? 'tertiary' : row.status === 'Confirmed' ? 'secondary' : row.status === 'Cancelled' ? 'error' : 'neutral', 
+                pulse: row.status === 'CheckedIn' 
+              }
+              return (
               <tr key={row.id} className="transition-colors hover:bg-surface-container-low/70">
                 <td className="px-space-md py-space-md">
                   <div className="flex items-center gap-space-sm">
                     <span
-                      className={cn(
-                        'flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold',
-                        row.avatarTone,
-                      )}
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold bg-primary-container text-on-primary-container"
                     >
-                      {row.initials}
+                      {row.driverName ? row.driverName.substring(0, 2).toUpperCase() : 'U'}
                     </span>
                     <div>
                       <p className="font-headline-sm text-body-sm font-semibold text-on-surface">
-                        #{row.id}
+                        #{row.id.substring(0, 8)}
                       </p>
-                      <p className="font-label-sm text-label-sm text-on-surface-variant">{row.user}</p>
+                      <p className="font-label-sm text-label-sm text-on-surface-variant">{row.driverName || 'Unknown User'}</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-space-md py-space-md">
-                  <p className="font-medium text-on-surface">{row.station}</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">{row.stationMeta}</p>
+                  <p className="font-headline-sm text-body-sm font-semibold text-on-surface">
+                    {row.stationName}
+                  </p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant">
+                    Charger ID: {row.chargerId}
+                  </p>
                 </td>
                 <td className="px-space-md py-space-md">
-                  <p className="text-on-surface">{row.window}</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">{row.windowMeta}</p>
+                  <p className="font-headline-sm text-body-sm text-on-surface">{new Date(row.startTime).toLocaleString()}</p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant">
+                    to {new Date(row.endTime).toLocaleTimeString()}
+                  </p>
                 </td>
                 <td className="px-space-md py-space-md">
-                  <p className="font-semibold text-on-surface">{row.energy}</p>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">{row.cost}</p>
+                  <p className="font-headline-sm text-body-sm font-semibold text-on-surface">
+                    LKR {row.advanceDepositAmount}
+                  </p>
+                  <p className="font-label-sm text-label-sm text-on-surface-variant">Deposit</p>
                 </td>
                 <td className="px-space-md py-space-md">
-                  <span className={cn('inline-flex items-center gap-1 font-label-md text-label-md', row.verification.tone)}>
-                    <span className="material-symbols-outlined text-sm">{row.verification.icon}</span>
-                    {row.verification.text}
-                  </span>
+                  <div className="flex items-center gap-1 text-tertiary">
+                    <span className="material-symbols-outlined text-sm">verified_user</span>
+                    <span className="font-label-sm text-label-sm">Verified</span>
+                  </div>
                 </td>
                 <td className="px-space-md py-space-md">
-                  <StatusPill status={row.status} />
+                  <StatusPill status={statusPill} />
                 </td>
                 <td className="px-space-md py-space-md text-right">
-                  <div className="inline-flex items-center gap-space-xs">
-                    <button
-                      type="button"
-                      className={cn(
-                        'rounded px-space-sm py-1 font-label-sm text-label-sm transition-colors',
-                        row.action === 'Intervene'
-                          ? 'bg-error-container text-on-error-container hover:brightness-95'
-                          : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest',
-                      )}
+                  <div className="flex items-center justify-end gap-space-sm">
+                    <button 
+                      onClick={() => navigate('/reservations')}
+                      className="rounded-lg bg-surface-container px-space-sm py-1 font-label-sm text-label-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-high"
                     >
-                      {row.action}
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="View telemetry"
-                      className="rounded p-1 text-on-surface-variant transition-colors hover:text-primary"
-                    >
-                      <span className="material-symbols-outlined text-base">monitoring</span>
+                      Manage
                     </button>
                   </div>
                 </td>
               </tr>
-            ))}
+            )})}
+            {!isLoading && filteredReservations.length === 0 && (
+              <tr>
+                 <td colSpan="7" className="p-8 text-center text-on-surface-variant">No reservations found.</td>
+              </tr>
+            )}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex flex-col items-center justify-between gap-space-sm pt-space-sm font-label-md text-label-md text-on-surface-variant sm:flex-row">
-        <span>
-          Showing <strong className="text-on-surface">1–4</strong> of{' '}
-          <strong className="text-on-surface">2,410</strong> live bookings
-        </span>
-        <div className="flex items-center gap-space-xs">
-          <button
-            type="button"
-            disabled
-            className="rounded-lg bg-surface-container-low px-space-sm py-1 text-on-surface opacity-40"
-          >
-            Previous
-          </button>
-          <button type="button" className="rounded-lg bg-primary px-space-sm py-1 font-semibold text-on-primary">
-            1
-          </button>
-          <button type="button" className="rounded-lg px-space-sm py-1 text-on-surface transition-colors hover:bg-surface-container">
-            2
-          </button>
-          <button type="button" className="rounded-lg px-space-sm py-1 text-on-surface transition-colors hover:bg-surface-container">
-            3
-          </button>
-          <span className="px-1 text-on-surface-variant">…</span>
-          <button type="button" className="rounded-lg px-space-sm py-1 text-on-surface transition-colors hover:bg-surface-container">
-            241
-          </button>
-          <button
-            type="button"
-            className="rounded-lg bg-surface-container-low px-space-sm py-1 text-on-surface transition-colors hover:bg-surface-container"
-          >
-            Next
-          </button>
-        </div>
       </div>
     </div>
   )

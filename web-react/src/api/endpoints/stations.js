@@ -7,6 +7,7 @@ export const stationsApi = {
   ...createResourceApi(base),
 
   getMyStations: () => unwrap(apiClient.get(base)),
+  getAll: () => unwrap(apiClient.get(`${base}/all`)),
   getById: (id) => unwrap(apiClient.get(`${base}/${id}`)),
   register: (data) => unwrap(apiClient.post(base, data)),
   addCharger: (stationId, data) => unwrap(apiClient.post(`${base}/${stationId}/chargers`, data)),

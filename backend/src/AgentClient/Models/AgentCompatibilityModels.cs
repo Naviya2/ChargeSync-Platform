@@ -42,6 +42,12 @@ public sealed class AgentChargerInput
 
     [JsonPropertyName("tariff")]
     public decimal? Tariff { get; set; }
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("bay_label")]
+    public string BayLabel { get; set; } = string.Empty;
 }
 
 public sealed class AgentStationInput

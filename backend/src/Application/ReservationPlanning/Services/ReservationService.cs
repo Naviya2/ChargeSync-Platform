@@ -48,6 +48,16 @@ public sealed class ReservationService : IReservationService
         if (!chargerExists)
             throw new NotFoundException(nameof(Charger), request.ChargerId);
 
+        // 3.5 Verify the driver doesn't already have an active reservation for this vehicle on this day.
+        var existingReservation = await _db.Reservations
+            .AnyAsync(r => r.DriverId == driverId 
+                        && r.VehicleId == request.VehicleId
+                        && r.StartTime.Date == request.StartTime.Date 
+                        && r.Status != ReservationStatus.Cancelled 
+                        && r.Status != ReservationStatus.Completed, cancellationToken);
+        if (existingReservation)
+            throw new InvalidOperationException("You already have an incomplete reservation for this vehicle today.");
+
         // 4. Create the reservation domain object.
         var reservation = Reservation.Create(
             driverId,
@@ -103,7 +113,7 @@ public sealed class ReservationService : IReservationService
 
     // ── List reservations ─────────────────────────────────────────────────────
 
-    public async Task<PagedResult<ReservationSummaryDto>> GetListAsync(
+    public async Task<PagedResult<ReservationDto>> GetListAsync(
         Guid requesterId,
         string requesterRole,
         ReservationFilter filter,
@@ -114,6 +124,10 @@ public sealed class ReservationService : IReservationService
         // Drivers can only see their own reservations.
         if (requesterRole == UserRole.Driver.ToString())
             query = query.Where(r => r.DriverId == requesterId);
+
+        // Station Owners can only see reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString())
+            query = query.Where(r => r.Charger.Station.OwnerId == requesterId);
 
         if (filter.ChargerId.HasValue)
             query = query.Where(r => r.ChargerId == filter.ChargerId.Value);
@@ -136,7 +150,7 @@ public sealed class ReservationService : IReservationService
             .OrderByDescending(r => r.StartTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(r => new ReservationSummaryDto
+            .Select(r => new ReservationDto
             {
                 Id = r.Id,
                 DriverId = r.DriverId,
@@ -147,11 +161,17 @@ public sealed class ReservationService : IReservationService
                 ReservationQRCode = r.ReservationQRCode,
                 AdvanceDepositAmount = r.AdvanceDepositAmount,
                 Status = r.Status,
-                IsWalkIn = r.DriverId == null
+                CreatedAt = r.CreatedAt,
+                StationName = r.Charger.Station.Name,
+                StationLatitude = r.Charger.Station.Latitude,
+                StationLongitude = r.Charger.Station.Longitude,
+                ChargerName = r.Charger.Identifier,
+                VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
+                DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
             })
             .ToListAsync(cancellationToken);
 
-        return new PagedResult<ReservationSummaryDto>
+        return new PagedResult<ReservationDto>
         {
             Items = items,
             TotalCount = totalCount,
@@ -169,6 +189,9 @@ public sealed class ReservationService : IReservationService
         CancellationToken cancellationToken = default)
     {
         var reservation = await _db.Reservations
+            .Include(r => r.Charger)
+                .ThenInclude(c => c.Station)
+            .Include(r => r.Vehicle)
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
@@ -176,6 +199,10 @@ public sealed class ReservationService : IReservationService
 
         // Drivers may only view their own reservations.
         if (requesterRole == UserRole.Driver.ToString() && reservation.DriverId != requesterId)
+            return null;
+
+        // Station Owners may only view reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString() && reservation.Charger.Station.OwnerId != requesterId)
             return null;
 
         return ToDto(reservation);
@@ -293,6 +320,18 @@ public sealed class ReservationService : IReservationService
         // Only admins or station owners can update this.
         if (requesterRole == UserRole.Driver.ToString())
             throw new ForbiddenAccessException();
+            
+        // Station Owners can only update reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString())
+        {
+            var stationOwnerId = await _db.Chargers
+                .Where(c => c.Id == reservation.ChargerId)
+                .Select(c => c.Station.OwnerId)
+                .FirstOrDefaultAsync(cancellationToken);
+                
+            if (stationOwnerId != requesterId)
+                throw new ForbiddenAccessException();
+        }
 
         // Business logic to update the time window would be handled in the Domain object.
         // For now, we update it via the entity directly if it exposes a setter or method.
@@ -333,6 +372,18 @@ public sealed class ReservationService : IReservationService
         // Only Admins or Station Owners should be able to hard delete
         if (requesterRole == UserRole.Driver.ToString())
             throw new ForbiddenAccessException();
+
+        // Station Owners can only delete reservations for their stations.
+        if (requesterRole == UserRole.StationOwner.ToString())
+        {
+            var stationOwnerId = await _db.Chargers
+                .Where(c => c.Id == reservation.ChargerId)
+                .Select(c => c.Station.OwnerId)
+                .FirstOrDefaultAsync(cancellationToken);
+                
+            if (stationOwnerId != requesterId)
+                throw new ForbiddenAccessException();
+        }
 
         // Also delete associated history
         var history = await _db.ReservationStatusHistories
@@ -424,6 +475,12 @@ public sealed class ReservationService : IReservationService
         ReservationQRCode = r.ReservationQRCode,
         AdvanceDepositAmount = r.AdvanceDepositAmount,
         Status = r.Status,
-        CreatedAt = r.CreatedAt
+        CreatedAt = r.CreatedAt,
+        StationName = r.Charger?.Station?.Name ?? string.Empty,
+        StationLatitude = r.Charger?.Station?.Latitude ?? 0,
+        StationLongitude = r.Charger?.Station?.Longitude ?? 0,
+        ChargerName = r.Charger?.Identifier ?? string.Empty,
+        VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
+        DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
     };
 }

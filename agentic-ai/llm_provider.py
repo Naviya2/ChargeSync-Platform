@@ -1,30 +1,30 @@
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from config import settings
 
-_gemini_instance = None
+_groq_instance = None
 
-def get_gemini_provider(api_key: str = None, model: str = None) -> ChatGoogleGenerativeAI:
+def get_groq_provider(api_key: str = None, model: str = None) -> ChatGroq:
     """
-    Returns a shared instance of the Gemini LLM provider.
+    Returns a shared instance of the Groq LLM provider.
     This ensures all agents use the same configured provider.
     """
-    global _gemini_instance
+    global _groq_instance
     
     # Use provided keys from .NET backend headers, or fallback to environment variables
-    final_api_key = api_key or settings.GEMINI_API_KEY
-    final_model = model or settings.GEMINI_MODEL
+    final_api_key = api_key or settings.GROQ_API_KEY
+    final_model = model or settings.GROQ_MODEL
     
     if not final_api_key:
-        raise ValueError("GEMINI_API_KEY is not configured.")
+        raise ValueError("GROQ_API_KEY is not configured.")
         
-    if _gemini_instance is None or api_key is not None:
+    if _groq_instance is None or api_key is not None:
         # We create a new instance if a dynamic key is provided via header
-        _gemini_instance = ChatGoogleGenerativeAI(
-            model=final_model,
-            google_api_key=final_api_key,
-            temperature=0.2,
+        _groq_instance = ChatGroq(
+            model_name=final_model,
+            api_key=final_api_key,
+            temperature=0, # User specified temperature=0
             max_retries=3,  # Minimal reusable retry mechanism with backoff for HTTP 429
         )
         
-    return _gemini_instance
+    return _groq_instance
