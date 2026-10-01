@@ -274,6 +274,13 @@ public class StationService : IStationService
 
     private static ChargerDto MapChargerToDto(Charger charger)
     {
+        var status = charger.Status;
+        var now = DateTimeOffset.UtcNow;
+        if (charger.MaintenanceWindows?.Any(m => now >= m.StartTime && now <= m.EndTime) == true)
+        {
+            status = ChargerStatus.Maintenance;
+        }
+
         return new ChargerDto
         {
             Id = charger.Id,
@@ -283,7 +290,7 @@ public class StationService : IStationService
             Connector = charger.Connector,
             PowerKw = charger.PowerKw,
             Tariff = charger.Tariff,
-            Status = charger.Status,
+            Status = status,
             MaintenanceWindows = charger.MaintenanceWindows?.Select(m => new MaintenanceWindowDto
             {
                 Id = m.Id,

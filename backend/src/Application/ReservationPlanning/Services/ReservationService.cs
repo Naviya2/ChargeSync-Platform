@@ -523,6 +523,7 @@ public sealed class ReservationService : IReservationService
         var charger = await _db.Chargers
             .Include(c => c.Station)
                 .ThenInclude(s => s.OperatingHours)
+            .Include(c => c.MaintenanceWindows)
             .FirstOrDefaultAsync(c => c.Id == chargerId, cancellationToken)
             ?? throw new NotFoundException(nameof(Charger), chargerId);
 
@@ -564,8 +565,9 @@ public sealed class ReservationService : IReservationService
         {
             var searchEnd = searchStart.AddMinutes(durationMinutes);
             bool isOverlap = reservations.Any(r => r.StartTime < searchEnd.AddMinutes(30) && r.EndTime > searchStart.AddMinutes(-30));
+            bool isMaintenanceOverlap = charger.MaintenanceWindows?.Any(m => m.StartTime < searchEnd && m.EndTime > searchStart) == true;
 
-            if (!isOverlap)
+            if (!isOverlap && !isMaintenanceOverlap)
             {
                 var timeOfDayStart = searchStart.TimeOfDay;
                 var timeOfDayEnd = searchEnd.TimeOfDay;
