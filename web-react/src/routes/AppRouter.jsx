@@ -14,6 +14,7 @@ import AnalyticsPage from '../features/analytics/pages/AnalyticsPage'
 import ApprovalsPage from '../features/approvals/pages/ApprovalsPage'
 import SupportPage from '../features/support/pages/SupportPage'
 import UsersPage from '../features/users/pages/UsersPage'
+import VehiclesPage from '../features/vehicles/pages/VehiclesPage'
 import StationDetailPage from '../features/stations/pages/StationDetailPage'
 import PendingStationPage from '../features/stations/pages/PendingStationPage'
 import NotFoundPage from './NotFoundPage'
@@ -103,6 +104,15 @@ export default function AppRouter() {
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
                 <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path={ROUTES.VEHICLES}
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                <VehiclesPage />
               </ProtectedRoute>
             }
           />
