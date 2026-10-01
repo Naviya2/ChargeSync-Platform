@@ -16,6 +16,12 @@ public sealed class StationEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         _client = factory.CreateClient();
     }
 
+    private static readonly System.Text.Json.JsonSerializerOptions JsonOptions = new()
+    {
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
+        PropertyNameCaseInsensitive = true
+    };
+
     private sealed record AuthResponse(string AccessToken, UserDto User);
     private sealed record UserDto(Guid Id, string FullName, string Email, string Role);
 
@@ -53,7 +59,7 @@ public sealed class StationEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         var response = await _client.PostAsJsonAsync("/api/stations", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var station = await response.Content.ReadFromJsonAsync<StationDto>();
+        var station = await response.Content.ReadFromJsonAsync<StationDto>(JsonOptions);
         Assert.NotNull(station);
         Assert.Equal("New Station", station!.Name);
     }
@@ -100,7 +106,7 @@ public sealed class StationEndpointsTests : IClassFixture<ChargeSyncApiFactory>
             DocumentUrls = new List<string>()
         };
         var stationResponse = await _client.PostAsJsonAsync("/api/stations", stationRequest);
-        var station = await stationResponse.Content.ReadFromJsonAsync<StationDto>();
+        var station = await stationResponse.Content.ReadFromJsonAsync<StationDto>(JsonOptions);
 
         var chargerRequest = new AddChargerRequest
         {
