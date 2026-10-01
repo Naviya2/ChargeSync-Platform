@@ -58,7 +58,7 @@ export const NAV_SECTIONS = [
         label: 'Support Tickets',
         to: ROUTES.SUPPORT,
         icon: 'headset_mic',
-        roles: [ROLES.ADMIN, ROLES.SUPPORT_MANAGER, ROLES.STATION_OWNER],
+        roles: [ROLES.ADMIN, ROLES.SUPPORT_MANAGER],
       },
     ],
   },

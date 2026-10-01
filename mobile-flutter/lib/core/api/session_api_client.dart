@@ -19,30 +19,21 @@ class SessionApiClient {
   Future<SessionCompletion> stopSession({
     required String sessionId,
     double? staffOverriddenKwh,
-    Uint8List? meterPhoto,
+    String? meterPhotoUrl,
   }) async {
     final token = await _getAccessToken();
-    final request = http.MultipartRequest(
-      'PUT',
+    final body = {
+      if (staffOverriddenKwh != null) 'staffOverriddenKwh': staffOverriddenKwh,
+      if (meterPhotoUrl != null) 'meterPhotoUrl': meterPhotoUrl,
+    };
+    final response = await http.put(
       Uri.parse('${ApiConfig.baseUrl}/api/sessions/$sessionId/stop'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
     );
-    if (token != null) request.headers['Authorization'] = 'Bearer $token';
-    if (staffOverriddenKwh != null) {
-      request.fields['staffOverriddenKwh'] = staffOverriddenKwh.toStringAsFixed(
-        3,
-      );
-    }
-
-    if (meterPhoto != null) {
-      request.files.add(
-        http.MultipartFile.fromBytes(
-          'meterPhoto',
-          meterPhoto,
-          filename: 'meter-photo',
-        ),
-      );
-    }
-    final response = await http.Response.fromStream(await request.send());
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return SessionCompletion.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>,

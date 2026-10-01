@@ -1,5 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
+import 'package:crypto/crypto.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 import 'package:flutter/material.dart';
@@ -30,7 +34,8 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
   bool _useOverride = false;
   String _paymentMethod = 'Cash';
   String? _error;
-  Uint8List? _meterPhoto;
+  String? _meterPhotoUrl;
+  bool _isUploadingImage = false;
   String? _completionNotice;
 
   @override
@@ -53,12 +58,47 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       }
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
-      setState(() {
-        _meterPhoto = bytes;
-        _error = null;
-      });
+      await _uploadImage(bytes);
     } catch (error) {
       if (mounted) setState(() => _error = _cleanError(error));
+    }
+  }
+
+  Future<void> _uploadImage(Uint8List imageBytes) async {
+    setState(() => _isUploadingImage = true);
+    try {
+      final timestamp = (DateTime.now().millisecondsSinceEpoch / 1000).round().toString();
+      final apiKey = dotenv.env['CLOUDINARY_API_KEY']!;
+      final apiSecret = dotenv.env['CLOUDINARY_API_SECRET']!;
+      final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME']!;
+      
+      final signatureString = 'timestamp=$timestamp$apiSecret';
+      final bytes = utf8.encode(signatureString);
+      final digest = sha1.convert(bytes);
+      final signature = digest.toString();
+
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      final request = http.MultipartRequest('POST', uri)
+        ..fields['api_key'] = apiKey
+        ..fields['timestamp'] = timestamp
+        ..fields['signature'] = signature
+        ..files.add(http.MultipartFile.fromBytes('file', imageBytes, filename: 'upload.jpg'));
+        
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      if (response.statusCode == 200) {
+        final data = jsonDecode(responseBody);
+        setState(() {
+          _meterPhotoUrl = data['secure_url'];
+          _error = null;
+        });
+      } else {
+        throw Exception('Upload failed');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = _cleanError(e));
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
     }
   }
 
@@ -90,7 +130,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       setState(() {
         _sessions = sessions;
         _selected = sessions.isEmpty ? null : sessions.first;
-        _meterPhoto = null;
+        _meterPhotoUrl = null;
         _overrideController.clear();
         _loadingSessions = false;
       });
@@ -127,7 +167,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       setState(() => _error = 'Enter a valid physical meter reading.');
       return;
     }
-    if (_useOverride && _meterPhoto == null) {
+    if (_useOverride && _meterPhotoUrl == null) {
       setState(() => _error = 'Meter photo is required when using a physical meter reading.');
       return;
     }
@@ -139,7 +179,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       final completion = await SessionApiClient.instance.stopSession(
         sessionId: session.id,
         staffOverriddenKwh: _overrideValue,
-        meterPhoto: _meterPhoto,
+        meterPhotoUrl: _meterPhotoUrl,
       );
       if (!mounted) return;
       setState(() {
@@ -147,7 +187,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
         _completionNotice = completion.session.status == 'DiscrepancyFlagged'
             ? 'Session completed. Energy difference flagged for review.'
             : 'Session completed.';
-        if (_meterPhoto != null) {
+        if (_meterPhotoUrl != null) {
           _completionNotice = '$_completionNotice Meter photo saved.';
         }
         _paymentMethod = completion.invoice.isWalkIn ? 'Cash' : 'Wallet';
@@ -193,7 +233,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       _invoice = null;
       _overrideController.clear();
       _useOverride = false;
-      _meterPhoto = null;
+      _meterPhotoUrl = null;
       _completionNotice = null;
     });
     await _loadSessions();
@@ -245,27 +285,31 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
                     'Attach a JPEG or PNG, up to 5 MB. It is saved with this session.',
                     style: _text(12, FontWeight.w400),
                   ),
-                  if (_meterPhoto != null) ...[
+                  if (_isUploadingImage) ...[
                     const SizedBox(height: 10),
-                    Image.memory(
-                      _meterPhoto!,
+                    const Center(child: CircularProgressIndicator()),
+                  ] else if (_meterPhotoUrl != null) ...[
+                    const SizedBox(height: 10),
+                    Image.network(
+                      _meterPhotoUrl!,
                       height: 160,
                       fit: BoxFit.contain,
                       errorBuilder: (_, error, stack) =>
-                          const Text('Choose a JPEG or PNG image.'),
+                          const Text('Failed to load image.'),
                     ),
                     TextButton(
                       onPressed: _submitting
                           ? null
-                          : () => setState(() => _meterPhoto = null),
+                          : () => setState(() => _meterPhotoUrl = null),
                       child: const Text('Remove photo'),
                     ),
                   ],
-                  OutlinedButton.icon(
-                    onPressed: _submitting ? null : _pickMeterPhoto,
-                    icon: const Icon(Icons.add_a_photo_outlined),
-                    label: const Text('Choose meter photo'),
-                  ),
+                  if (!_isUploadingImage)
+                    OutlinedButton.icon(
+                      onPressed: _submitting ? null : _pickMeterPhoto,
+                      icon: const Icon(Icons.add_a_photo_outlined),
+                      label: const Text('Choose meter photo'),
+                    ),
                 ],
               ),
             ),

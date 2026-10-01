@@ -51,6 +51,9 @@ public sealed class WalkInRequest
     public Guid ChargerId { get; set; }
     public DateTimeOffset StartTime { get; set; }
     public DateTimeOffset EndTime { get; set; }
+    public string? CustomerName { get; set; }
+    public string? VehicleNumber { get; set; }
+    public double? BatteryCapacity { get; set; }
 }
 
 /// <summary>
