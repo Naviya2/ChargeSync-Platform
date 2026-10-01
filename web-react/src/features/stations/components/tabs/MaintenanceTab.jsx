@@ -244,7 +244,7 @@ export default function MaintenanceTab({ stationId, maintenance = [], chargers =
               >
                 <option value="" disabled>Select a charger</option>
                 {chargers.map(ch => (
-                  <option key={ch.id} value={ch.id}>{ch.id} ({ch.power || ch.maxOutputKw} kW)</option>
+                  <option key={ch.id} value={ch.id}>{ch.identifier} ({ch.powerKw} kW)</option>
                 ))}
               </select>
             </div>
