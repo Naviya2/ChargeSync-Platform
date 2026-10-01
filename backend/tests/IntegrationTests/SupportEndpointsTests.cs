@@ -37,6 +37,8 @@ public sealed class SupportEndpointsTests(ChargeSyncApiFactory factory) : IClass
         var created = await owner.PostAsJsonAsync("/api/support-tickets", new { category = "Technical", subject = "Application does not refresh", description = "The charging application is not refreshing correctly." }); created.EnsureSuccessStatusCode();
         var ticket = (await created.Content.ReadFromJsonAsync<Application.Support.SupportTicketDto>())!;
         Assert.Equal(HttpStatusCode.Forbidden, (await other.GetAsync($"/api/support-tickets/{ticket.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await owner.PostAsync($"/api/support-tickets/{ticket.Id}/analysis", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await manager.PostAsync($"/api/support-tickets/{Guid.NewGuid()}/analysis", null)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await owner.PutAsJsonAsync($"/api/support-tickets/{ticket.Id}/status", new { status = "Resolved" })).StatusCode);
         (await manager.PutAsJsonAsync($"/api/support-tickets/{ticket.Id}/assignee", new { assigneeId = managerId })).EnsureSuccessStatusCode();
         (await manager.PostAsJsonAsync($"/api/support-tickets/{ticket.Id}/messages", new { body = "We are investigating this report." })).EnsureSuccessStatusCode();

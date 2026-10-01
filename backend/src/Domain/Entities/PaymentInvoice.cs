@@ -43,6 +43,16 @@ public sealed class PaymentInvoice : AuditableEntity
     public decimal DiscountPercentage { get; private set; }
     public decimal AdvanceDeducted { get; private set; }
     public decimal NetAmountDue { get; private set; }
+    public decimal RefundedAmount { get; private set; }
+
+    public void Refund(decimal amount)
+    {
+        if (Status != InvoiceStatus.Paid || amount <= 0 || decimal.Round(amount, 2) != amount ||
+            amount > GrossAmount - DiscountAmount - RefundedAmount)
+            throw new InvalidOperationException("Refund must not exceed the remaining paid amount and must use whole cents.");
+        RefundedAmount += amount;
+        if (RefundedAmount == GrossAmount - DiscountAmount) Status = InvoiceStatus.Refunded;
+    }
     public PaymentMethod? PaymentMethod { get; private set; }
     public InvoiceStatus Status { get; private set; }
     public DateTimeOffset IssuedAt { get; private set; }

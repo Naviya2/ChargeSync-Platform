@@ -1,3 +1,5 @@
+import TicketAnalysis from '../components/TicketAnalysis'
+import SupportWorkflow from '../components/SupportWorkflow'
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import supportApi from '../../../api/endpoints/support'
@@ -15,7 +17,7 @@ export default function SupportInboxPage() {
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [reply, setReply] = useState('')
-  const query = useQuery({ queryKey: ['support-tickets'], queryFn: () => supportApi.list() })
+  const query = useQuery({ queryKey: ['support-tickets'], queryFn: () => supportApi.list(), refetchInterval: 10000 })
   const tickets = useMemo(() => query.data ?? [], [query.data])
   const effectiveSelectedId = selectedId ?? tickets[0]?.id
   const selected = tickets.find((ticket) => ticket.id === effectiveSelectedId)
@@ -35,6 +37,7 @@ export default function SupportInboxPage() {
     },
     onSuccess: (ticket) => {
       client.setQueryData(['support-tickets'], (old = []) => old.map((item) => item.id === ticket.id ? ticket : item))
+      client.invalidateQueries({ queryKey: ['support-workflow', ticket.id] })
     },
     onError: (_error, _variables, context) => {
       if (context?.previous) client.setQueryData(['support-tickets'], context.previous)
@@ -57,7 +60,7 @@ export default function SupportInboxPage() {
     {query.isLoading ? <p className="p-8">Loading tickets…</p> : <div className="grid grid-cols-1 gap-space-lg lg:grid-cols-12">
       <section className="max-h-[760px] overflow-y-auto rounded-xl bg-surface-container-lowest lg:col-span-4">
         {!visible.length && <p className="p-8 text-on-surface-variant">No matching tickets.</p>}
-        {visible.map((ticket) => <button key={ticket.id} type="button" onClick={() => setSelectedId(ticket.id)} className={`w-full border-b border-surface-container p-4 text-left ${ticket.id === effectiveSelectedId ? 'bg-primary/10' : 'hover:bg-surface-container-low'}`}>
+        {visible.map((ticket) => <button key={ticket.id} type="button" onClick={() => { setSelectedId(ticket.id); setReply('') }} className={`w-full border-b border-surface-container p-4 text-left ${ticket.id === effectiveSelectedId ? 'bg-primary/10' : 'hover:bg-surface-container-low'}`}>
           <div className="flex justify-between"><span className="text-xs text-primary">#{ticket.id.slice(0, 8)}</span><span className={`rounded px-2 py-1 text-xs ${tone[ticket.priority]}`}>{ticket.priority}</span></div>
           <h3 className="mt-2 font-semibold">{ticket.subject}</h3><p className="line-clamp-2 text-sm text-on-surface-variant">{ticket.description}</p><div className="mt-2 flex justify-between text-xs text-on-surface-variant"><span>{ticket.driverName}</span><span>{readable(ticket.status)}</span></div>
         </button>)}
@@ -71,9 +74,11 @@ export default function SupportInboxPage() {
         </main>
 
         <aside className="flex flex-col gap-4 lg:col-span-3">
+          <SupportWorkflow key={`workflow-${selected.id}`} ticket={selected} onUseDraft={setReply} />
+          <details className="rounded-xl bg-surface-container-lowest p-3"><summary className="cursor-pointer text-sm">Additional ticket analysis</summary><TicketAnalysis key={selected.id} ticket={selected} onUseDraft={setReply} /></details>
           <section className="rounded-xl bg-surface-container-lowest p-5"><h3 className="font-semibold">Workflow</h3><label className="mt-3 block text-xs text-on-surface-variant">Status</label><select value={selected.status === 'Withdrawn' ? 'Open' : selected.status} disabled={selected.status === 'Withdrawn' || mutation.isPending} onChange={(event) => { const status = event.target.value; act(() => supportApi.status(selected.id, status), (ticket) => ({ ...ticket, status })) }} className="mt-1 w-full rounded-lg bg-surface-container p-2">{statuses.map((status) => <option key={status} value={status} disabled={selected.refundStatus === 'PendingReview' && ['Resolved', 'Closed'].includes(status)}>{readable(status)}</option>)}</select>{selected.refundStatus === 'PendingReview' && <p className="mt-2 text-xs text-error">Approve or reject the pending refund before resolving this ticket.</p>}<button disabled={mutation.isPending || selected.assignedToUserId === user.id || selected.status === 'Withdrawn'} onClick={() => act(() => supportApi.assign(selected.id, user.id), (ticket) => ({ ...ticket, assignedToUserId: user.id, assigneeName: user.name ?? user.fullName ?? 'You' }))} className="mt-3 w-full rounded-lg bg-surface-container p-2 disabled:opacity-50">{selected.assignedToUserId === user.id ? 'Assigned to you' : mutation.isPending ? 'Saving…' : 'Assign to me'}</button>{selected.assigneeName && <p className="mt-2 text-xs text-on-surface-variant">Owner: {selected.assigneeName}</p>}</section>
           <section className="rounded-xl bg-surface-container-lowest p-5"><h3 className="font-semibold">Driver</h3><p>{selected.driverName}</p><p className="text-sm text-on-surface-variant">{selected.driverEmail}</p><p className="mt-3 break-all text-xs">Ticket: {selected.id}</p></section>
-          {selected.refundStatus !== 'NotRequested' && <section className="rounded-xl bg-surface-container-lowest p-5"><h3 className="font-semibold">Refund review</h3><p className="mt-2 text-xl">LKR {Number(selected.requestedRefundAmount).toFixed(2)}</p><p>{readable(selected.refundStatus)}</p>{selected.invoiceId && <p className="mt-2 break-all text-xs">Invoice: {selected.invoiceId}</p>}{selected.refundStatus === 'PendingReview' && <div className="mt-3 grid grid-cols-2 gap-2"><button disabled={mutation.isPending} onClick={() => window.confirm('Approve and credit this refund once?') && act(() => supportApi.reviewRefund(selected.id, true))} className="rounded-lg bg-primary p-2 text-on-primary">Approve</button><button disabled={mutation.isPending} onClick={() => window.confirm('Reject this refund?') && act(() => supportApi.reviewRefund(selected.id, false))} className="rounded-lg bg-error-container p-2 text-on-error-container">Reject</button></div>}</section>}
+          {selected.refundStatus !== 'NotRequested' && <section className="rounded-xl bg-surface-container-lowest p-5"><h3 className="font-semibold">Refund review</h3><p className="mt-2 text-xl">LKR {Number(selected.requestedRefundAmount).toFixed(2)}</p><p>{selected.refundStatus === 'PendingReview' ? 'Pending approval' : readable(selected.refundStatus)}</p>{selected.invoiceId && <p className="mt-2 break-all text-xs">Invoice: {selected.invoiceId}</p>}{selected.refundStatus === 'PendingReview' && <div className="mt-3 grid grid-cols-2 gap-2"><button disabled={mutation.isPending} onClick={() => window.confirm('Approve and credit this refund once?') && act(() => supportApi.reviewRefund(selected.id, true))} className="rounded-lg bg-primary p-2 text-on-primary">Approve</button><button disabled={mutation.isPending} onClick={() => window.confirm('Reject this refund?') && act(() => supportApi.reviewRefund(selected.id, false))} className="rounded-lg bg-error-container p-2 text-on-error-container">Reject</button></div>}</section>}
         </aside>
       </>}
     </div>}

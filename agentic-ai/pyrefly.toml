@@ -1,0 +1,5 @@
+project-includes = ["main.py", "config.py", "agents/**/*.py", "models/**/*.py", "tools/**/*.py", "tests/**/*.py"]
+search-path = ["."]
+
+# Detect the local venv beside this file; VS Code's selected interpreter takes
+# precedence, so select agentic-ai/venv in Python: Select Interpreter.
