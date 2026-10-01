@@ -11,8 +11,10 @@ export default function Topbar() {
   const user = useAuthStore((s) => s.user)
   const clearSession = useAuthStore((s) => s.clearSession)
   
-  const notifications = useNotificationStore((s) => s.notifications)
+  const allNotifications = useNotificationStore((s) => s.notifications)
+  const notifications = allNotifications.filter(n => !n.transient)
   const dismissNotification = useNotificationStore((s) => s.dismiss)
+  const clearNotifications = useNotificationStore((s) => s.clear)
   const notify = useNotificationStore((s) => s.notify)
 
   const { data: myStations = [] } = useMyStations()
@@ -150,7 +152,14 @@ export default function Topbar() {
                 <div className="absolute right-0 mt-2 w-80 rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                     <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
-                    <span className="text-xs bg-blue-100 text-blue-800 py-0.5 px-2 rounded-full">{notifications.length} New</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-blue-100 text-blue-800 py-0.5 px-2 rounded-full">{notifications.length} New</span>
+                      {notifications.length > 0 && (
+                        <button onClick={clearNotifications} className="text-xs text-red-600 hover:text-red-800 font-medium ml-2">
+                          Clear All
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="max-h-96 overflow-y-auto">
                     {notifications.length === 0 ? (

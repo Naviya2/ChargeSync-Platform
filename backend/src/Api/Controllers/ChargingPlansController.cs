@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Api.Authentication;
 using Application.Common.Interfaces;
-
+using Microsoft.EntityFrameworkCore;
 namespace Api.Controllers;
 
 [ApiController]
@@ -61,29 +61,58 @@ public class ChargingPlansController : ControllerBase
                 }
             }
 
-            // Get Stations
-            var stations = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
-                Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.Include(
-                    _context.Stations, s => s.Chargers), cancellationToken);
+            // Get Stations with Chargers and OperatingHours
+            var stationsQuery = _context.Stations
+                .Include(s => s.Chargers)
+                .Include(s => s.OperatingHours);
+            
+            var stations = await stationsQuery.ToListAsync(cancellationToken);
 
-            var agentStations = stations.Select(s => new AgentStationInput
+            var now = DateTimeOffset.UtcNow;
+            var upcomingLimit = now.AddMinutes(90);
+
+            var activeReservations = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+                _context.Reservations.Where(r => 
+                    r.Status != Domain.Enums.ReservationStatus.Cancelled && 
+                    r.Status != Domain.Enums.ReservationStatus.Completed &&
+                    r.StartTime < upcomingLimit && 
+                    r.EndTime > now.AddMinutes(-30)
+                ), cancellationToken);
+
+            var timeZoneOffset = TimeSpan.FromHours(5.5);
+            var nowLocal = now.ToOffset(timeZoneOffset);
+            var currentDayOfWeek = (int)nowLocal.DayOfWeek;
+            var currentTimeOfDay = nowLocal.TimeOfDay;
+
+            var agentStations = stations
+                .Where(s => {
+                    var opHour = s.OperatingHours.FirstOrDefault(o => o.DayOfWeek == currentDayOfWeek);
+                    if (opHour == null || !opHour.IsEnabled) return false;
+                    return currentTimeOfDay >= opHour.OpenTime && currentTimeOfDay <= opHour.CloseTime;
+                })
+                .Select(s => new AgentStationInput
             {
                 StationId = s.Id.ToString(),
                 Name = s.Name,
                 Address = s.Address,
                 Latitude = s.Latitude,
                 Longitude = s.Longitude,
-                Chargers = s.Chargers.Select(c => new AgentChargerInput
-                {
-                    ChargerId = c.Id.ToString(),
-                    Identifier = c.Identifier,
-                    Connector = c.Connector.ToString(),
-                    PowerKw = c.PowerKw,
-                    Tariff = c.Tariff,
-                    Status = c.Status.ToString(),
-                    BayLabel = c.BayLabel
-                }).ToList()
-            }).ToList();
+                Chargers = s.Chargers
+                    .Where(c => c.Status == Domain.Enums.ChargerStatus.Available && 
+                                !activeReservations.Any(r => r.ChargerId == c.Id))
+                    .Select(c => new AgentChargerInput
+                    {
+                        ChargerId = c.Id.ToString(),
+                        Identifier = c.Identifier,
+                        Connector = c.Connector.ToString(),
+                        PowerKw = c.PowerKw,
+                        Tariff = c.Tariff,
+                        Status = c.Status.ToString(),
+                        BayLabel = c.BayLabel
+                    }).ToList()
+            })
+            .Where(s => s.Chargers.Any()) // Only include stations with at least one available charger
+            .ToList();
 
             var secureRequest = request with 
             { 

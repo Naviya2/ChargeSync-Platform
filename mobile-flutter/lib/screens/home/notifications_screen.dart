@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/theme/app_colors.dart';
 import '../../features/reservations/screens/reservation_list_screen.dart';
 import '../../core/api/reservation_api_client.dart';
 import '../../core/api/reservation_models.dart';
+import '../../core/api/auth_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -16,6 +19,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _isLoading = true;
   List<ReservationDto> _upcomingReservations = [];
+  final _storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -26,10 +30,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _fetchReminders() async {
     try {
       final res = await ReservationApiClient.instance.getMyReservations();
+      final dismissedStr = await _storage.read(key: 'dismissed_notifications') ?? '[]';
+      final dismissedIds = List<String>.from(jsonDecode(dismissedStr));
+      
       if (mounted) {
         setState(() {
           _upcomingReservations = res.items
-              .where((r) => r.status == 'Confirmed' || r.status == 'Pending')
+              .where((r) => 
+                  !dismissedIds.contains(r.id) &&
+                  (r.status == 'Confirmed' || 
+                  r.status == 'Pending' || 
+                  (r.status == 'Cancelled' && 
+                   r.startTime.toLocal().isAfter(DateTime.now().subtract(const Duration(hours: 24))))))
               .toList();
           _isLoading = false;
         });
@@ -39,6 +51,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _clearAll() async {
+    final dismissedStr = await _storage.read(key: 'dismissed_notifications') ?? '[]';
+    final dismissedIds = List<String>.from(jsonDecode(dismissedStr));
+    dismissedIds.addAll(_upcomingReservations.map((e) => e.id));
+    await _storage.write(key: 'dismissed_notifications', value: jsonEncode(dismissedIds));
+    
+    setState(() {
+      _upcomingReservations.clear();
+    });
   }
 
   @override
@@ -56,6 +79,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          if (_upcomingReservations.isNotEmpty)
+            TextButton(
+              onPressed: _clearAll,
+              child: Text(
+                'Clear All',
+                style: GoogleFonts.inter(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -71,29 +107,44 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               itemCount: _upcomingReservations.length,
               itemBuilder: (context, index) {
                 final res = _upcomingReservations[index];
+                final isLate = res.startTime.toLocal().isBefore(DateTime.now());
+                final isCancelled = res.status == 'Cancelled';
+                
+                final isStationOwner = AuthService.instance.currentUser?.role == 'StationOwner';
+                
                 return Card(
                   color: AppColors.surfaceContainerLow,
                   margin: const EdgeInsets.only(bottom: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(
-                      color: AppColors.primary.withValues(alpha: 0.5),
+                      color: isLate || isCancelled ? AppColors.error.withValues(alpha: 0.5) : AppColors.primary.withValues(alpha: 0.5),
                     ),
                   ),
                   child: ListTile(
-                    leading: const Icon(
-                      Icons.calendar_today,
-                      color: AppColors.primary,
+                    leading: Icon(
+                      isCancelled ? Icons.cancel : (isLate ? Icons.warning_amber_rounded : Icons.calendar_today),
+                      color: isLate || isCancelled ? AppColors.error : AppColors.primary,
                     ),
                     title: Text(
-                      'Upcoming Reservation Reminder',
+                      isCancelled ? 'Reservation Cancelled' : (isLate ? 'Missed Session Alert!' : 'Upcoming Reservation Reminder'),
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.onSurface,
+                        color: isLate || isCancelled ? AppColors.error : AppColors.onSurface,
                       ),
                     ),
                     subtitle: Text(
-                      'You have a charging session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}.',
+                      isCancelled
+                          ? (isStationOwner || AuthService.instance.currentUser?.role == 'Staff'
+                              ? 'Reservation at ${DateFormat('HH:mm').format(res.startTime.toLocal())} was cancelled.'
+                              : 'Your reservation at ${DateFormat('HH:mm').format(res.startTime.toLocal())} was cancelled.')
+                          : (isLate
+                              ? (isStationOwner || AuthService.instance.currentUser?.role == 'Staff'
+                                  ? 'Driver is late for the session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}. It will be cancelled 30 mins after start time.'
+                                  : 'You haven\'t started your session scheduled for ${DateFormat('HH:mm').format(res.startTime.toLocal())}. It will be automatically cancelled 30 minutes after the start time.')
+                              : (isStationOwner || AuthService.instance.currentUser?.role == 'Staff'
+                                  ? 'A driver has a charging session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}.'
+                                  : 'You have a charging session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}.')),
                       style: GoogleFonts.inter(
                         color: AppColors.onSurfaceVariant,
                       ),
