@@ -1,3 +1,6 @@
+using AgentClient;
+using AgentClient.Models;
+using Api.Compatibility;
 using Application.Common.Interfaces;
 using Application.Vehicles;
 using Application.Vehicles.Models;
@@ -13,11 +16,16 @@ public sealed class VehiclesController : ControllerBase
 {
     private readonly IVehicleService _vehicleService;
     private readonly ICurrentUser _currentUser;
+    private readonly IVehicleAgentClient _vehicleAgentClient;
 
-    public VehiclesController(IVehicleService vehicleService, ICurrentUser currentUser)
+    public VehiclesController(
+        IVehicleService vehicleService,
+        ICurrentUser currentUser,
+        IVehicleAgentClient vehicleAgentClient)
     {
         _vehicleService = vehicleService;
         _currentUser = currentUser;
+        _vehicleAgentClient = vehicleAgentClient;
     }
 
     private Guid OwnerId => _currentUser.Id ?? Guid.Empty;
@@ -73,7 +81,46 @@ public sealed class VehiclesController : ControllerBase
     {
         try
         {
-            return Ok(await _vehicleService.FindCompatibleStationsAsync(OwnerId, id, request, cancellationToken));
+            var local = (await _vehicleService.FindCompatibleStationsAsync(OwnerId, id, request, cancellationToken)).ToList();
+            var vehicle = await _vehicleService.GetByIdAsync(OwnerId, id, cancellationToken);
+            if (vehicle is null || local.Count == 0)
+                return Ok(local);
+
+            var ai = await _vehicleAgentClient.BatchEvaluateCompatibilityAsync(new AgentBatchCompatibilityRequest
+            {
+                Vehicle = new AgentVehicleInput
+                {
+                    VehicleId = vehicle.Id.ToString(),
+                    Make = vehicle.Make,
+                    Model = vehicle.Model,
+                    Connector = vehicle.Connector.ToString(),
+                    BatteryCapacityKwh = vehicle.BatteryCapacityKwh,
+                    MaxChargeRateKw = vehicle.MaxChargeRateKw,
+                    LicensePlate = vehicle.LicensePlate
+                },
+                Stations = local.Select(VehicleCompatibilityMapper.ToAgent).ToList()
+            }, cancellationToken);
+
+            if (ai?.Stations is { Count: > 0 })
+            {
+                var byId = ai.Stations
+                    .GroupBy(s => s.StationId, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+                foreach (var station in local)
+                {
+                    if (byId.TryGetValue(station.StationId.ToString(), out var scored))
+                        VehicleCompatibilityMapper.Overlay(station, scored);
+                }
+
+                local = local
+                    .OrderByDescending(s => s.IsCompatible)
+                    .ThenByDescending(s => s.CompatibilityScore)
+                    .ThenBy(s => s.DistanceKm)
+                    .ToList();
+            }
+
+            return Ok(local);
         }
         catch (KeyNotFoundException)
         {

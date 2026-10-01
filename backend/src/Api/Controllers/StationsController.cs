@@ -1,7 +1,10 @@
+using AgentClient.Models;
+using Api.Compatibility;
 using Application.Common.Interfaces;
 using Application.Stations;
 using Application.Stations.Models;
-using AgentClient.Models;
+using Application.Vehicles;
+using Application.Vehicles.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -63,14 +66,20 @@ public class StationsController : ControllerBase
     }
 
     [HttpGet("{id:guid}/compatibility")]
-    [AllowAnonymous]
+    [AllowAnonymous] // class-level StationOwner/Admin would otherwise 403 drivers
     public async Task<IActionResult> GetCompatibility(
         Guid id,
         [FromQuery] Guid? vehicleId,
-        [FromServices] AgentClient.IVehicleAgentClient? agentClient,
+        [FromQuery] double? latitude,
+        [FromQuery] double? longitude,
+        [FromServices] AgentClient.IVehicleAgentClient agentClient,
         [FromServices] IAppDbContext db,
+        [FromServices] IVehicleService vehicleService,
         CancellationToken cancellationToken)
     {
+        if (!_currentUser.IsAuthenticated || _currentUser.Id is null)
+            return Unauthorized();
+
         var station = await db.Stations
             .Include(s => s.Chargers)
             .AsNoTracking()
@@ -78,55 +87,90 @@ public class StationsController : ControllerBase
 
         if (station == null) return NotFound();
 
+        var ownerId = _currentUser.Id.Value;
+        var isAdmin = _currentUser.IsAdmin;
+
         Domain.Entities.Vehicle? vehicle = null;
-        if (vehicleId.HasValue)
+        if (vehicleId.HasValue && vehicleId.Value != Guid.Empty)
         {
-            vehicle = await db.Vehicles.AsNoTracking().FirstOrDefaultAsync(v => v.Id == vehicleId.Value, cancellationToken);
+            vehicle = await db.Vehicles.AsNoTracking()
+                .FirstOrDefaultAsync(
+                    v => v.Id == vehicleId.Value && (v.OwnerId == ownerId || isAdmin),
+                    cancellationToken);
+        }
+        else
+        {
+            vehicle = await db.Vehicles.AsNoTracking()
+                .Where(v => v.OwnerId == ownerId)
+                .OrderBy(v => v.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
         }
 
         if (vehicle == null)
+            return BadRequest(new { message = "Register a vehicle before checking compatibility." });
+
+        var originLat = latitude ?? station.Latitude;
+        var originLng = longitude ?? station.Longitude;
+
+        var nearby = await vehicleService.FindCompatibleStationsAsync(
+            vehicle.OwnerId,
+            vehicle.Id,
+            new NearbyStationsRequest
+            {
+                Latitude = originLat,
+                Longitude = originLng,
+                RadiusKm = 25
+            },
+            cancellationToken);
+
+        var candidateStations = (await db.Stations
+                .Include(s => s.Chargers)
+                .AsNoTracking()
+                .Where(s => s.Status == Domain.Enums.StationStatus.Active && s.Id != station.Id)
+                .ToListAsync(cancellationToken))
+            .Select(s => (Station: s, Distance: VehicleCompatibilityMapper.DistanceKm(
+                originLat, originLng, s.Latitude, s.Longitude)))
+            .Where(x => x.Distance <= 25)
+            .OrderBy(x => x.Distance)
+            .Take(8)
+            .ToList();
+
+        var aiResult = await agentClient.EvaluateCompatibilityAsync(new AgentCompatibilityRequest
         {
-            vehicle = await db.Vehicles.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+            Vehicle = VehicleCompatibilityMapper.ToAgent(vehicle),
+            TargetStation = VehicleCompatibilityMapper.ToAgent(
+                station,
+                VehicleCompatibilityMapper.DistanceKm(originLat, originLng, station.Latitude, station.Longitude)),
+            CandidateAlternativeStations = candidateStations
+                .Select(x => VehicleCompatibilityMapper.ToAgent(x.Station, x.Distance))
+                .ToList()
+        }, cancellationToken);
+
+        if (aiResult != null)
+            return Ok(VehicleCompatibilityMapper.ToDto(station.Id, aiResult));
+
+        var local = nearby.FirstOrDefault(s => s.StationId == station.Id);
+        if (local == null)
+        {
+            return Ok(new CompatibilityEvaluationDto
+            {
+                StationId = station.Id,
+                IsCompatible = false,
+                CompatibilityScore = 0,
+                AiInsight = "Compatibility service is unavailable and this station is outside the local search set.",
+                SuggestedAlternatives = nearby.Where(s => s.IsCompatible).Take(3).Select(s => new AlternativeStationDto
+                {
+                    StationId = s.StationId,
+                    Name = s.Name,
+                    Address = s.Address,
+                    DistanceKm = s.DistanceKm,
+                    CompatibilityScore = s.CompatibilityScore,
+                    Reason = "Nearby compatible station"
+                }).ToList()
+            });
         }
 
-        if (agentClient != null && vehicle != null)
-        {
-            var agentRequest = new AgentCompatibilityRequest
-            {
-                Vehicle = new AgentVehicleInput
-                {
-                    VehicleId = vehicle.Id.ToString(),
-                    Make = vehicle.Make,
-                    Model = vehicle.Model,
-                    Connector = vehicle.Connector.ToString(),
-                    BatteryCapacityKwh = vehicle.BatteryCapacityKwh,
-                    MaxChargeRateKw = vehicle.MaxChargeRateKw
-                },
-                TargetStation = new AgentStationInput
-                {
-                    StationId = station.Id.ToString(),
-                    Name = station.Name,
-                    Latitude = station.Latitude,
-                    Longitude = station.Longitude,
-                    Address = station.Address,
-                    Chargers = station.Chargers.Select(c => new AgentChargerInput
-                    {
-                        ChargerId = c.Id.ToString(),
-                        Identifier = c.Identifier,
-                        Connector = c.Connector.ToString(),
-                        PowerKw = c.PowerKw
-                    }).ToList()
-                }
-            };
-
-            var aiResult = await agentClient.EvaluateCompatibilityAsync(agentRequest, cancellationToken);
-            if (aiResult != null)
-            {
-                return Ok(aiResult);
-            }
-        }
-
-        return Ok(new { message = "Compatibility evaluated locally", stationId = id });
+        return Ok(VehicleCompatibilityMapper.FromLocal(local, nearby));
     }
 
     [HttpPost]

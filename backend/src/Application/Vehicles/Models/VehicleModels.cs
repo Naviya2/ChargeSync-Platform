@@ -56,3 +56,30 @@ public sealed class NearbyStationsRequest
     public double Longitude { get; set; }
     public double RadiusKm { get; set; } = 25;
 }
+
+public sealed class AlternativeStationDto
+{
+    public Guid StationId { get; set; }
+    public string Name { get; set; } = null!;
+    public string? Address { get; set; }
+    public double DistanceKm { get; set; }
+    public int CompatibilityScore { get; set; }
+    public decimal BestPowerKw { get; set; }
+    public string? EstimatedChargeTimeFormatted { get; set; }
+    public string Reason { get; set; } = string.Empty;
+}
+
+public sealed class CompatibilityEvaluationDto
+{
+    public Guid StationId { get; set; }
+    public bool IsCompatible { get; set; }
+    public int CompatibilityScore { get; set; }
+    public Guid? BestChargerId { get; set; }
+    public decimal EffectiveChargingPowerKw { get; set; }
+    public double? EstimatedChargeTimeMinutes { get; set; }
+    public string? EstimatedChargeTimeFormatted { get; set; }
+    public List<CompatibleChargerDto> Chargers { get; set; } = new();
+    public List<string> Warnings { get; set; } = new();
+    public List<AlternativeStationDto> SuggestedAlternatives { get; set; } = new();
+    public string? AiInsight { get; set; }
+}

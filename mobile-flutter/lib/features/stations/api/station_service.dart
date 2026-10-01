@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/api/api_config.dart';
+import '../../../core/api/vehicle_models.dart';
 import '../models/station.dart';
 import '../models/charger.dart';
 
@@ -86,6 +87,7 @@ class StationService {
     double? longitude,
     double radiusKm = 25,
     int? connector,
+    String? connectorName,
     String? query,
   }) async {
     try {
@@ -93,7 +95,10 @@ class StationService {
         'radiusKm': radiusKm.toString(),
         if (latitude != null) 'latitude': latitude.toString(),
         if (longitude != null) 'longitude': longitude.toString(),
-        if (connector != null) 'connector': connector.toString(),
+        if (connectorName != null && connectorName.isNotEmpty)
+          'connector': connectorName
+        else if (connector != null)
+          'connector': connector.toString(),
         if (query != null && query.isNotEmpty) 'query': query,
       };
 
@@ -134,11 +139,24 @@ class StationService {
     await _put('/api/Stations/$stationId/operating-hours', hours);
   }
 
-  Future<Map<String, dynamic>?> getCompatibility(String stationId, [String? vehicleId]) async {
+  Future<CompatibilityEvaluation?> getCompatibility(
+    String stationId, [
+    String? vehicleId,
+    double? latitude,
+    double? longitude,
+  ]) async {
     try {
-      final query = (vehicleId != null && vehicleId.isNotEmpty) ? '?vehicleId=$vehicleId' : '';
+      final params = <String, String>{
+        if (vehicleId != null && vehicleId.isNotEmpty) 'vehicleId': vehicleId,
+        if (latitude != null) 'latitude': latitude.toString(),
+        if (longitude != null) 'longitude': longitude.toString(),
+      };
+      final query = params.isEmpty ? '' : '?${Uri(queryParameters: params).query}';
       final response = await _get('/api/Stations/$stationId/compatibility$query');
-      return response is Map<String, dynamic> ? response : null;
+      if (response is Map<String, dynamic>) {
+        return CompatibilityEvaluation.fromJson(response);
+      }
+      return null;
     } catch (_) {
       return null;
     }

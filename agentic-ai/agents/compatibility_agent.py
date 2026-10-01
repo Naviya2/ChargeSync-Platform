@@ -230,23 +230,40 @@ class VehicleCompatibilityAgent:
         Generates a concise natural language explanation summarizing the compatibility assessment.
         """
         if not is_compatible:
-            return (
+            fallback = (
                 f"Incompatibility Alert: {target_station.name} does not have a {vehicle.connector} socket matching your {vehicle.make} {vehicle.model}. Please check the recommended alternative stations below."
             )
+        else:
+            summary_parts = [
+                f"{vehicle.make} {vehicle.model} is fully compatible with {target_station.name} (Score: {score}/100)."
+            ]
+            if formatted_time:
+                summary_parts.append(
+                    f"Estimated fast-charge time from 10% to 80% is {formatted_time} at an effective rate of {effective_power:.0f} kW."
+                )
+            if warnings:
+                summary_parts.append(f"Note: {warnings[0]}")
+            fallback = " ".join(summary_parts)
 
-        summary_parts = [
-            f"{vehicle.make} {vehicle.model} is fully compatible with {target_station.name} (Score: {score}/100)."
-        ]
-        
-        if formatted_time:
-            summary_parts.append(
-                f"Estimated fast-charge time from 10% to 80% is {formatted_time} at an effective rate of {effective_power:.0f} kW."
+        if not self.llm:
+            return fallback
+
+        try:
+            prompt = (
+                "You are ChargeSync's Vehicle Compatibility Agent. Write at most two short sentences for an EV driver. "
+                "Do not invent sockets or stations. Use only these facts:\n"
+                f"- Vehicle: {vehicle.make} {vehicle.model}, connector {vehicle.connector}, "
+                f"{vehicle.battery_capacity_kwh} kWh, max {vehicle.max_charge_rate_kw} kW\n"
+                f"- Station: {target_station.name}\n"
+                f"- Compatible: {is_compatible}, score: {score}/100, effective power: {effective_power:.0f} kW, "
+                f"10-80% time: {formatted_time or 'n/a'}\n"
+                f"- Warnings: {'; '.join(warnings) if warnings else 'none'}"
             )
-
-        if warnings:
-            summary_parts.append(f"Note: {warnings[0]}")
-
-        return " ".join(summary_parts)
+            message = self.llm.invoke(prompt)
+            text = (getattr(message, "content", None) or str(message)).strip()
+            return text[:500] if text else fallback
+        except Exception:
+            return fallback
 
     def evaluate(self, request: CompatibilityRequest) -> CompatibilityResponse:
         (

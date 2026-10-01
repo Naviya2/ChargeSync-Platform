@@ -140,6 +140,51 @@ public sealed class AgentAlternativeStationSuggestion
     public string Reason { get; set; } = string.Empty;
 }
 
+public sealed class AgentBatchCompatibilityRequest
+{
+    [JsonPropertyName("vehicle")]
+    public AgentVehicleInput Vehicle { get; set; } = new();
+
+    [JsonPropertyName("stations")]
+    public List<AgentStationInput> Stations { get; set; } = new();
+}
+
+public sealed class AgentBatchStationScore
+{
+    [JsonPropertyName("station_id")]
+    public string StationId { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("distance_km")]
+    public double DistanceKm { get; set; }
+
+    [JsonPropertyName("is_compatible")]
+    public bool IsCompatible { get; set; }
+
+    [JsonPropertyName("compatibility_score")]
+    public int CompatibilityScore { get; set; }
+
+    [JsonPropertyName("effective_power_kw")]
+    public decimal EffectivePowerKw { get; set; }
+
+    [JsonPropertyName("estimated_charge_time_formatted")]
+    public string? EstimatedChargeTimeFormatted { get; set; }
+
+    [JsonPropertyName("chargers")]
+    public List<AgentChargerCompatibilityDetail> Chargers { get; set; } = new();
+}
+
+public sealed class AgentBatchCompatibilityResponse
+{
+    [JsonPropertyName("vehicle_summary")]
+    public string VehicleSummary { get; set; } = string.Empty;
+
+    [JsonPropertyName("stations")]
+    public List<AgentBatchStationScore> Stations { get; set; } = new();
+}
+
 public sealed class AgentCompatibilityResponse
 {
     [JsonPropertyName("is_compatible")]

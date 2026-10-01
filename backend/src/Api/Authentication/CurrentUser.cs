@@ -22,10 +22,15 @@ public sealed class CurrentUser : ICurrentUser
             ? id
             : null;
 
-    public UserRole? Role =>
-        Enum.TryParse<UserRole>(_principal?.FindFirstValue(ClaimTypes.Role), ignoreCase: false, out var role)
-            ? role
-            : null;
+    public UserRole? Role
+    {
+        get
+        {
+            var value = _principal?.FindFirstValue("role")
+                ?? _principal?.FindFirstValue(ClaimTypes.Role);
+            return Enum.TryParse<UserRole>(value, ignoreCase: true, out var role) ? role : null;
+        }
+    }
 
     public bool IsAuthenticated => _principal?.Identity?.IsAuthenticated ?? false;
 

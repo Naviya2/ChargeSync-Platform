@@ -296,14 +296,17 @@ class CompatibleCharger {
     }
 
     return CompatibleCharger(
-      chargerId: json['chargerId'] as String? ?? '',
+      chargerId: (json['chargerId'] ?? json['charger_id'])?.toString() ?? '',
       identifier: json['identifier'] as String? ?? '',
       connector: connector,
-      powerKw: (json['powerKw'] as num?)?.toDouble() ?? 0.0,
-      isCompatible: json['isCompatible'] as bool? ?? false,
-      effectiveChargingPowerKw: (json['effectiveChargingPowerKw'] as num?)?.toDouble() ?? 0.0,
-      estimatedChargeTimeMinutes: (json['estimatedChargeTimeMinutes'] as num?)?.toDouble(),
-      estimatedChargeTimeFormatted: json['estimatedChargeTimeFormatted'] as String?,
+      powerKw: ((json['powerKw'] ?? json['power_kw']) as num?)?.toDouble() ?? 0.0,
+      isCompatible: json['isCompatible'] as bool? ?? json['is_compatible'] as bool? ?? false,
+      effectiveChargingPowerKw:
+          ((json['effectiveChargingPowerKw'] ?? json['effective_power_kw']) as num?)?.toDouble() ?? 0.0,
+      estimatedChargeTimeMinutes:
+          ((json['estimatedChargeTimeMinutes'] ?? json['estimated_charge_time_minutes']) as num?)?.toDouble(),
+      estimatedChargeTimeFormatted:
+          (json['estimatedChargeTimeFormatted'] ?? json['estimated_charge_time_formatted']) as String?,
     );
   }
 }
@@ -339,12 +342,98 @@ class CompatibleStation {
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       distanceKm: (json['distanceKm'] as num?)?.toDouble() ?? 0.0,
-      compatibilityScore: json['compatibilityScore'] as int? ?? 0,
-      isCompatible: json['isCompatible'] as bool? ?? false,
+      compatibilityScore: _asInt(json['compatibilityScore'] ?? json['compatibility_score']),
+      isCompatible: json['isCompatible'] as bool? ?? json['is_compatible'] as bool? ?? false,
       chargers: (json['chargers'] as List<dynamic>?)
               ?.map((c) => CompatibleCharger.fromJson(c as Map<String, dynamic>))
               .toList() ??
           [],
+    );
+  }
+}
+
+int _asInt(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.round();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+class AlternativeStation {
+  final String stationId;
+  final String name;
+  final String? address;
+  final double distanceKm;
+  final int compatibilityScore;
+  final double bestPowerKw;
+  final String? estimatedChargeTimeFormatted;
+  final String reason;
+
+  AlternativeStation({
+    required this.stationId,
+    required this.name,
+    this.address,
+    required this.distanceKm,
+    required this.compatibilityScore,
+    required this.bestPowerKw,
+    this.estimatedChargeTimeFormatted,
+    required this.reason,
+  });
+
+  factory AlternativeStation.fromJson(Map<String, dynamic> json) {
+    return AlternativeStation(
+      stationId: (json['stationId'] ?? json['station_id'])?.toString() ?? '',
+      name: json['name'] as String? ?? '',
+      address: json['address'] as String?,
+      distanceKm: ((json['distanceKm'] ?? json['distance_km']) as num?)?.toDouble() ?? 0,
+      compatibilityScore: _asInt(json['compatibilityScore'] ?? json['compatibility_score']),
+      bestPowerKw: ((json['bestPowerKw'] ?? json['best_power_kw']) as num?)?.toDouble() ?? 0,
+      estimatedChargeTimeFormatted:
+          (json['estimatedChargeTimeFormatted'] ?? json['estimated_charge_time_formatted']) as String?,
+      reason: json['reason'] as String? ?? '',
+    );
+  }
+}
+
+class CompatibilityEvaluation {
+  final String stationId;
+  final bool isCompatible;
+  final int compatibilityScore;
+  final double effectiveChargingPowerKw;
+  final double? estimatedChargeTimeMinutes;
+  final String? estimatedChargeTimeFormatted;
+  final List<String> warnings;
+  final List<AlternativeStation> suggestedAlternatives;
+  final String? aiInsight;
+
+  CompatibilityEvaluation({
+    required this.stationId,
+    required this.isCompatible,
+    required this.compatibilityScore,
+    required this.effectiveChargingPowerKw,
+    this.estimatedChargeTimeMinutes,
+    this.estimatedChargeTimeFormatted,
+    required this.warnings,
+    required this.suggestedAlternatives,
+    this.aiInsight,
+  });
+
+  factory CompatibilityEvaluation.fromJson(Map<String, dynamic> json) {
+    return CompatibilityEvaluation(
+      stationId: (json['stationId'] ?? json['station_id'])?.toString() ?? '',
+      isCompatible: json['isCompatible'] as bool? ?? json['is_compatible'] as bool? ?? false,
+      compatibilityScore: _asInt(json['compatibilityScore'] ?? json['compatibility_score']),
+      effectiveChargingPowerKw:
+          ((json['effectiveChargingPowerKw'] ?? json['effective_charging_power_kw']) as num?)?.toDouble() ?? 0,
+      estimatedChargeTimeMinutes:
+          ((json['estimatedChargeTimeMinutes'] ?? json['estimated_charge_time_minutes']) as num?)?.toDouble(),
+      estimatedChargeTimeFormatted:
+          (json['estimatedChargeTimeFormatted'] ?? json['estimated_charge_time_formatted']) as String?,
+      warnings: ((json['warnings'] as List<dynamic>?) ?? const []).map((e) => e.toString()).toList(),
+      suggestedAlternatives: ((json['suggestedAlternatives'] ?? json['suggested_alternatives']) as List<dynamic>?)
+              ?.map((e) => AlternativeStation.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      aiInsight: (json['aiInsight'] ?? json['ai_insight']) as String?,
     );
   }
 }

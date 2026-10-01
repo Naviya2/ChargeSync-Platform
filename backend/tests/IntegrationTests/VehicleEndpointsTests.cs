@@ -55,4 +55,37 @@ public sealed class VehicleEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         Assert.Equal(75.0m, vehicle.BatteryCapacityKwh);
         Assert.Equal(170.0m, vehicle.MaxChargeRateKw);
     }
+
+    [Fact]
+    public async Task Driver_CanRequestCompatibleStations_ForOwnVehicle()
+    {
+        var register = await _client.PostAsJsonAsync("/api/auth/register", new
+        {
+            fullName = "Compatibility Driver",
+            email = $"compat-driver-{Guid.NewGuid():N}@example.com",
+            password = "password123",
+            role = "Driver"
+        });
+        register.EnsureSuccessStatusCode();
+        var auth = await register.Content.ReadFromJsonAsync<AuthResponse>();
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth!.AccessToken);
+
+        var created = await _client.PostAsJsonAsync("/api/vehicles", new
+        {
+            make = "Hyundai",
+            model = "Ioniq 5",
+            connector = "CCS2",
+            batteryCapacityKwh = 77.4m,
+            maxChargeRateKw = 233.0m
+        });
+        created.EnsureSuccessStatusCode();
+        var vehicle = await created.Content.ReadFromJsonAsync<VehicleResponse>();
+
+        var response = await _client.GetAsync(
+            $"/api/vehicles/{vehicle!.Id}/compatible-stations?latitude=6.9271&longitude=79.8612&radiusKm=25");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.StartsWith("[", body.Trim());
+    }
 }

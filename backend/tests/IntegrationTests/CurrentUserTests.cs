@@ -34,6 +34,17 @@ public class CurrentUserTests
     }
 
     [Fact]
+    public void ReadsShortRoleClaimIssuedByJwtBearer()
+    {
+        var user = For(
+            new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
+            new Claim("role", nameof(UserRole.Driver)));
+
+        Assert.Equal(UserRole.Driver, user.Role);
+        Assert.False(user.IsAdmin);
+    }
+
+    [Fact]
     public void AdminRole_SetsIsAdmin()
     {
         var user = For(

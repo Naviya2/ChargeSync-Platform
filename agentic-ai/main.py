@@ -59,6 +59,7 @@ async def health_check():
         "status": "online",
         "service": settings.APP_NAME,
         "version": settings.APP_VERSION,
+        "function": "Function 1 — Vehicle & AI Compatibility Discovery",
         "description": "Agentic AI Subsystem (Compatibility, Station Analysis, and Planning Coordinators)",
     }
 

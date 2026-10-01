@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/api/vehicle_api_client.dart';
@@ -31,15 +32,33 @@ class _CompatibleStationsSheetState extends State<CompatibleStationsSheet> {
   bool _isLoading = true;
   String? _errorMessage;
   List<CompatibleStation> _stations = [];
-
-  // Default coordinate center (Colombo / central area fallback)
-  final double _latitude = 6.9271;
-  final double _longitude = 79.8612;
+  double _latitude = 6.9271;
+  double _longitude = 79.8612;
 
   @override
   void initState() {
     super.initState();
     _fetchCompatibleStations();
+  }
+
+  Future<void> _resolveLocation() async {
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) return;
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition();
+      _latitude = position.latitude;
+      _longitude = position.longitude;
+    } catch (_) {
+      // Keep Colombo fallback when GPS is unavailable.
+    }
   }
 
   Future<void> _fetchCompatibleStations() async {
@@ -49,6 +68,7 @@ class _CompatibleStationsSheetState extends State<CompatibleStationsSheet> {
     });
 
     try {
+      await _resolveLocation();
       final stations = await VehicleApiClient.instance.getCompatibleStations(
         vehicleId: widget.vehicle.id,
         latitude: _latitude,
@@ -236,7 +256,7 @@ class _CompatibleStationsSheetState extends State<CompatibleStationsSheet> {
           children: [
             CircularProgressIndicator(color: AppColors.primary),
             SizedBox(height: 16),
-            Text('Calculating compatibility scores and charge benchmarks...'),
+            Text('Scoring nearby stations with the Compatibility Agent...'),
           ],
         ),
       );
@@ -412,6 +432,22 @@ class _CompatibleStationsSheetState extends State<CompatibleStationsSheet> {
               const SizedBox(height: 12),
 
               // Compatible Charging Info Box
+              if (!st.isCompatible)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'No ${widget.vehicle.connector.shortName} socket at this station. Score ${st.compatibilityScore}/100.',
+                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.error, fontWeight: FontWeight.w600),
+                  ),
+                )
+              else if (st.compatibilityScore > 0 && st.compatibilityScore < 70)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    'Partial match (${st.compatibilityScore}/100). Power or distance may not be ideal for this vehicle.',
+                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.onSurfaceVariant, fontWeight: FontWeight.w600),
+                  ),
+                ),
               if (bestCharger != null) ...[
                 Container(
                   padding: const EdgeInsets.all(12),

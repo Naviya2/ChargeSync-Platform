@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/api/vehicle_models.dart';
 import '../../../core/api/vehicle_service.dart';
 import '../../../screens/vehicles/compatible_stations_sheet.dart';
 import '../../stations/api/station_service.dart';
@@ -30,6 +31,8 @@ class _StationMapScreenState extends State<StationMapScreen> {
 
   List<Station> _stations = [];
   Station? _selectedStation;
+  CompatibilityEvaluation? _compatibility;
+  bool _compatibilityLoading = false;
   LatLng? _currentLocation;
   List<LatLng> _routePoints = [];
   String _distance = '';
@@ -49,9 +52,9 @@ class _StationMapScreenState extends State<StationMapScreen> {
   }
 
   Future<void> _initMap() async {
+    await VehicleService.instance.fetchVehicles();
     await _getLocation();
     await _loadStations();
-    VehicleService.instance.fetchVehicles();
     setState(() {
       _isLoading = false;
     });
@@ -91,8 +94,19 @@ class _StationMapScreenState extends State<StationMapScreen> {
 
   Future<void> _loadStations() async {
     try {
-      // Fetch all stations instead of just my stations so drivers can see them
-      final stations = await StationService.instance.getAllStations();
+      final activeVehicle = VehicleService.instance.activeVehicle;
+      List<Station> stations = [];
+      if (_currentLocation != null) {
+        stations = await StationService.instance.searchStations(
+          latitude: _currentLocation!.latitude,
+          longitude: _currentLocation!.longitude,
+          radiusKm: 25,
+          connectorName: activeVehicle?.connector.toBackendString(),
+        );
+      }
+      if (stations.isEmpty) {
+        stations = await StationService.instance.getAllStations();
+      }
       setState(() {
         _stations = stations;
       });
@@ -101,13 +115,44 @@ class _StationMapScreenState extends State<StationMapScreen> {
     }
   }
 
-  Future<void> _getRouteTo(Station station) async {
+  Future<void> _evaluateCompatibility(Station station) async {
     final activeVehicle = VehicleService.instance.activeVehicle;
-    // Trigger AI Compatibility Agent evaluation for selected station & active vehicle
-    StationService.instance.getCompatibility(station.id, activeVehicle?.id ?? '');
+    if (activeVehicle == null) {
+      setState(() {
+        _compatibility = null;
+        _compatibilityLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _compatibility = null;
+      _compatibilityLoading = true;
+    });
+
+    final evaluation = await StationService.instance.getCompatibility(
+      station.id,
+      activeVehicle.id,
+      _currentLocation?.latitude,
+      _currentLocation?.longitude,
+    );
+
+    if (!mounted || _selectedStation?.id != station.id) return;
+    setState(() {
+      _compatibility = evaluation;
+      _compatibilityLoading = false;
+    });
+  }
+
+  Future<void> _getRouteTo(Station station) async {
+    setState(() {
+      _selectedStation = station;
+      _compatibility = null;
+      _compatibilityLoading = VehicleService.instance.activeVehicle != null;
+    });
+    unawaited(_evaluateCompatibility(station));
 
     if (_currentLocation == null) {
-      setState(() => _selectedStation = station);
       return;
     }
 
@@ -459,6 +504,105 @@ class _StationMapScreenState extends State<StationMapScreen> {
     final activeVehicle = VehicleService.instance.activeVehicle;
     if (activeVehicle == null) {
       return const SizedBox.shrink();
+    }
+
+    if (_compatibilityLoading) {
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Checking AI compatibility for ${activeVehicle.fullName}...',
+                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final evaluation = _compatibility;
+    if (evaluation != null) {
+      final compatible = evaluation.isCompatible;
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: (compatible ? AppColors.primaryContainer : AppColors.error).withValues(alpha: compatible ? 0.35 : 0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: (compatible ? AppColors.primary : AppColors.error).withValues(alpha: 0.4),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  compatible ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                  color: compatible ? AppColors.primary : AppColors.error,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    compatible
+                        ? '${evaluation.compatibilityScore}% match with ${activeVehicle.fullName}'
+                            '${evaluation.estimatedChargeTimeFormatted != null ? ' • ${evaluation.estimatedChargeTimeFormatted}' : ''}'
+                        : 'Incompatible with ${activeVehicle.fullName} (${activeVehicle.connector.shortName})',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: compatible ? AppColors.primary : AppColors.error,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (evaluation.aiInsight != null && evaluation.aiInsight!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                evaluation.aiInsight!,
+                style: GoogleFonts.inter(fontSize: 11, color: AppColors.onSurfaceVariant),
+              ),
+            ],
+            if (evaluation.suggestedAlternatives.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Alternatives: ${evaluation.suggestedAlternatives.take(2).map((a) => '${a.name} (${a.compatibilityScore}%)').join(' · ')}',
+                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+              ),
+            ],
+            const SizedBox(height: 4),
+            GestureDetector(
+              onTap: () => CompatibleStationsSheet.show(context, activeVehicle),
+              child: Text(
+                compatible ? 'View nearby scored stations →' : 'Tap to view compatible alternatives nearby →',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     final chargers = station.chargers ?? [];

@@ -39,4 +39,28 @@ public sealed class VehicleAgentClient : IVehicleAgentClient
             return null;
         }
     }
+
+    public async Task<AgentBatchCompatibilityResponse?> BatchEvaluateCompatibilityAsync(
+        AgentBatchCompatibilityRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("/api/compatibility/batch-evaluate", request, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<AgentBatchCompatibilityResponse>(
+                    cancellationToken: cancellationToken);
+            }
+
+            _logger?.LogWarning("Agent AI batch evaluate returned status {StatusCode}: {Body}",
+                response.StatusCode, await response.Content.ReadAsStringAsync(cancellationToken));
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to call Agent AI batch evaluate, falling back to deterministic calculations.");
+            return null;
+        }
+    }
 }
