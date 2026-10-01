@@ -10,6 +10,7 @@ class Station {
   final String status;
   final String? rejectionReason;
   final List<Charger>? chargers;
+  final List<String>? documentUrls;
 
   Station({
     required this.id,
@@ -21,6 +22,7 @@ class Station {
     required this.status,
     this.rejectionReason,
     this.chargers,
+    this.documentUrls,
   });
 
   factory Station.fromJson(Map<String, dynamic> json) {
@@ -37,7 +39,10 @@ class Station {
           ? (json['chargers'] as List)
               .map((e) => Charger.fromJson(e as Map<String, dynamic>))
               .toList()
-          : null
+          : null,
+      documentUrls: json['documentUrls'] != null
+          ? List<String>.from(json['documentUrls'])
+          : null,
     );
   }
 
@@ -52,6 +57,7 @@ class Station {
       'status': status,
       'rejectionReason': rejectionReason,
       if (chargers != null) 'chargers': chargers!.map((e) => e.toJson()).toList(),
+      if (documentUrls != null) 'documentUrls': documentUrls,
     };
   }
 }
