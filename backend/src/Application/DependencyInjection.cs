@@ -14,6 +14,8 @@ public static class DependencyInjection
         services.AddScoped<Application.Memberships.MemberService>();
         services.AddScoped<Application.Wallets.WalletService>();
         services.AddScoped<Application.Support.SupportService>();
+        services.AddScoped<Application.Support.SupportAnalysisService>();
+        services.AddScoped<Application.Support.SupportWorkflowService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IResourceGuard, ResourceGuard>();
 

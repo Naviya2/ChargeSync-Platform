@@ -93,11 +93,13 @@ public sealed class MemberServiceTests : IDisposable
         var reward = (await service.RewardsAsync(ct))[1];
         var r = await service.RedeemAsync(user.Id, new(reward.Id, Guid.NewGuid()), ct);
         Assert.Equal("Pending", r.Status); Assert.Equal(1000, account.PointsBalance); Assert.Equal(0m, user.WalletBalance);
-        await service.ReviewAsync(Guid.NewGuid(), r.Id, approve, ct);
+        var admin = User.Create("Admin", $"{Guid.NewGuid()}@test.com", "hashed", UserRole.Admin);
+        db.Users.Add(admin); await db.SaveChangesAsync();
+        await service.ReviewAsync(admin.Id, r.Id, approve, ct);
         Assert.Equal(approve ? 6000m : 0m, user.WalletBalance);
         Assert.Equal(approve ? 1000 : 7000, account.PointsBalance);
         Assert.Equal(7000, account.LifetimePoints); Assert.Equal("Gold", account.Tier);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReviewAsync(Guid.NewGuid(), r.Id, approve, ct));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReviewAsync(admin.Id, r.Id, approve, ct));
     }
 
     [Fact]
@@ -110,6 +112,20 @@ public sealed class MemberServiceTests : IDisposable
         db.Entry(account).Property(a => a.Version).OriginalValue = original;
         account.Spend(100);
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => db.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task DriverCannotApproveRewardThroughApplicationService()
+    {
+        var driver = await Driver(0);
+        var account = new LoyaltyAccount { DriverId = driver.Id }; account.Earn(6000);
+        db.LoyaltyAccounts.Add(account); await db.SaveChangesAsync();
+        var reward = (await service.RewardsAsync(ct))[1];
+        var redemption = await service.RedeemAsync(driver.Id, new(reward.Id, Guid.NewGuid()), ct);
+        await Assert.ThrowsAsync<Application.Common.Exceptions.ForbiddenAccessException>(
+            () => service.ReviewAsync(driver.Id, redemption.Id, true, ct));
+        Assert.Equal("Pending", redemption.Status);
+        Assert.Equal(0, driver.WalletBalance);
     }
 
     [Theory]

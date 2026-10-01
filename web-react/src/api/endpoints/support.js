@@ -2,6 +2,7 @@ import apiClient, { unwrap } from '../client'
 const base = '/support-tickets'
 
 export const supportApi = {
+  analyze: (id) => unwrap(apiClient.post(`${base}/${id}/analysis`, null, { timeout: 30_000 })),
   list: (params) => unwrap(apiClient.get(base, { params })),
   get: (id) => unwrap(apiClient.get(`${base}/${id}`)),
   create: (payload) => unwrap(apiClient.post(base, payload)),

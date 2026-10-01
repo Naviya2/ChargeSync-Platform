@@ -24,6 +24,15 @@ public sealed class LoyaltyAccount
         Version = Guid.NewGuid();
     }
 
+    public void ReverseEarned(int points)
+    {
+        if (points < 0 || PointsBalance < points || LifetimePoints < points)
+            throw new InvalidOperationException("Earned points have already been spent or reserved. Resolve loyalty accounting before approving this refund.");
+        PointsBalance -= points;
+        LifetimePoints -= points;
+        Version = Guid.NewGuid();
+    }
+
     public void Release(int points)
     {
         if (points <= 0) throw new ArgumentException("Released points must be positive.");

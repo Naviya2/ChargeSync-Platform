@@ -5,6 +5,12 @@ const base = '/agent-workflows'
 
 export const agentWorkflowsApi = {
   ...createResourceApi(base),
+  forTicket: (ticketId) => unwrap(apiClient.get(`${base}/support-ticket/${ticketId}`)),
+  startSupport: (ticketId) => unwrap(apiClient.post(`${base}/support-ticket/${ticketId}`)),
+  reviewSupport: (id, decision, version, note) => {
+    if (!['approve', 'reject', 'revise'].includes(decision)) throw new Error('Invalid workflow decision')
+    return unwrap(apiClient.post(`${base}/${id}/${decision}`, { version, note }))
+  },
   /** @param {string|number} id @param {Record<string, unknown>} [input] */
   trigger: (id, input) => unwrap(apiClient.post(`${base}/${id}/trigger`, input)),
   /** @param {string|number} id */
