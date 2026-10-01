@@ -350,7 +350,8 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       onChanged: (id) => setState(() {
         _selected = _sessions.firstWhere((item) => item.id == id);
         _overrideController.clear();
-        _meterPhoto = null;
+        _meterPhotoUrl = null;
+        _isUploadingImage = false;
         _useOverride = false;
       }),
     ),

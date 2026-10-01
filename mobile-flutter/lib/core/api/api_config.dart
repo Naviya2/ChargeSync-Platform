@@ -7,9 +7,13 @@ class ApiConfig {
 
   /// Reads API_URL from .env file, falls back to compile-time env or local defaults
   static String get baseUrl {
-    final envUrl = dotenv.env['API_URL'];
-    if (envUrl != null && envUrl.isNotEmpty) {
-      return envUrl;
+    try {
+      final envUrl = dotenv.env['API_URL'];
+      if (envUrl != null && envUrl.isNotEmpty) {
+        return envUrl;
+      }
+    } catch (_) {
+      // Ignored for tests if dotenv is not initialized
     }
 
     const buildUrl = String.fromEnvironment('API_URL');

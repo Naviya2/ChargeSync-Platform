@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from models.station_analysis_models import (
     StationAnalysisRequest,
     StationAnalysisResponse,
@@ -35,7 +35,7 @@ class StationAnalysisAgent:
         score = max(0.0, base_score - history_penalty)
         return round(score, 1)
 
-    def evaluate_pricing(self, current_price: float, avg_price: float, comp_price: float = None) -> float:
+    def evaluate_pricing(self, current_price: float, avg_price: float, comp_price: Optional[float] = None) -> float:
         """
         Calculates price competitiveness. A score of 50 means price is average.
         Scores > 50 indicate cheaper/better pricing, < 50 indicate more expensive pricing.

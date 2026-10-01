@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
@@ -25,7 +26,7 @@ class ItineraryStep(BaseModel):
     match_score: int = Field(0, description="Score out of 100")
 
 class PlanningResponse(BaseModel):
-    plan_id: str = Field(..., description="Unique generated plan ID")
+    plan_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique generated plan ID")
     ranked_itineraries: List[ItineraryStep] = Field(..., description="List of options")
     requires_approval: bool = Field(False, description="If an itinerary requires waitlist override approval")
     agent_reasoning: str = Field(..., description="Explanation of the generated plan")

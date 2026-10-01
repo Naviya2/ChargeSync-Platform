@@ -4,7 +4,9 @@ from config import settings
 
 _groq_instance = None
 
-def get_groq_provider(api_key: str = None, model: str = None) -> ChatGroq:
+from typing import Optional
+
+def get_groq_provider(api_key: Optional[str] = None, model: Optional[str] = None) -> ChatGroq:
     """
     Returns a shared instance of the Groq LLM provider.
     This ensures all agents use the same configured provider.

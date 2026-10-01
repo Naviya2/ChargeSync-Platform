@@ -38,7 +38,7 @@ class PlanningCoordinatorAgent:
                 avg_tariff = sum(tariffs) / len(tariffs)
                 
         # Calculate real utilization metric (placeholder based on current real status)
-        busy_chargers = len([c for c in station.chargers if c.status.upper() not in ["AVAILABLE", "UNKNOWN"]])
+        busy_chargers = len([c for c in station.chargers if (c.status or "UNKNOWN").upper() not in ["AVAILABLE", "UNKNOWN"]])
         total_chargers = len(station.chargers)
         real_utilization = (busy_chargers / total_chargers * 100.0) if total_chargers > 0 else 0.0
         
@@ -48,7 +48,7 @@ class PlanningCoordinatorAgent:
             station_data=StationDataInput(
                 station_id=station.station_id,
                 historical_utilization_percent=real_utilization,
-                live_chargers=[ChargerStatus(charger_id=c.charger_id, status=c.status) for c in station.chargers],
+                live_chargers=[ChargerStatus(charger_id=c.charger_id, status=c.status or "UNKNOWN") for c in station.chargers],
                 pricing=PricingHistory(
                     current_price_per_kwh=avg_tariff, 
                     average_price_per_kwh=100.0, 
@@ -128,10 +128,26 @@ class PlanningCoordinatorAgent:
         
         try:
             response = self.llm.invoke(system_prompt)
-            # Ensure plan_id is populated
-            if not response.plan_id:
-                response.plan_id = str(uuid.uuid4())
-            return response
+            # Ensure plan_id is populated safely (langchain might return a generic BaseModel without this attribute if missing in LLM output)
+            if isinstance(response, dict):
+                if not response.get("plan_id"):
+                    response["plan_id"] = str(uuid.uuid4())
+                return PlanningResponse(**response)
+            else:
+                if not getattr(response, "plan_id", None):
+                    setattr(response, "plan_id", str(uuid.uuid4()))
+                
+                if isinstance(response, PlanningResponse):
+                    return response
+                
+                # If it's a generic BaseModel, try converting it
+                if hasattr(response, "dict"):
+                    return PlanningResponse(**response.dict())
+                elif hasattr(response, "model_dump"):
+                    return PlanningResponse(**response.model_dump())
+                
+                from typing import cast
+                return cast(PlanningResponse, response)
         except Exception as e:
             # Fallback in case the LLM fails to parse structured output
             print(f"LLM Error: {e}")
