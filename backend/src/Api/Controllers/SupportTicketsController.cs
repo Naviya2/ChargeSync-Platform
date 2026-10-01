@@ -14,6 +14,14 @@ public sealed class SupportTicketsController(SupportService support, ICurrentUse
     private Guid UserId => current.Id!.Value;
     private UserRole Role => current.Role!.Value;
 
+    [HttpPost("{id:guid}/analysis")]
+    [Authorize(Roles = "SupportManager,Admin")]
+    public async Task<IActionResult> Analyze(Guid id, [FromServices] SupportAnalysisService analysis, CancellationToken ct) => Ok(await analysis.AnalyzeAsync(id, Role, ct));
+
+    [HttpGet("invoices/{id:guid}/validation")]
+    [Authorize(Roles = "SupportManager,Admin")]
+    public async Task<IActionResult> ValidateInvoice(Guid id, [FromServices] SupportAnalysisService analysis, CancellationToken ct) => Ok(await analysis.ValidateInvoiceAsync(id, Role, ct));
+
     [HttpGet]
     public async Task<IActionResult> List([FromQuery] string? status, CancellationToken ct) => Ok(await support.ListAsync(UserId, Role, status, ct));
     [HttpGet("{id:guid}")]

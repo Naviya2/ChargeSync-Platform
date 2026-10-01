@@ -9,7 +9,7 @@ namespace Application.Support;
 
 public sealed class SupportService(IAppDbContext db)
 {
-    public const decimal RefundApprovalThresholdLkr = 5000m;
+    public const decimal RefundApprovalThresholdLkr = 15m;
     private static readonly string[] Categories = ["Charging", "Reservation", "Payment", "Refund", "Technical", "Membership", "Other"];
     private static readonly string[] Statuses = ["Open", "InProgress", "Resolved", "Closed"];
 
@@ -37,15 +37,19 @@ public sealed class SupportService(IAppDbContext db)
         if (!Categories.Contains(category)) throw new ArgumentException("Choose a valid support category.");
         ValidateText(request.Subject, 5, 150, "Subject");
         ValidateText(request.Description, 10, 4000, "Description");
-        if (category != "Refund" && (request.InvoiceId != null || request.RequestedRefundAmount != null))
-            throw new ArgumentException("Invoice and refund amount are only valid for Refund tickets.");
+        if (category != "Refund" && request.RequestedRefundAmount != null)
+            throw new ArgumentException("Refund amount is only valid for Refund tickets.");
+        if (request.InvoiceId is Guid linkedInvoice && !await db.PaymentInvoices.AnyAsync(i => i.Id == linkedInvoice && i.DriverId == driverId, ct))
+            throw new NotFoundException("PaymentInvoice", linkedInvoice);
         if (category == "Refund")
         {
             if (request.InvoiceId is null || request.RequestedRefundAmount is null or <= 0)
                 throw new ArgumentException("A paid invoice and positive refund amount are required.");
+            if (decimal.Round(request.RequestedRefundAmount.Value, 2) != request.RequestedRefundAmount.Value)
+                throw new ArgumentException("Refund amounts must use whole cents.");
             var invoice = await db.PaymentInvoices.AsNoTracking().SingleOrDefaultAsync(i => i.Id == request.InvoiceId && i.DriverId == driverId, ct)
                 ?? throw new NotFoundException("PaymentInvoice", request.InvoiceId.Value);
-            var paidAmount = invoice.GrossAmount - invoice.DiscountAmount;
+            var paidAmount = invoice.GrossAmount - invoice.DiscountAmount - invoice.RefundedAmount;
             if (invoice.Status != InvoiceStatus.Paid || request.RequestedRefundAmount > paidAmount)
                 throw new ArgumentException("Refund must reference your paid invoice and cannot exceed its paid amount.");
             if (await db.SupportTickets.AnyAsync(t => t.InvoiceId == request.InvoiceId &&
@@ -59,6 +63,7 @@ public sealed class SupportService(IAppDbContext db)
             RefundStatus = category == "Refund" ? "PendingReview" : "NotRequested" };
         ticket.Messages.Add(new SupportMessage { TicketId = ticket.Id, AuthorId = driverId, AuthorRole = "Driver", Body = ticket.Description });
         db.SupportTickets.Add(ticket);
+        db.AgentWorkflowRuns.Add(new AgentWorkflowRun { TicketId = ticket.Id, DriverId = driverId });
         await Save(ct);
         return await GetAsync(driverId, UserRole.Driver, ticket.Id, ct);
     }
@@ -109,16 +114,64 @@ public sealed class SupportService(IAppDbContext db)
 
     public async Task<SupportTicketDto> ReviewRefundAsync(Guid actorId, UserRole role, Guid id, ReviewRefundRequest request, CancellationToken ct)
     {
-        Staff(role); var ticket = await TicketAsync(id, ct);
+        await ApplyRefundReviewAsync(actorId, role, id, request, ct);
+        var run = await db.AgentWorkflowRuns.SingleOrDefaultAsync(r => r.TicketId == id, ct);
+        if (run is not null)
+        {
+            run.Status = request.Approve ? AgentWorkflowStatus.Completed : AgentWorkflowStatus.Rejected;
+            run.Decision = request.Approve ? "Approved" : "Rejected";
+            run.ReviewedBy = actorId; run.ReviewedAt = run.CompletedAt = run.UpdatedAt = DateTimeOffset.UtcNow;
+            run.LeaseUntil = null; run.Version = Guid.NewGuid();
+            SupportWorkflowService.Audit(run, "ManualRefundDecision", "Existing support refund review: " + run.Decision, actorId);
+        }
+        await Save(ct);
+        return await GetAsync(actorId, role, id, ct);
+    }
+
+    // Stages existing financial rules in the caller's unit of work. Workflow state
+    // and financial changes are committed together, never in separate saves.
+    internal async Task ApplyRefundReviewAsync(Guid actorId, UserRole role, Guid id, ReviewRefundRequest request, CancellationToken ct)
+    {
+        Staff(role); await ActiveUser(actorId, role, ct); var ticket = await TicketAsync(id, ct);
         if (ticket.RefundStatus != "PendingReview" || ticket.RequestedRefundAmount is null)
             throw new InvalidOperationException("This refund is not awaiting review.");
-        var driver = await db.Users.SingleAsync(u => u.Id == ticket.DriverId, ct);
-        if (request.Approve) driver.CreditBalance(ticket.RequestedRefundAmount.Value);
+        if (request.Approve)
+        {
+            var invoice = await db.PaymentInvoices.Include(i => i.Session).SingleOrDefaultAsync(i => i.Id == ticket.InvoiceId, ct)
+                ?? throw new NotFoundException("PaymentInvoice", ticket.InvoiceId ?? Guid.Empty);
+            if (invoice.DriverId != ticket.DriverId) throw new InvalidOperationException("Invoice ownership does not match this ticket.");
+            var findings = WorkflowValidation.Evaluate(ticket, invoice);
+            if (findings.Any(f => f.Outcome == "Error")) throw new InvalidOperationException("Invoice or session validation failed. Correct the records before refunding.");
+            if (findings.Any(f => f.Code == "METER_DISCREPANCY" && f.Outcome == "Review") && role != UserRole.Admin)
+                throw new ForbiddenAccessException();
+            var driver = await db.Users.SingleOrDefaultAsync(u => u.Id == ticket.DriverId && u.IsActive, ct)
+                ?? throw new NotFoundException("Driver", ticket.DriverId);
+            var amount = ticket.RequestedRefundAmount.Value;
+            if (invoice.Status != InvoiceStatus.Paid || amount <= 0 || decimal.Round(amount, 2) != amount || amount > invoice.GrossAmount - invoice.DiscountAmount - invoice.RefundedAmount)
+                throw new InvalidOperationException("Refund exceeds the remaining paid amount or has invalid precision.");
+            // Preserve the original award as the invoice's unique ledger entry. Reversals
+            // reference the audited ticket in Reason, allowing partial refund accounting.
+            var award = await db.LoyaltyEntries.SingleOrDefaultAsync(e => e.InvoiceId == invoice.Id, ct);
+            if (award is not null && award.Points > 0)
+            {
+                var paid = invoice.GrossAmount - invoice.DiscountAmount;
+                var before = (int)decimal.Floor(award.Points * (paid - invoice.RefundedAmount) / paid);
+                var after = (int)decimal.Floor(award.Points * (paid - invoice.RefundedAmount - amount) / paid);
+                var reverse = before - after;
+                var account = await db.LoyaltyAccounts.SingleOrDefaultAsync(a => a.DriverId == driver.Id, ct)
+                    ?? throw new InvalidOperationException("Loyalty account is missing. Manual investigation required.");
+                account.ReverseEarned(reverse);
+                if (reverse > 0) db.LoyaltyEntries.Add(new Domain.Loyalty.LoyaltyEntry {
+                    DriverId = driver.Id, Points = -reverse, Reason = $"Refund reversal: ticket {ticket.Id}, invoice {invoice.Id}" });
+            }
+            invoice.Refund(amount);
+            driver.CreditBalance(amount);
+        }
         ticket.RefundStatus = request.Approve ? "Approved" : "Rejected";
         ticket.RefundReviewedBy = actorId; ticket.RefundReviewedAt = DateTimeOffset.UtcNow;
         var note = string.IsNullOrWhiteSpace(request.Note) ? "" : $" Note: {request.Note.Trim()}";
         AddSystem(ticket, actorId, role, $"Refund {ticket.RefundStatus.ToLowerInvariant()} for LKR {ticket.RequestedRefundAmount:0.00}.{note}");
-        Touch(ticket); await Save(ct); return await GetAsync(actorId, role, id, ct);
+        Touch(ticket);
     }
 
     private async Task<SupportTicket> TicketAsync(Guid id, CancellationToken ct) =>

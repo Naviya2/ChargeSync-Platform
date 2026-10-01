@@ -115,7 +115,7 @@ public sealed class MemberService(IAppDbContext db)
             ?? throw new NotFoundException(nameof(Reward), request.RewardId);
         var account = await AccountAsync(driverId, ct);
         account.Spend(reward.PointsCost);
-        var approval = reward.RequiresApproval || reward.PointsCost > 5000;
+        var approval = Application.Support.SupportWorkflowPolicy.LoyaltyRequiresApproval(reward.PointsCost, reward.RequiresApproval);
         var redemption = new RewardRedemption { DriverId = driverId, RewardId = reward.Id, RequestId = request.RequestId,
             RewardDescription = reward.Name, PointsRedeemed = reward.PointsCost, WalletCredit = reward.WalletCredit,
             Status = approval ? "Pending" : "Approved" };
@@ -129,6 +129,8 @@ public sealed class MemberService(IAppDbContext db)
 
     public async Task<RewardRedemption> ReviewAsync(Guid adminId, Guid id, bool approve, CancellationToken ct)
     {
+        if (!await db.Users.AnyAsync(u => u.Id == adminId && u.Role == UserRole.Admin && u.IsActive, ct))
+            throw new ForbiddenAccessException();
         var r = await db.RewardRedemptions.FirstOrDefaultAsync(r => r.Id == id, ct) ?? throw new NotFoundException(nameof(RewardRedemption), id);
         if (r.Status != "Pending") throw new InvalidOperationException("This redemption has already been reviewed.");
         r.Status = approve ? "Approved" : "Rejected"; r.ReviewedBy = adminId; r.ReviewedAt = DateTimeOffset.UtcNow;
