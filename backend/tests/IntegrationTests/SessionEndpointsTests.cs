@@ -100,7 +100,7 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
             var reservation = Reservation.Create(
                 owner.User.Id,
                 chargerId,
-                DateTimeOffset.UtcNow.AddMinutes(1),
+                DateTimeOffset.UtcNow.AddMinutes(-1),
                 DateTimeOffset.UtcNow.AddHours(1),
                 0m);
             reservation.ConfirmWithQrCode(qrCode);
@@ -288,6 +288,12 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var station = Station.Create("Session Station", "Test address", 6.9, 79.8, ownerId);
+        
+        var operatingHours = Enumerable.Range(0, 7)
+            .Select(day => OperatingHour.Create(station.Id, day, true, TimeSpan.Zero, new TimeSpan(23, 59, 59)))
+            .ToList();
+        station.UpdateOperatingHours(operatingHours);
+
         db.Stations.Add(station);
         await db.SaveChangesAsync();
 
