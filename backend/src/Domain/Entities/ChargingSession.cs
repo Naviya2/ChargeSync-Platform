@@ -74,8 +74,8 @@ public sealed class ChargingSession : AuditableEntity
         StaffOverriddenKwh = staffOverriddenKwh;
         FinalEnergyDeliveredKwh = staffOverriddenKwh ?? automaticKwh;
 
-        var discrepancyRatio = automaticKwh == 0 || staffOverriddenKwh is null
-            ? 0
+        var discrepancyRatio = staffOverriddenKwh is null ? 0
+            : automaticKwh == 0 ? (staffOverriddenKwh.Value == 0 ? 0 : 1)
             : Math.Abs(staffOverriddenKwh.Value - automaticKwh) / automaticKwh;
 
         Status = discrepancyRatio > 0.15m

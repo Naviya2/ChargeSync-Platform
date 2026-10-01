@@ -59,6 +59,46 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       
       // Stop scanning on success
       _scannerController.stop();
+
+      // Show success popup
+      if (mounted) {
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 72),
+                const SizedBox(height: 16),
+                Text('Check-In Successful!',
+                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.onSurface),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 8),
+                Text('The session has been started successfully.',
+                    style: GoogleFonts.inter(fontSize: 14, color: AppColors.onSurfaceVariant),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text('Done', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
       
     } catch (e) {
       setState(() {

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../api/support_api.dart';
+import '../models/workflow_status.dart';
 
 class SupportTicketsScreen extends StatefulWidget {
   const SupportTicketsScreen({super.key});
@@ -126,21 +128,24 @@ class _SupportTicketsScreenState extends State<SupportTicketsScreen> {
 }
 
 class CreateSupportTicketScreen extends StatefulWidget {
-  const CreateSupportTicketScreen({super.key});
+  const CreateSupportTicketScreen({super.key, this.api});
+  final SupportApi? api;
   @override
   State<CreateSupportTicketScreen> createState() =>
       _CreateSupportTicketScreenState();
 }
 
 class _CreateSupportTicketScreenState extends State<CreateSupportTicketScreen> {
-  final _api = SupportApi(),
-      _form = GlobalKey<FormState>(),
+  late final SupportApi _api = widget.api ?? SupportApi();
+  final _form = GlobalKey<FormState>(),
       _subject = TextEditingController(),
       _description = TextEditingController(),
       _refund = TextEditingController();
   String _category = 'Charging';
   String? _invoiceId, _error;
   List<dynamic> _invoices = [];
+  bool _loadingInvoices = true;
+  String? _invoiceError;
   bool _busy = false;
   static const categories = [
     'Charging',
@@ -158,10 +163,23 @@ class _CreateSupportTicketScreenState extends State<CreateSupportTicketScreen> {
   }
 
   Future<void> _loadInvoices() async {
+    setState(() {
+      _loadingInvoices = true;
+      _invoiceError = null;
+    });
     try {
       final rows = await _api.paidInvoices();
       if (mounted) setState(() => _invoices = rows);
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) {
+        setState(
+          () => _invoiceError =
+              'Could not load paid invoices. ${e.toString().replaceFirst('Exception: ', '')}',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingInvoices = false);
+    }
   }
 
   @override
@@ -179,7 +197,7 @@ class _CreateSupportTicketScreenState extends State<CreateSupportTicketScreen> {
       _error = null;
     });
     try {
-      await _api.create({
+      final ticket = await _api.create({
         'category': _category,
         'subject': _subject.text.trim(),
         'description': _description.text.trim(),
@@ -187,7 +205,15 @@ class _CreateSupportTicketScreenState extends State<CreateSupportTicketScreen> {
         if (_category == 'Refund')
           'requestedRefundAmount': double.tryParse(_refund.text),
       });
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                SupportTicketDetailScreen(ticket: ticket, api: _api),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
@@ -241,6 +267,19 @@ class _CreateSupportTicketScreenState extends State<CreateSupportTicketScreen> {
                 : null,
           ),
           if (_category == 'Refund') ...[
+            if (_loadingInvoices) const LinearProgressIndicator(),
+            if (!_loadingInvoices &&
+                (_invoiceError != null || _invoices.isEmpty)) ...[
+              Text(
+                _invoiceError ??
+                    'No paid invoices found for this account. Complete and pay for a charging session using this driver account, then refresh.',
+              ),
+              TextButton.icon(
+                onPressed: _busy ? null : _loadInvoices,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Refresh invoices'),
+              ),
+            ],
             DropdownButtonFormField<String>(
               initialValue: _invoiceId,
               decoration: const InputDecoration(labelText: 'Paid invoice'),
@@ -254,7 +293,9 @@ class _CreateSupportTicketScreenState extends State<CreateSupportTicketScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (v) => setState(() => _invoiceId = v),
+              onChanged: _loadingInvoices || _invoiceError != null || _busy
+                  ? null
+                  : (v) => setState(() => _invoiceId = v),
               validator: (v) =>
                   v == null ? 'Select the disputed invoice.' : null,
             ),
@@ -292,32 +333,91 @@ class _CreateSupportTicketScreenState extends State<CreateSupportTicketScreen> {
 }
 
 class SupportTicketDetailScreen extends StatefulWidget {
-  const SupportTicketDetailScreen({super.key, required this.ticket});
+  const SupportTicketDetailScreen({super.key, required this.ticket, this.api});
   final Map<String, dynamic> ticket;
+  final SupportApi? api;
   @override
   State<SupportTicketDetailScreen> createState() =>
       _SupportTicketDetailScreenState();
 }
 
-class _SupportTicketDetailScreenState extends State<SupportTicketDetailScreen> {
-  final _api = SupportApi(), _message = TextEditingController();
+class _SupportTicketDetailScreenState extends State<SupportTicketDetailScreen>
+    with WidgetsBindingObserver {
+  late final SupportApi _api = widget.api ?? SupportApi();
+  final _message = TextEditingController();
   late Map<String, dynamic> _ticket;
   bool _busy = false;
   String? _error;
+  Map<String, dynamic>? _workflow;
+  String? _workflowError;
+  Timer? _refreshTimer;
+  bool _refreshing = false;
+  int _changeVersion = 0;
   @override
   void initState() {
     super.initState();
     _ticket = widget.ticket;
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (mounted &&
+          ModalRoute.of(context)?.isCurrent == true &&
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        _refresh();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _message.dispose();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    if (!mounted || _refreshing || _busy) return;
+    setState(() => _refreshing = true);
+    final version = _changeVersion;
+    try {
+      final row = await _api.get(_ticket['id']);
+      if (!mounted || version != _changeVersion) return;
+      setState(() => _ticket = row);
+      // Workflow failure must not prevent loading the ticket or replying.
+      try {
+        final result = await _api.workflow(_ticket['id']);
+        if (mounted && version == _changeVersion) {
+          setState(() {
+            _workflow = Map<String, dynamic>.from(result['workflow']);
+            _workflowError = null;
+          });
+        }
+      } catch (_) {
+        if (mounted && version == _changeVersion)
+          setState(
+            () => _workflowError =
+                'Analysis status unavailable. You can still contact support.',
+          );
+      }
+    } catch (_) {
+      if (mounted && version == _changeVersion)
+        setState(
+          () => _workflowError = 'Could not refresh. Tap refresh to try again.',
+        );
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
   Future<void> _send() async {
     if (_message.text.trim().isEmpty || _busy) return;
+    _changeVersion++;
     setState(() => _busy = true);
     try {
       final row = await _api.message(_ticket['id'], _message.text.trim());
@@ -357,7 +457,8 @@ class _SupportTicketDetailScreenState extends State<SupportTicketDetailScreen> {
         ],
       ),
     );
-    if (yes != true) return;
+    if (yes != true || !mounted) return;
+    _changeVersion++;
     setState(() => _busy = true);
     try {
       final row = await _api.withdraw(_ticket['id']);
@@ -375,8 +476,21 @@ class _SupportTicketDetailScreenState extends State<SupportTicketDetailScreen> {
   Widget build(BuildContext context) {
     final closed = ['Closed', 'Withdrawn'].contains(_ticket['status']);
     final messages = (_ticket['messages'] as List?) ?? [];
+    final workflowStatus = SupportWorkflowStatus.fromRecords(
+      _ticket,
+      _workflow,
+    );
     return Scaffold(
-      appBar: AppBar(title: const Text('Ticket details')),
+      appBar: AppBar(
+        title: const Text('Ticket details'),
+        actions: [
+          IconButton(
+            onPressed: _refreshing ? null : _refresh,
+            tooltip: 'Refresh ticket status',
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -404,6 +518,25 @@ class _SupportTicketDetailScreenState extends State<SupportTicketDetailScreen> {
                         'LKR ${((_ticket['requestedRefundAmount'] ?? 0) as num).toStringAsFixed(2)}',
                       ),
                     ),
+                  ),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.support_agent),
+                    title: Text(
+                      _workflowError != null && _workflow == null
+                          ? 'Status unavailable'
+                          : workflowStatus.label,
+                    ),
+                    subtitle: Text(
+                      _workflowError ?? workflowStatus.description,
+                    ),
+                  ),
+                ),
+                if (_refreshing) const LinearProgressIndicator(),
+                if (_workflowError != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(_workflowError!),
                   ),
                 if (_error != null)
                   Text(_error!, style: const TextStyle(color: AppColors.error)),

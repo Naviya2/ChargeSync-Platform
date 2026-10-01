@@ -15,13 +15,11 @@ namespace Application.ReservationPlanning;
 public sealed class ReservationService : IReservationService
 {
     private readonly IAppDbContext _db;
-    private readonly IWaitlistService _waitlist;
     private readonly ISessionService _sessions;
 
-    public ReservationService(IAppDbContext db, IWaitlistService waitlist, ISessionService sessions)
+    public ReservationService(IAppDbContext db, ISessionService sessions)
     {
         _db = db;
-        _waitlist = waitlist;
         _sessions = sessions;
     }
 
@@ -246,7 +244,10 @@ public sealed class ReservationService : IReservationService
                 StationLongitude = r.Charger.Station.Longitude,
                 ChargerName = r.Charger.Identifier,
                 VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
-                DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
+                DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in",
+                FinalEnergyDeliveredKwh = r.ChargingSession != null ? r.ChargingSession.FinalEnergyDeliveredKwh : null,
+                InvoiceNetAmount = r.ChargingSession != null && r.ChargingSession.Invoice != null ? r.ChargingSession.Invoice.NetAmountDue : null,
+                InvoicePaymentMethod = r.ChargingSession != null && r.ChargingSession.Invoice != null && r.ChargingSession.Invoice.PaymentMethod != null ? r.ChargingSession.Invoice.PaymentMethod.ToString() : null
             })
             .ToListAsync(cancellationToken);
 
@@ -272,6 +273,8 @@ public sealed class ReservationService : IReservationService
                 .ThenInclude(c => c.Station)
             .Include(r => r.Vehicle)
             .Include(r => r.Driver)
+            .Include(r => r.ChargingSession)
+                .ThenInclude(cs => cs.Invoice)
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
 
@@ -323,13 +326,6 @@ public sealed class ReservationService : IReservationService
 
         RecordHistory(reservation, oldStatus, ReservationStatus.Cancelled, actorId: requesterId);
         await _db.SaveChangesAsync(cancellationToken);
-
-        // Attempt to promote the next waitlist entry for this charger slot.
-        await _waitlist.TryPromoteNextAsync(
-            reservation.ChargerId,
-            reservation.StartTime,
-            reservation.EndTime,
-            cancellationToken);
     }
 
     // ── Staff QR check-in ─────────────────────────────────────────────────────
@@ -600,7 +596,10 @@ public sealed class ReservationService : IReservationService
         StationLongitude = r.Charger?.Station?.Longitude ?? 0,
         ChargerName = r.Charger?.Identifier ?? string.Empty,
         VehicleName = r.Vehicle != null ? r.Vehicle.Make + " " + r.Vehicle.Model : "Walk-in",
-        DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in"
+        DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in",
+        FinalEnergyDeliveredKwh = r.ChargingSession?.FinalEnergyDeliveredKwh,
+        InvoiceNetAmount = r.ChargingSession?.Invoice?.NetAmountDue,
+        InvoicePaymentMethod = r.ChargingSession?.Invoice?.PaymentMethod?.ToString()
     };
 
     private async Task ValidateOperatingHoursAsync(Guid chargerId, DateTimeOffset startTime, DateTimeOffset endTime, CancellationToken cancellationToken)
@@ -608,17 +607,26 @@ public sealed class ReservationService : IReservationService
         var charger = await _db.Chargers
             .Include(c => c.Station)
                 .ThenInclude(s => s.OperatingHours)
+            .Include(c => c.MaintenanceWindows)
             .FirstOrDefaultAsync(c => c.Id == chargerId, cancellationToken)
             ?? throw new NotFoundException(nameof(Charger), chargerId);
 
-        var dayOfWeek = (int)startTime.DayOfWeek;
+        var timeZoneOffset = TimeSpan.FromHours(5.5);
+        var localStartTime = startTime.ToOffset(timeZoneOffset);
+        var localEndTime = endTime.ToOffset(timeZoneOffset);
+
+        var dayOfWeek = (int)localStartTime.DayOfWeek;
         var operatingHour = charger.Station.OperatingHours.FirstOrDefault(o => o.DayOfWeek == dayOfWeek);
         if (operatingHour == null || !operatingHour.IsEnabled)
             throw new InvalidOperationException("The charging station is closed on this time.");
 
-        var timeOfDay = startTime.TimeOfDay;
-        var endTimeOfDay = endTime.TimeOfDay;
+        var timeOfDay = localStartTime.TimeOfDay;
+        var endTimeOfDay = localEndTime.TimeOfDay;
         if (timeOfDay < operatingHour.OpenTime || endTimeOfDay > operatingHour.CloseTime)
             throw new InvalidOperationException($"The requested time falls outside the station's operating hours ({operatingHour.OpenTime:hh\\:mm} - {operatingHour.CloseTime:hh\\:mm}).");
+
+        var isMaintenanceOverlap = charger.MaintenanceWindows?.Any(m => m.StartTime < endTime && m.EndTime > startTime) == true;
+        if (isMaintenanceOverlap)
+            throw new InvalidOperationException("The requested time slot falls during a scheduled maintenance window for this charger.");
     }
 }

@@ -6,8 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/api/reservation_api_client.dart';
 import '../../../../core/api/reservation_models.dart';
+import '../../../../core/api/session_api_client.dart';
+import '../../payments/models/payment_models.dart';
 import '../../../../core/theme/app_colors.dart';
-import 'waitlist_screen.dart';
+import 'dart:async';
 
 class ReservationListScreen extends StatefulWidget {
   const ReservationListScreen({super.key});
@@ -22,13 +24,18 @@ class _ReservationListScreenState extends State<ReservationListScreen>
   bool _isLoading = true;
   List<ReservationDto> _reservations = [];
   List<String> _clearedReservationIds = [];
+  List<ChargingSessionSummary> _activeSessions = [];
+  Timer? _clock;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
     _loadClearedAndFetch();
+    _clock = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _loadClearedAndFetch() async {
@@ -41,6 +48,7 @@ class _ReservationListScreenState extends State<ReservationListScreen>
 
   @override
   void dispose() {
+    _clock?.cancel();
     _tabController.dispose();
     super.dispose();
   }
@@ -48,9 +56,11 @@ class _ReservationListScreenState extends State<ReservationListScreen>
   Future<void> _fetchReservations() async {
     try {
       final result = await ReservationApiClient.instance.getMyReservations();
+      final sessions = await SessionApiClient.instance.getActiveSessions();
       setState(() {
         _reservations = result.items.where((r) => !_clearedReservationIds.contains(r.id)).toList();
         _reservations.sort((a, b) => b.startTime.compareTo(a.startTime));
+        _activeSessions = sessions;
         _isLoading = false;
       });
     } catch (e) {
@@ -91,32 +101,30 @@ class _ReservationListScreenState extends State<ReservationListScreen>
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── Tab Bar ──────────────────────────────────────────────
+        // ── Header ──────────────────────────────────────────────
         Container(
+          width: double.infinity,
           color: AppColors.surface,
-          child: TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.onSurfaceVariant,
-            indicatorColor: AppColors.primary,
-            indicatorSize: TabBarIndicatorSize.label,
-            labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
-            unselectedLabelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
-            tabs: const [
-              Tab(icon: Icon(Icons.confirmation_number_rounded, size: 18), text: 'Reservations'),
-              Tab(icon: Icon(Icons.queue_rounded, size: 18), text: 'Waitlist'),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+          child: Row(
+            children: [
+              const Icon(Icons.confirmation_number_rounded, size: 28, color: AppColors.primary),
+              const SizedBox(width: 12),
+              Text(
+                'My Reservations',
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.onSurface,
+                  letterSpacing: -0.5,
+                ),
+              ),
             ],
           ),
         ),
-        // ── Tab Content ──────────────────────────────────────────
+        // ── Content ──────────────────────────────────────────
         Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildReservationList(),
-              const WaitlistScreen(),
-            ],
-          ),
+          child: _buildReservationList(),
         ),
       ],
     );
@@ -246,111 +254,186 @@ class _ReservationListScreenState extends State<ReservationListScreen>
                     ),
                   ],
                 ),
+                if (res.status == 'CheckedIn' && _activeSessions.any((s) => s.reservationId == res.id)) ...[
+                  const SizedBox(height: 12),
+                  Builder(builder: (context) {
+                     final session = _activeSessions.firstWhere((s) => s.reservationId == res.id);
+                     final energy = session.estimatedEnergyAt(DateTime.now());
+                     final cost = energy * session.tariffPerKwh;
+                     return Container(
+                         padding: const EdgeInsets.all(12),
+                         decoration: BoxDecoration(
+                           color: AppColors.surfaceContainerHigh.withOpacity(0.5),
+                           borderRadius: BorderRadius.circular(8),
+                           border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+                         ),
+                         child: Row(
+                           mainAxisAlignment: MainAxisAlignment.spaceAround,
+                           children: [
+                             Column(
+                               children: [
+                                 Text('Live Usage', style: GoogleFonts.inter(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                                 const SizedBox(height: 4),
+                                 Text('${energy.toStringAsFixed(2)} kWh', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                               ],
+                             ),
+                             Column(
+                               children: [
+                                 Text('Est. Cost', style: GoogleFonts.inter(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                                 const SizedBox(height: 4),
+                                 Text('LKR ${cost.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                               ],
+                             ),
+                           ],
+                         ),
+                       );
+                  }),
+                ],
+                if (res.status == 'Completed' && res.finalEnergyDeliveredKwh != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHigh.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.outlineVariant.withOpacity(0.5)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Column(
+                          children: [
+                            Text('Total Usage', style: GoogleFonts.inter(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                            const SizedBox(height: 4),
+                            Text('${res.finalEnergyDeliveredKwh!.toStringAsFixed(2)} kWh', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            Text('Final Cost', style: GoogleFonts.inter(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                            const SizedBox(height: 4),
+                            Text('LKR ${res.invoiceNetAmount?.toStringAsFixed(2) ?? '0.00'}', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            Text('Payment', style: GoogleFonts.inter(fontSize: 11, color: AppColors.onSurfaceVariant)),
+                            const SizedBox(height: 4),
+                            Text(res.invoicePaymentMethod ?? 'N/A', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (isActive) ...[
                   const SizedBox(height: 12),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Cancel Reservation'),
-                              content: const Text('Are you sure you want to cancel this reservation?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('No'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    _cancelReservation(res.id);
-                                  },
-                                  child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.cancel_outlined, size: 16),
-                        label: const Text('Cancel'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          textStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      const Spacer(),
-                      if (res.reservationQRCode != null && res.reservationQRCode!.isNotEmpty)
-                        ElevatedButton.icon(
+                      Expanded(
+                        child: OutlinedButton.icon(
                           onPressed: () {
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
-                                title: const Text('Reservation QR Code'),
-                                content: SizedBox(
-                                  width: 200,
-                                  height: 200,
-                                  child: Center(
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: QrImageView(
-                                        data: res.reservationQRCode!,
-                                        version: QrVersions.auto,
-                                        size: 200.0,
-                                        backgroundColor: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                title: const Text('Cancel Reservation'),
+                                content: const Text('Are you sure you want to cancel this reservation?'),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(context),
-                                    child: const Text('Close'),
+                                    child: const Text('No'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      _cancelReservation(res.id);
+                                    },
+                                    child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
                                   ),
                                 ],
                               ),
                             );
                           },
-                          icon: const Icon(Icons.qr_code),
-                          label: const Text('View QR'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: AppColors.onPrimary,
+                          icon: const Icon(Icons.cancel_outlined, size: 16),
+                          label: const Text('Cancel', style: TextStyle(fontSize: 12)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                            textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
                           ),
                         ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          final query = '${res.stationLatitude},${res.stationLongitude}';
-                          final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
-                          if (await canLaunchUrl(url)) {
-                            await launchUrl(url, mode: LaunchMode.externalApplication);
-                          } else {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch maps')));
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.directions),
-                        label: const Text('Directions'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
-                          foregroundColor: AppColors.onSecondary,
-                        ),
                       ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () => _cancelReservation(res.id),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                        child: const Text('Cancel'),
+                      const SizedBox(width: 6),
+                      if (res.reservationQRCode != null && res.reservationQRCode!.isNotEmpty) ...[
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Reservation QR Code'),
+                                  content: SizedBox(
+                                    width: 200,
+                                    height: 200,
+                                    child: Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: QrImageView(
+                                          data: res.reservationQRCode!,
+                                          version: QrVersions.auto,
+                                          size: 200.0,
+                                          backgroundColor: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Close'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.qr_code, size: 16),
+                            label: const Text('View QR', style: TextStyle(fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.onPrimary,
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final query = '${res.stationLatitude},${res.stationLongitude}';
+                            final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                            } else {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch maps')));
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.directions, size: 16),
+                          label: const Text('Directions', style: TextStyle(fontSize: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondary,
+                            foregroundColor: AppColors.onSecondary,
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                          ),
+                        ),
                       ),
                     ],
                   ),
