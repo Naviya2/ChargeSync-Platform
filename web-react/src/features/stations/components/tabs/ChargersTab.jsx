@@ -157,8 +157,9 @@ export default function ChargersTab({ stationId, chargers }) {
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
             <div className="flex flex-col gap-space-2xs">
-              <label className="font-label-sm text-label-sm text-on-surface">Identifier (e.g. CH-01)</label>
+              <label htmlFor="identifierInput" className="font-label-sm text-label-sm text-on-surface">Identifier (e.g. CH-01)</label>
               <input
+                id="identifierInput"
                 type="text"
                 required
                 className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
@@ -167,8 +168,9 @@ export default function ChargersTab({ stationId, chargers }) {
               />
             </div>
             <div className="flex flex-col gap-space-2xs">
-              <label className="font-label-sm text-label-sm text-on-surface">Bay Label (e.g. Bay 1)</label>
+              <label htmlFor="bayLabelInput" className="font-label-sm text-label-sm text-on-surface">Bay Label (e.g. Bay 1)</label>
               <input
+                id="bayLabelInput"
                 type="text"
                 required
                 className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"

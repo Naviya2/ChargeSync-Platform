@@ -4,8 +4,11 @@ export function useWaitlistApprovals() {
   return useQuery({
     queryKey: ['waitlist-approvals'],
     queryFn: async () => {
-      // Return real data here once API is ready, for now empty as no real requests exist for this user.
-      return []
+      // Return real data here once API is ready.
+      return [
+        { id: 'w-1', driver: 'Alice', station: 'Central Plaza' },
+        { id: 'w-2', driver: 'Bob', station: 'North Mall' }
+      ]
     }
   })
 }
