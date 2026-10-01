@@ -86,6 +86,49 @@ public sealed class ReservationService : IReservationService
         return ToDto(reservation);
     }
 
+    public async Task<ReservationDto> CreateByAdminAsync(
+        Guid staffUserId,
+        AdminCreateReservationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var driverExists = await _db.Users
+            .AnyAsync(u => u.Id == request.DriverId, cancellationToken);
+        if (!driverExists)
+            throw new NotFoundException(nameof(User), request.DriverId);
+
+        var chargerExists = await _db.Chargers
+            .AnyAsync(c => c.Id == request.ChargerId, cancellationToken);
+        if (!chargerExists)
+            throw new NotFoundException(nameof(Charger), request.ChargerId);
+
+        var existingReservation = await _db.Reservations
+            .AnyAsync(r => r.DriverId == request.DriverId
+                        && r.VehicleId == request.VehicleId
+                        && r.StartTime.Date == request.StartTime.Date
+                        && r.Status != ReservationStatus.Cancelled
+                        && r.Status != ReservationStatus.Completed, cancellationToken);
+        if (existingReservation)
+            throw new InvalidOperationException("You already have an incomplete reservation for this vehicle today.");
+
+        var reservation = Reservation.Create(
+            request.DriverId,
+            request.ChargerId,
+            request.StartTime,
+            request.EndTime,
+            advanceDepositAmount: 0m,
+            request.VehicleId);
+
+        reservation.ConfirmWithQrCode(GenerateQrToken());
+        _db.Reservations.Add(reservation);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.Pending, actorId: staffUserId);
+        RecordHistory(reservation, oldStatus: ReservationStatus.Pending, newStatus: ReservationStatus.Confirmed, actorId: staffUserId);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return ToDto(reservation);
+    }
+
     // ── Walk-in admission ─────────────────────────────────────────────────────
 
     public async Task<ReservationDto> CreateWalkInAsync(
