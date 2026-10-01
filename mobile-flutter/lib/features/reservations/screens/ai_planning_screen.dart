@@ -308,21 +308,7 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                             Text('LKR ${itinerary.costEstimate.toStringAsFixed(2)} estimated cost', style: GoogleFonts.inter(fontSize: 14, color: AppColors.onSurfaceVariant)),
                           ],
                         ),
-                        if (itinerary.waitlistOverrideRequired) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  'Requires Waitlist Override (Admin Approval)',
-                                  style: GoogleFonts.inter(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+
                         const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,

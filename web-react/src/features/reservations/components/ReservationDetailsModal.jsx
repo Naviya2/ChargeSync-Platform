@@ -237,6 +237,32 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
                 </div>
               )}
 
+              {/* Invoice Details */}
+              {reservation.status === 'Completed' && reservation.invoiceNetAmount != null && (
+                <div className="rounded-xl bg-blue-50 p-4 border border-blue-100 mt-4 flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <span className="material-symbols-outlined">receipt_long</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xs font-semibold text-blue-700 uppercase tracking-wider">Final Session Invoice</h3>
+                    <div className="grid grid-cols-3 gap-4 mt-2">
+                      <div>
+                        <div className="text-xs text-blue-500 font-medium">Final Cost</div>
+                        <div className="text-sm font-bold text-blue-700">Rs. {reservation.invoiceNetAmount.toFixed(2)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-blue-500 font-medium">Energy</div>
+                        <div className="text-sm font-bold text-blue-700">{reservation.finalEnergyDeliveredKwh?.toFixed(2) || 'N/A'} kWh</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-blue-500 font-medium">Payment Method</div>
+                        <div className="text-sm font-bold text-blue-700">{reservation.invoicePaymentMethod || 'N/A'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Status Timeline */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">

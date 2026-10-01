@@ -14,6 +14,9 @@ class WalkInBookingScreen extends StatefulWidget {
 }
 
 class _WalkInBookingScreenState extends State<WalkInBookingScreen> {
+  final _nameController = TextEditingController();
+  final _vehicleNoController = TextEditingController();
+  final _batteryCapacityController = TextEditingController();
   final _durationController = TextEditingController(text: '60'); // Minutes
   List<Charger> _chargers = [];
   Map<String, String> _stationNames = {};
@@ -28,6 +31,23 @@ class _WalkInBookingScreenState extends State<WalkInBookingScreen> {
   void initState() {
     super.initState();
     _loadChargers();
+    _batteryCapacityController.addListener(_calculateDuration);
+  }
+
+  void _calculateDuration() {
+    if (_selectedChargerId == null) return;
+    final capacityText = _batteryCapacityController.text.trim();
+    if (capacityText.isEmpty) return;
+    
+    final capacity = double.tryParse(capacityText);
+    if (capacity == null || capacity <= 0) return;
+
+    final charger = _chargers.firstWhere((c) => c.id == _selectedChargerId);
+    final powerKw = charger.powerKw > 0 ? charger.powerKw : 7.0; // fallback
+
+    final hours = capacity / powerKw;
+    final mins = (hours * 60).round();
+    _durationController.text = mins.toString();
   }
 
   Future<void> _loadChargers() async {
@@ -38,9 +58,18 @@ class _WalkInBookingScreenState extends State<WalkInBookingScreen> {
 
     try {
       final stations = await StationService.instance.getMyStations();
+      final res = await ReservationApiClient.instance.getMyReservations();
+      
+      final now = DateTime.now();
+      final activeReservations = res.items.where((r) => r.status != 'Cancelled' && r.status != 'Completed');
+      final busyChargerIds = activeReservations
+          .where((r) => r.startTime.isBefore(now.add(const Duration(minutes: 60))) && r.endTime.isAfter(now))
+          .map((r) => r.chargerId)
+          .toSet();
+
       final chargers = stations
           .expand((station) => station.chargers ?? const <Charger>[])
-          .where((charger) => charger.status.toLowerCase() == 'available')
+          .where((charger) => charger.status.toLowerCase() == 'available' && !busyChargerIds.contains(charger.id))
           .toList();
 
       if (!mounted) return;
@@ -54,6 +83,7 @@ class _WalkInBookingScreenState extends State<WalkInBookingScreen> {
             : null;
         _isLoadingChargers = false;
       });
+      _calculateDuration();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -99,6 +129,9 @@ class _WalkInBookingScreenState extends State<WalkInBookingScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _vehicleNoController.dispose();
+    _batteryCapacityController.dispose();
     _durationController.dispose();
     super.dispose();
   }
@@ -183,8 +216,42 @@ class _WalkInBookingScreenState extends State<WalkInBookingScreen> {
                   ),
                 );
               }).toList(),
-              onChanged: (value) => setState(() => _selectedChargerId = value),
+              onChanged: (value) {
+                setState(() => _selectedChargerId = value);
+                _calculateDuration();
+              },
             ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _nameController,
+            decoration: InputDecoration(
+              labelText: 'Customer Name',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: AppColors.surfaceContainer,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _vehicleNoController,
+            decoration: InputDecoration(
+              labelText: 'Vehicle Number',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: AppColors.surfaceContainer,
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _batteryCapacityController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Battery Capacity (kWh)',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              filled: true,
+              fillColor: AppColors.surfaceContainer,
+            ),
+          ),
           const SizedBox(height: 16),
           TextField(
             controller: _durationController,
