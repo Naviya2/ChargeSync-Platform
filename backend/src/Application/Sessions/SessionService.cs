@@ -79,7 +79,7 @@ public sealed class SessionService : ISessionService
         return await query.OrderByDescending(s => s.StartTime).Select(s => new ChargingSessionDto
         {
             Id = s.Id,
-            HasMeterPhoto = s.MeterPhoto != null,
+            MeterPhotoUrl = s.MeterPhotoUrl,
             ReservationId = s.ReservationId,
             ChargerId = s.Reservation.ChargerId,
             DriverId = s.Reservation.DriverId,
@@ -136,7 +136,7 @@ public sealed class SessionService : ISessionService
         Guid id,
         decimal? staffOverriddenKwh,
         CancellationToken cancellationToken = default,
-        MeterPhotoUpload? meterPhoto = null)
+        string? meterPhotoUrl = null)
     {
         var session = await _db.ChargingSessions
             .Include(s => s.Reservation)
@@ -149,8 +149,8 @@ public sealed class SessionService : ISessionService
             ?? throw new NotFoundException(nameof(Charger), session.Reservation.ChargerId);
 
         session.Stop(DateTimeOffset.UtcNow, charger.PowerKw, staffOverriddenKwh);
-        if (meterPhoto is not null)
-            session.AttachMeterPhoto(meterPhoto.Data, meterPhoto.ContentType);
+        if (meterPhotoUrl is not null)
+            session.AttachMeterPhoto(meterPhotoUrl);
         var invoice = await _payments.IssueForSessionAsync(session, charger, cancellationToken);
         charger.SetStatus(ChargerStatus.Available);
         session.Reservation.Complete();
@@ -167,15 +167,6 @@ public sealed class SessionService : ISessionService
         };
     }
 
-    public async Task<MeterPhotoUpload?> GetMeterPhotoAsync(Guid requesterId, string requesterRole,
-        Guid id, CancellationToken cancellationToken = default)
-    {
-        var session = await _db.ChargingSessions.AsNoTracking().Include(s => s.Reservation)
-            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
-        if (session is null || !await CanReadAsync(requesterId, requesterRole, session, cancellationToken))
-            return null;
-        return session.MeterPhoto is null ? null : new MeterPhotoUpload(session.MeterPhoto, session.MeterPhotoContentType!);
-    }
 
     private async Task AddSessionAsync(
         Reservation reservation,
@@ -246,7 +237,7 @@ public sealed class SessionService : ISessionService
         return new ChargingSessionDto
         {
             Id = session.Id,
-            HasMeterPhoto = session.MeterPhoto != null,
+            MeterPhotoUrl = session.MeterPhotoUrl,
             ReservationId = session.ReservationId,
             ChargerId = charger.Id,
             DriverId = session.Reservation.DriverId,

@@ -170,7 +170,10 @@ public sealed class ReservationService : IReservationService
         var reservation = Reservation.CreateWalkIn(
             request.ChargerId,
             request.StartTime,
-            request.EndTime);
+            request.EndTime,
+            request.CustomerName,
+            request.VehicleNumber,
+            request.BatteryCapacity);
 
         _db.Reservations.Add(reservation);
         RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.CheckedIn, actorId: staffUserId);
@@ -247,7 +250,10 @@ public sealed class ReservationService : IReservationService
                 DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in",
                 FinalEnergyDeliveredKwh = r.ChargingSession != null ? r.ChargingSession.FinalEnergyDeliveredKwh : null,
                 InvoiceNetAmount = r.ChargingSession != null && r.ChargingSession.Invoice != null ? r.ChargingSession.Invoice.NetAmountDue : null,
-                InvoicePaymentMethod = r.ChargingSession != null && r.ChargingSession.Invoice != null && r.ChargingSession.Invoice.PaymentMethod != null ? r.ChargingSession.Invoice.PaymentMethod.ToString() : null
+                InvoicePaymentMethod = r.ChargingSession != null && r.ChargingSession.Invoice != null && r.ChargingSession.Invoice.PaymentMethod != null ? r.ChargingSession.Invoice.PaymentMethod.ToString() : null,
+                WalkInCustomerName = r.WalkInCustomerName,
+                WalkInVehicleNumber = r.WalkInVehicleNumber,
+                WalkInBatteryCapacity = r.WalkInBatteryCapacity
             })
             .ToListAsync(cancellationToken);
 
@@ -599,7 +605,11 @@ public sealed class ReservationService : IReservationService
         DriverName = r.Driver != null ? r.Driver.FullName : "Walk-in",
         FinalEnergyDeliveredKwh = r.ChargingSession?.FinalEnergyDeliveredKwh,
         InvoiceNetAmount = r.ChargingSession?.Invoice?.NetAmountDue,
-        InvoicePaymentMethod = r.ChargingSession?.Invoice?.PaymentMethod?.ToString()
+        InvoicePaymentMethod = r.ChargingSession?.Invoice?.PaymentMethod?.ToString(),
+        WalkInCustomerName = r.WalkInCustomerName,
+        WalkInVehicleNumber = r.WalkInVehicleNumber,
+        WalkInBatteryCapacity = r.WalkInBatteryCapacity,
+        SessionMeterPhotoUrl = r.ChargingSession?.MeterPhotoUrl
     };
 
     private async Task ValidateOperatingHoursAsync(Guid chargerId, DateTimeOffset startTime, DateTimeOffset endTime, CancellationToken cancellationToken)

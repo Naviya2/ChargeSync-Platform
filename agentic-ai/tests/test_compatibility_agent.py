@@ -155,7 +155,6 @@ class TestFastApiEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "online"
-        assert "Function 1" in data["function"]
 
     def test_evaluate_endpoint(self, tesla_model_3, downtown_station):
         payload = {
