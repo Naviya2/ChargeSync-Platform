@@ -43,7 +43,7 @@ public class JwtTokenGeneratorTests
         Assert.Contains("ChargeSync", jwt.Audiences);
         Assert.Contains(user.Id.ToString(), claimValues);          // sub
         Assert.Contains("ada@example.com", claimValues);            // email, normalised
-        Assert.Contains("StationOwner", claimValues);               // role
+        Assert.Contains(jwt.Claims, c => c.Type == "role" && c.Value == "StationOwner");
         Assert.Single(jwt.Claims, c => c.Type == JwtRegisteredClaimNames.Jti);
     }
 
