@@ -24,10 +24,17 @@ public sealed class VehiclesController : ControllerBase
 
     private Guid OwnerId => _currentUser.Id ?? Guid.Empty;
 
+    /// <summary>Driver — lists only their own vehicles.</summary>
     [HttpGet]
     [Authorize(Roles = "Driver")]
     public async Task<ActionResult<IReadOnlyList<VehicleDto>>> GetMine(CancellationToken cancellationToken) =>
         Ok(await _vehicleService.GetMineAsync(OwnerId, cancellationToken));
+
+    /// <summary>Admin — lists ALL vehicles across the platform.</summary>
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<IReadOnlyList<VehicleDto>>> GetAll(CancellationToken cancellationToken) =>
+        Ok(await _vehicleService.GetAllAsync(cancellationToken));
 
     [HttpGet("user/{userId:guid}")]
     [Authorize(Roles = "Admin,StationOwner")]
@@ -83,9 +90,31 @@ public sealed class VehiclesController : ControllerBase
         }
     }
 
+    /// <summary>Admin — update any vehicle regardless of owner.</summary>
+    [HttpPut("admin/{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<VehicleDto>> AdminUpdate(Guid id, [FromBody] VehicleRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var vehicle = await _vehicleService.UpdateAnyAsync(id, request, cancellationToken);
+            return vehicle is null ? NotFound() : Ok(vehicle);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken) =>
         await _vehicleService.DeleteAsync(OwnerId, id, cancellationToken) ? NoContent() : NotFound();
+
+    /// <summary>Admin — delete any vehicle regardless of owner.</summary>
+    [HttpDelete("admin/{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AdminDelete(Guid id, CancellationToken cancellationToken) =>
+        await _vehicleService.DeleteAnyAsync(id, cancellationToken) ? NoContent() : NotFound();
 
     [HttpGet("{id:guid}/compatible-stations")]
     public async Task<ActionResult<IReadOnlyList<CompatibleStationDto>>> FindCompatibleStations(

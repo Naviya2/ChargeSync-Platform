@@ -1,4 +1,5 @@
 export { vehiclesApi } from './vehicles'
+export { vehiclesApi as vehicles } from './vehicles'
 export { stationsApi } from './stations'
 export { reservationsApi } from './reservations'
 export { chargingPlansApi } from './chargingPlans'

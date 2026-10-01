@@ -14,6 +14,9 @@ public sealed class VehicleService : IVehicleService
     public async Task<IReadOnlyList<VehicleDto>> GetMineAsync(Guid ownerId, CancellationToken cancellationToken = default) =>
         (await _db.Vehicles.AsNoTracking().Where(v => v.OwnerId == ownerId).OrderBy(v => v.Make).ThenBy(v => v.Model).ToListAsync(cancellationToken)).Select(ToDto).ToList();
 
+    public async Task<IReadOnlyList<VehicleDto>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        (await _db.Vehicles.AsNoTracking().OrderBy(v => v.Make).ThenBy(v => v.Model).ToListAsync(cancellationToken)).Select(ToDto).ToList();
+
     public async Task<VehicleDto?> GetByIdAsync(Guid ownerId, Guid vehicleId, CancellationToken cancellationToken = default)
     {
         var vehicle = await _db.Vehicles.AsNoTracking().FirstOrDefaultAsync(v => v.Id == vehicleId && v.OwnerId == ownerId, cancellationToken);
@@ -38,9 +41,29 @@ public sealed class VehicleService : IVehicleService
         return ToDto(vehicle);
     }
 
+    public async Task<VehicleDto?> UpdateAnyAsync(Guid vehicleId, VehicleRequest request, CancellationToken cancellationToken = default)
+    {
+        var vehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken);
+        if (vehicle is null) return null;
+
+        vehicle.UpdateDetails(request.Make, request.Model, request.Connector, request.BatteryCapacityKwh, request.MaxChargeRateKw, request.LicensePlate);
+        await _db.SaveChangesAsync(cancellationToken);
+        return ToDto(vehicle);
+    }
+
     public async Task<bool> DeleteAsync(Guid ownerId, Guid vehicleId, CancellationToken cancellationToken = default)
     {
         var vehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == vehicleId && v.OwnerId == ownerId, cancellationToken);
+        if (vehicle is null) return false;
+
+        _db.Vehicles.Remove(vehicle);
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> DeleteAnyAsync(Guid vehicleId, CancellationToken cancellationToken = default)
+    {
+        var vehicle = await _db.Vehicles.FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken);
         if (vehicle is null) return false;
 
         _db.Vehicles.Remove(vehicle);

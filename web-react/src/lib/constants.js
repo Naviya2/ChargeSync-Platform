@@ -22,6 +22,7 @@ export const ROUTES = {
   APPROVALS: '/approvals',
   SUPPORT: '/support',
   USERS: '/users',
+  VEHICLES: '/vehicles',
 }
 
 /**
@@ -48,6 +49,7 @@ export const NAV_SECTIONS = [
         badge: { text: '4 pending', tone: 'secondary' },
       },
       { label: 'User Management', to: ROUTES.USERS, icon: 'manage_accounts', roles: [ROLES.ADMIN] },
+      { label: 'Vehicle Management', to: ROUTES.VEHICLES, icon: 'directions_car', roles: [ROLES.ADMIN] },
       {
         label: 'Analytics',
         to: ROUTES.ANALYTICS,
