@@ -37,7 +37,7 @@ public interface IAppDbContext
 
     DbSet<ReservationStatusHistory> ReservationStatusHistories { get; }
 
-    DbSet<WaitlistEntry> WaitlistEntries { get; }
+
 
     DbSet<ChargingSession> ChargingSessions { get; }
 

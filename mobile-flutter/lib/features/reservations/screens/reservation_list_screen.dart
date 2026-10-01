@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/api/reservation_api_client.dart';
 import '../../../../core/api/reservation_models.dart';
 import '../../../../core/theme/app_colors.dart';
-import 'waitlist_screen.dart';
 
 class ReservationListScreen extends StatefulWidget {
   const ReservationListScreen({super.key});
@@ -27,7 +26,7 @@ class _ReservationListScreenState extends State<ReservationListScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
     _loadClearedAndFetch();
   }
 
@@ -91,32 +90,30 @@ class _ReservationListScreenState extends State<ReservationListScreen>
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── Tab Bar ──────────────────────────────────────────────
+        // ── Header ──────────────────────────────────────────────
         Container(
+          width: double.infinity,
           color: AppColors.surface,
-          child: TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.onSurfaceVariant,
-            indicatorColor: AppColors.primary,
-            indicatorSize: TabBarIndicatorSize.label,
-            labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
-            unselectedLabelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
-            tabs: const [
-              Tab(icon: Icon(Icons.confirmation_number_rounded, size: 18), text: 'Reservations'),
-              Tab(icon: Icon(Icons.queue_rounded, size: 18), text: 'Waitlist'),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+          child: Row(
+            children: [
+              const Icon(Icons.confirmation_number_rounded, size: 28, color: AppColors.primary),
+              const SizedBox(width: 12),
+              Text(
+                'My Reservations',
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.onSurface,
+                  letterSpacing: -0.5,
+                ),
+              ),
             ],
           ),
         ),
-        // ── Tab Content ──────────────────────────────────────────
+        // ── Content ──────────────────────────────────────────
         Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildReservationList(),
-              const WaitlistScreen(),
-            ],
-          ),
+          child: _buildReservationList(),
         ),
       ],
     );

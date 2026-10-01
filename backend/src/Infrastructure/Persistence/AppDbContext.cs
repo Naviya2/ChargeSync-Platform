@@ -47,7 +47,7 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<ReservationStatusHistory> ReservationStatusHistories => Set<ReservationStatusHistory>();
 
-    public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
+
 
     public DbSet<ChargingSession> ChargingSessions => Set<ChargingSession>();
 

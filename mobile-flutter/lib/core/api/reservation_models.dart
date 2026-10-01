@@ -13,6 +13,7 @@ class ReservationDto {
   final double stationLongitude;
   final String chargerName;
   final String vehicleName;
+  final String driverName;
 
   ReservationDto({
     required this.id,
@@ -29,6 +30,7 @@ class ReservationDto {
     this.stationLongitude = 0.0,
     this.chargerName = '',
     this.vehicleName = '',
+    this.driverName = '',
   });
 
   factory ReservationDto.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,7 @@ class ReservationDto {
       stationLongitude: (json['stationLongitude'] as num?)?.toDouble() ?? 0.0,
       chargerName: json['chargerName'] ?? '',
       vehicleName: json['vehicleName'] ?? '',
+      driverName: json['driverName'] ?? '',
     );
   }
 }

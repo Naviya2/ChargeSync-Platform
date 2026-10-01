@@ -90,29 +90,39 @@ public class ChargingPlansController : ControllerBase
                     if (opHour == null || !opHour.IsEnabled) return false;
                     return currentTimeOfDay >= opHour.OpenTime && currentTimeOfDay <= opHour.CloseTime;
                 })
-                .Select(s => new AgentStationInput
-            {
-                StationId = s.Id.ToString(),
-                Name = s.Name,
-                Address = s.Address,
-                Latitude = s.Latitude,
-                Longitude = s.Longitude,
-                Chargers = s.Chargers
-                    .Where(c => c.Status == Domain.Enums.ChargerStatus.Available && 
-                                !activeReservations.Any(r => r.ChargerId == c.Id))
-                    .Select(c => new AgentChargerInput
+                .Select(s => {
+                    double distance = 0.0;
+                    if (request.CurrentLat.HasValue && request.CurrentLon.HasValue)
                     {
-                        ChargerId = c.Id.ToString(),
-                        Identifier = c.Identifier,
-                        Connector = c.Connector.ToString(),
-                        PowerKw = c.PowerKw,
-                        Tariff = c.Tariff,
-                        Status = c.Status.ToString(),
-                        BayLabel = c.BayLabel
-                    }).ToList()
-            })
-            .Where(s => s.Chargers.Any()) // Only include stations with at least one available charger
-            .ToList();
+                        distance = CalculateDistance(request.CurrentLat.Value, request.CurrentLon.Value, s.Latitude, s.Longitude);
+                    }
+                    
+                    return new AgentStationInput
+                    {
+                        StationId = s.Id.ToString(),
+                        Name = s.Name,
+                        Address = s.Address,
+                        Latitude = s.Latitude,
+                        Longitude = s.Longitude,
+                        DistanceKm = distance,
+                        Chargers = s.Chargers
+                            .Where(c => c.Status == Domain.Enums.ChargerStatus.Available && 
+                                        !activeReservations.Any(r => r.ChargerId == c.Id))
+                            .Select(c => new AgentChargerInput
+                            {
+                                ChargerId = c.Id.ToString(),
+                                Identifier = c.Identifier,
+                                Connector = c.Connector.ToString(),
+                                PowerKw = c.PowerKw,
+                                Tariff = c.Tariff,
+                                Status = c.Status.ToString(),
+                                BayLabel = c.BayLabel
+                            }).ToList()
+                    };
+                })
+                .Where(s => s.Chargers.Any()) // Only include stations with at least one available charger
+                .Where(s => request.MaxDistanceKm == null || !request.CurrentLat.HasValue || !request.CurrentLon.HasValue || s.DistanceKm <= request.MaxDistanceKm.Value)
+                .ToList();
 
             var secureRequest = request with 
             { 
@@ -135,5 +145,23 @@ public class ChargingPlansController : ControllerBase
             _logger.LogError(ex, "Error generating charging plan.");
             return StatusCode(500, "An error occurred while generating the charging plan.");
         }
+    }
+
+    private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+    {
+        var R = 6371; // Radius of the earth in km
+        var dLat = Deg2Rad(lat2 - lat1);
+        var dLon = Deg2Rad(lon2 - lon1);
+        var a =
+            Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+            Math.Cos(Deg2Rad(lat1)) * Math.Cos(Deg2Rad(lat2)) *
+            Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return R * c; // Distance in km
+    }
+
+    private static double Deg2Rad(double deg)
+    {
+        return deg * (Math.PI / 180);
     }
 }

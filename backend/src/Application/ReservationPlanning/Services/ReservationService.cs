@@ -15,13 +15,11 @@ namespace Application.ReservationPlanning;
 public sealed class ReservationService : IReservationService
 {
     private readonly IAppDbContext _db;
-    private readonly IWaitlistService _waitlist;
     private readonly ISessionService _sessions;
 
-    public ReservationService(IAppDbContext db, IWaitlistService waitlist, ISessionService sessions)
+    public ReservationService(IAppDbContext db, ISessionService sessions)
     {
         _db = db;
-        _waitlist = waitlist;
         _sessions = sessions;
     }
 
@@ -324,12 +322,7 @@ public sealed class ReservationService : IReservationService
         RecordHistory(reservation, oldStatus, ReservationStatus.Cancelled, actorId: requesterId);
         await _db.SaveChangesAsync(cancellationToken);
 
-        // Attempt to promote the next waitlist entry for this charger slot.
-        await _waitlist.TryPromoteNextAsync(
-            reservation.ChargerId,
-            reservation.StartTime,
-            reservation.EndTime,
-            cancellationToken);
+
     }
 
     // ── Staff QR check-in ─────────────────────────────────────────────────────
