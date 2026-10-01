@@ -271,8 +271,8 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
             ),
             const SizedBox(height: 18),
             _primaryButton(
-              icon: Icons.receipt_long_rounded,
-              label: 'Complete session & generate invoice',
+              icon: Icons.stop_circle_rounded,
+              label: 'Stop session & generate invoice',
               onPressed: _submitting ? null : _completeSession,
             ),
           ],

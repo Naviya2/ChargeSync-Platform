@@ -97,34 +97,35 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
 
       final items = res.items;
 
-      // Detect new reservations
-      if (!initial && items.length > _lastReservationCount) {
-        _addNotification(
-          title: 'New Reservation',
-          body: 'A driver just made a new reservation at your station.',
-          icon: Icons.confirmation_number_rounded,
-          color: AppColors.primary,
-        );
-      }
-
-      // Detect cancellations
+      // Detect new reservations and cancellations
       if (!initial) {
         for (var r in items) {
-          final prev = _lastStatuses[r.id];
-          if (prev != null && prev != 'Cancelled' && r.status == 'Cancelled') {
+          if (!_lastStatuses.containsKey(r.id)) {
             _addNotification(
-              title: 'Reservation Cancelled',
-              body: 'Reservation at ${r.stationName} was cancelled.',
-              icon: Icons.cancel_rounded,
-              color: Colors.red,
+              title: 'New Reservation',
+              body: 'A driver just made a new reservation at your station.',
+              icon: Icons.confirmation_number_rounded,
+              color: AppColors.primary,
             );
+          } else {
+            final prev = _lastStatuses[r.id];
+            if (prev != null && prev != 'Cancelled' && r.status == 'Cancelled') {
+              _addNotification(
+                title: 'Reservation Cancelled',
+                body: 'Reservation at ${r.stationName} was cancelled.',
+                icon: Icons.cancel_rounded,
+                color: Colors.red,
+              );
+            }
           }
         }
       }
 
       setState(() {
         _lastReservationCount = items.length;
-        _lastStatuses = {for (var r in items) r.id: r.status};
+        for (var r in items) {
+          _lastStatuses[r.id] = r.status;
+        }
         _currentReservations = items;
         _reservationsLoading = false;
       });
@@ -527,9 +528,9 @@ class _StaffHomeTab extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryContainer,
+                  color: AppColors.surfaceContainer,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.4), width: 1),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -545,7 +546,7 @@ class _StaffHomeTab extends StatelessWidget {
                         Text(
                           '${DateFormat('hh:mm a').format(res.startTime.toLocal())} → ${DateFormat('hh:mm a').format(res.endTime.toLocal())}',
                           style: GoogleFonts.inter(
-                              fontSize: 12, color: AppColors.onPrimaryContainer),
+                              fontSize: 12, color: AppColors.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -553,13 +554,13 @@ class _StaffHomeTab extends StatelessWidget {
                     Text(
                       'Driver: ${res.driverName.isNotEmpty ? res.driverName : 'N/A'}',
                       style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600, color: AppColors.onPrimaryContainer),
+                          fontWeight: FontWeight.w600, color: AppColors.onSurface),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Charger: ${res.chargerName.isNotEmpty ? res.chargerName : res.chargerId.substring(0, 8)}',
                       style: GoogleFonts.inter(
-                          fontSize: 13, color: AppColors.onPrimaryContainer),
+                          fontSize: 13, color: AppColors.onSurfaceVariant),
                     ),
                   ],
                 ),

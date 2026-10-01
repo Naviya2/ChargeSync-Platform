@@ -61,9 +61,10 @@ public class ChargingPlansController : ControllerBase
                 }
             }
 
-            // Get Stations with Chargers and OperatingHours
+            // Get Stations with Chargers, MaintenanceWindows, and OperatingHours
             var stationsQuery = _context.Stations
                 .Include(s => s.Chargers)
+                    .ThenInclude(c => c.MaintenanceWindows)
                 .Include(s => s.OperatingHours);
             
             var stations = await stationsQuery.ToListAsync(cancellationToken);
@@ -107,7 +108,8 @@ public class ChargingPlansController : ControllerBase
                         DistanceKm = distance,
                         Chargers = s.Chargers
                             .Where(c => c.Status == Domain.Enums.ChargerStatus.Available && 
-                                        !activeReservations.Any(r => r.ChargerId == c.Id))
+                                        !activeReservations.Any(r => r.ChargerId == c.Id) &&
+                                        !c.MaintenanceWindows.Any(m => m.StartTime < upcomingLimit && m.EndTime > now))
                             .Select(c => new AgentChargerInput
                             {
                                 ChargerId = c.Id.ToString(),
