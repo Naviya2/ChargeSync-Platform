@@ -1,28 +1,50 @@
-import { ROLE_SCOPES } from '../data/dashboardData'
+import { useAuthStore } from '../../../store/authStore'
+import { ROLES, ROLE_LABELS } from '../../../lib/constants'
 import { cn } from '../../../lib/cn'
 
 export default function RoleScopePanel() {
+  const user = useAuthStore((s) => s.user)
+  const currentRole = user?.role
+
+  const activeScopes = [
+    {
+      key: 'admin',
+      icon: 'admin_panel_settings',
+      title: 'Platform Administrator',
+      subtitle: 'Full global tenant controls',
+      active: currentRole === ROLES.ADMIN,
+      visible: currentRole === ROLES.ADMIN
+    },
+    {
+      key: 'owner',
+      icon: 'storefront',
+      title: 'Station Owner Portal',
+      subtitle: 'Host payout & bay management',
+      active: currentRole === ROLES.STATION_OWNER,
+      visible: true
+    }
+  ].filter(s => s.visible)
+
   return (
     <div className="flex flex-col gap-space-md rounded-xl bg-surface-container-lowest p-space-lg shadow-sm">
       <div className="flex items-center justify-between">
         <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">
-          Quick Switch Role Scope
+          Active Role Scope
         </span>
         <span className="material-symbols-outlined text-base text-on-surface-variant">
-          switch_access_shortcut
+          admin_panel_settings
         </span>
       </div>
 
       <div className="flex flex-col gap-space-xs">
-        {ROLE_SCOPES.map((scope) => (
-          <button
+        {activeScopes.map((scope) => (
+          <div
             key={scope.key}
-            type="button"
             className={cn(
               'flex w-full items-center justify-between rounded-lg p-space-sm text-left transition-all',
               scope.active
                 ? 'bg-primary-container text-on-primary-container'
-                : 'bg-surface-container-low text-on-surface hover:bg-surface-container',
+                : 'bg-surface-container-low text-on-surface',
             )}
           >
             <span className="flex items-center gap-space-sm">
@@ -47,9 +69,9 @@ export default function RoleScopePanel() {
               </span>
             </span>
             <span className="material-symbols-outlined text-sm">
-              {scope.active ? 'check' : 'chevron_right'}
+              {scope.active ? 'check' : ''}
             </span>
-          </button>
+          </div>
         ))}
       </div>
     </div>

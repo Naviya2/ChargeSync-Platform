@@ -1,3 +1,4 @@
+
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -16,6 +17,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             "\"Role\" IN ('Driver', 'StationOwner', 'Admin', 'SupportManager')"));
 
         builder.HasKey(u => u.Id);
+        builder.Property(u => u.MembershipVersion).IsConcurrencyToken();
 
         builder.Property(u => u.Id)
             .HasDefaultValueSql("gen_random_uuid()")
@@ -33,8 +35,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique();
 
         builder.Property(u => u.PasswordHash)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(255);
+
+        builder.Property(u => u.AuthProvider)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasDefaultValue("Local");
 
         builder.Property(u => u.Role)
             .IsRequired()
@@ -47,6 +54,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.IsActive)
             .IsRequired()
             .HasDefaultValue(true);
+
+        builder.Property(u => u.WalletBalance)
+            .IsRequired()
+            .HasPrecision(10, 2)
+            .IsConcurrencyToken()
+            .HasDefaultValue(0m);
 
         builder.Property(u => u.CreatedAt)
             .IsRequired()

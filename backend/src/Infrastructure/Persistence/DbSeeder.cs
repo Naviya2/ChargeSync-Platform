@@ -39,9 +39,14 @@ public sealed class DbSeeder
             return;
         }
 
-        if (await _db.Users.AnyAsync(u => u.Role == UserRole.Admin, cancellationToken))
+        // if (await _db.Users.AnyAsync(u => u.Role == UserRole.Admin, cancellationToken))
+        // {
+        //     return;
+        // }
+        var admins = await _db.Users.Where(u => u.Role == UserRole.Admin).ToListAsync(cancellationToken);
+        if (admins.Any())
         {
-            return;
+            _logger.LogWarning("Existing admins found: {Admins}", string.Join(", ", admins.Select(a => a.Email)));
         }
 
         var email = _options.AdminEmail.Trim().ToLowerInvariant();

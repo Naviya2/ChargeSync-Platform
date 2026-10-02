@@ -1,4 +1,7 @@
-export default function StationsHeader() {
+import { Link } from 'react-router-dom'
+import { ROUTES } from '../../../lib/constants'
+
+export default function StationsHeader({ stations = [], hideAddStation = false }) {
   return (
     <div className="flex flex-col justify-between gap-space-md md:flex-row md:items-center">
       <div className="flex flex-col">
@@ -9,7 +12,7 @@ export default function StationsHeader() {
           </span>
         </div>
         <h1 className="mt-space-2xs font-display-lg text-headline-lg tracking-tight text-on-surface md:text-display-lg">
-          My Charging Stations
+          {hideAddStation ? 'Network Stations' : 'My Charging Stations'}
         </h1>
         <p className="max-w-2xl font-body-md text-body-md text-on-surface-variant">
           Manage physical charging assets, live bays, dynamic pricing rules, and scheduled
@@ -20,18 +23,39 @@ export default function StationsHeader() {
       <div className="flex items-center gap-space-sm self-start md:self-auto">
         <button
           type="button"
+          onClick={() => {
+             let csv = "\uFEFF"; // BOM for Excel UTF-8
+             csv += 'System Name:,ChargeSync Platform\n';
+             csv += `Report Generated:,${new Date().toLocaleString()}\n\n`;
+             csv += 'Station ID,Name,Address,Status,Latitude,Longitude,Total Chargers\n';
+             
+             stations.forEach(s => {
+               csv += `"${s.id}","${s.name}","${s.address}","${s.status.key}","${s.detailData?.latitude || ''}","${s.detailData?.longitude || ''}","${s.detailData?.chargers?.length || 0}"\n`;
+             });
+
+             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+             const encodedUri = URL.createObjectURL(blob);
+             const link = document.createElement("a");
+             link.setAttribute("href", encodedUri);
+             link.setAttribute("download", `ChargeSync_Stations_${new Date().toISOString().slice(0, 10)}.csv`);
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);
+          }}
           className="inline-flex items-center gap-space-xs rounded-xl bg-surface-container-lowest px-space-md py-space-xs font-label-md text-label-md text-on-surface shadow-sm transition-colors hover:bg-surface-container"
         >
           <span className="material-symbols-outlined text-base">file_download</span>
           Export Network Data
         </button>
-        <button
-          type="button"
-          className="inline-flex items-center gap-space-xs rounded-xl bg-primary px-space-lg py-space-xs font-headline-sm text-headline-sm text-on-primary shadow-sm transition-all hover:bg-primary-container"
-        >
-          <span className="material-symbols-outlined text-base">add_circle</span>
-          Add Station
-        </button>
+        {!hideAddStation && (
+          <Link
+            to={ROUTES.STATIONS + '/new'}
+            className="inline-flex items-center gap-space-xs rounded-xl bg-primary px-space-lg py-space-xs font-headline-sm text-headline-sm text-on-primary shadow-sm transition-all hover:bg-primary-container"
+          >
+            <span className="material-symbols-outlined text-base">add_circle</span>
+            Add Station
+          </Link>
+        )}
       </div>
     </div>
   )

@@ -1,9 +1,7 @@
-import { STATION_KPIS } from '../data/stationsData'
-
-export default function StationKpiStrip() {
+export default function StationKpiStrip({ kpis = [] }) {
   return (
     <div className="grid grid-cols-2 gap-space-md lg:grid-cols-4">
-      {STATION_KPIS.map((kpi) => (
+      {kpis.map((kpi) => (
         <div
           key={kpi.key}
           className="flex flex-col justify-between rounded-xl bg-surface-container-lowest p-space-lg shadow-sm"

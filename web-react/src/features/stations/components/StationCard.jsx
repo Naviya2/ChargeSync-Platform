@@ -67,9 +67,6 @@ export default function StationCard({ station, selected, onSelect }) {
             <h3 className="font-headline-sm text-headline-sm text-on-surface transition-colors group-hover:text-primary">
               {station.name}
             </h3>
-            <span className="material-symbols-outlined text-sm text-primary">
-              {selected ? 'radio_button_checked' : 'radio_button_unchecked'}
-            </span>
           </div>
           <p className="mt-space-2xs flex items-center gap-space-2xs font-body-sm text-body-sm text-on-surface-variant">
             <span className="material-symbols-outlined text-xs">location_on</span>

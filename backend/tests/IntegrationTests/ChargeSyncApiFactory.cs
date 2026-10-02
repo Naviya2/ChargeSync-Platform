@@ -21,6 +21,7 @@ public sealed class ChargeSyncApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(Environments.Development);
+        builder.UseSetting("AgenticAi:WorkflowsEnabled", "false");
 
         // Settings are visible to Program.cs before it builds the app.
         builder.UseSetting("ConnectionStrings:Postgres", "Host=test;Database=test;Username=test;Password=test");
@@ -30,6 +31,7 @@ public sealed class ChargeSyncApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:AccessTokenMinutes", "60");
         builder.UseSetting("Seed:AdminEmail", AdminEmail);
         builder.UseSetting("Seed:AdminPassword", AdminPassword);
+        builder.UseSetting("Groq:ApiKey", "mock-integration-test-key-groq");
 
         builder.ConfigureServices(services =>
         {

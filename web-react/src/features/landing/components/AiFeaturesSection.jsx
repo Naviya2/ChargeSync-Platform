@@ -72,8 +72,8 @@ export default function AiFeaturesSection() {
                 Human-in-the-Loop Safety
               </h3>
               <p className="font-body-md text-body-md leading-relaxed text-surface-variant">
-                Every high-impact action (disputes, refunds, abnormal surge spikes, waitlist
-                overrides) is routed to human platform admins for review before release.
+                Every high-impact action (disputes, refunds, abnormal surge spikes)
+                is routed to human platform admins for review before release.
               </p>
             </div>
             <div className="mt-space-xl flex flex-col gap-1 rounded-lg bg-emerald-950/70 p-space-sm shadow-sm">

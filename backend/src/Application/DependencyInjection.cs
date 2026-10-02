@@ -11,8 +11,22 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<Application.Memberships.MemberService>();
+        services.AddScoped<Application.Wallets.WalletService>();
+        services.AddScoped<Application.Support.SupportService>();
+        services.AddScoped<Application.Support.SupportAnalysisService>();
+        services.AddScoped<Application.Support.SupportWorkflowService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IResourceGuard, ResourceGuard>();
+
+        services.AddScoped<Application.Stations.IStationService, Application.Stations.StationService>();
+        services.AddScoped<Application.Stations.IAvailabilityService, Application.Stations.AvailabilityService>();
+        services.AddScoped<Application.Admin.IAdminStationService, Application.Admin.AdminStationService>();
+        services.AddScoped<Application.Vehicles.IVehicleService, Application.Vehicles.VehicleService>();
+
+        services.AddScoped<Application.ReservationPlanning.IReservationService, Application.ReservationPlanning.ReservationService>();
+        services.AddScoped<Application.Sessions.ISessionService, Application.Sessions.SessionService>();
+        services.AddScoped<Application.Payments.IPaymentService, Application.Payments.PaymentService>();
 
         return services;
     }

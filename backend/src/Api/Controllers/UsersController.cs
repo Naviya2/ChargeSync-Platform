@@ -9,7 +9,6 @@ namespace Api.Controllers;
 [ApiController]
 [Route("api/users")]
 [Produces("application/json")]
-[Authorize(Policy = AuthorizationPolicies.Admin)]
 public sealed class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -17,7 +16,9 @@ public sealed class UsersController : ControllerBase
     public UsersController(IUserService userService) => _userService = userService;
 
     /// <summary>Creates an account with any role. Administrator only.</summary>
+    /// 
     [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.Admin)]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -31,8 +32,32 @@ public sealed class UsersController : ControllerBase
 
     /// <summary>Fetches a single user. Administrator only.</summary>
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.Admin)]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserDto>> GetById(Guid id, CancellationToken cancellationToken)
         => Ok(await _userService.GetByIdAsync(id, cancellationToken));
+
+    [HttpGet]
+    [Authorize(Roles = "Admin,StationOwner")]
+    [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<UserDto>>> GetAll(CancellationToken cancellationToken)
+        => Ok(await _userService.GetAllAsync(cancellationToken));
+
+    [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.Admin)]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserDto>> Update(Guid id, UpdateUserRequest request, CancellationToken cancellationToken)
+        => Ok(await _userService.UpdateAsync(id, request, cancellationToken));
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await _userService.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
 }

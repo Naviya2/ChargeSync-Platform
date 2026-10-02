@@ -4,6 +4,7 @@ using Api.Common;
 using Application;
 using Infrastructure;
 using Infrastructure.Authentication;
+using AgentClient;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
@@ -17,7 +18,13 @@ builder.Services
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddApplication();
+AgentClient.DependencyInjection.AddAgentClient(builder.Services, builder.Configuration);
+var workflowPolicy = builder.Configuration.GetSection("SupportWorkflow").Get<Application.Support.SupportWorkflowPolicy>() ?? new();
+if (workflowPolicy.RefundApprovalThresholdLkr < 0) throw new InvalidOperationException("Refund approval threshold cannot be negative.");
+builder.Services.AddSingleton(workflowPolicy);
+builder.Services.AddHostedService<Api.SupportWorkflowWorker>();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddAgentClient(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Application.Common.Interfaces.ICurrentUser, Api.Authentication.CurrentUser>();
@@ -29,6 +36,12 @@ if (string.IsNullOrWhiteSpace(jwtSettings.Key))
 {
     throw new InvalidOperationException(
         "Jwt:Key is not configured. Set it with: dotnet user-secrets set \"Jwt:Key\" \"<32+ char secret>\" --project src/Api");
+}
+
+var groqApiKey = builder.Configuration["Groq:ApiKey"];
+if (string.IsNullOrWhiteSpace(groqApiKey))
+{
+    throw new InvalidOperationException("GROQ_API_KEY is not configured.");
 }
 
 builder.Services
@@ -61,6 +74,18 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// Allow Flutter web (Chrome) and any local dev origin to reach the API.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FlutterDev", policy =>
+    {
+        policy
+            .AllowAnyOrigin()   // tighten to specific origins in production
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -86,6 +111,8 @@ var app = builder.Build();
 await app.Services.InitialiseDatabaseAsync();
 
 app.UseExceptionHandler();
+
+app.UseCors("FlutterDev");  // must be before Auth middleware
 
 if (app.Environment.IsDevelopment())
 {

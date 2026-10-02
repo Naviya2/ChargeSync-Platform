@@ -1,4 +1,3 @@
-import { AI_RECOMMENDATIONS } from '../data/dashboardData'
 import { cn } from '../../../lib/cn'
 
 const TAG_TONE = {
@@ -74,55 +73,21 @@ export default function AiGridQueue() {
       </div>
 
       <div className="flex flex-col gap-space-sm">
-        {AI_RECOMMENDATIONS.map((item) => (
-          <div
-            key={item.id}
-            className="flex flex-col items-start justify-between gap-space-md rounded-xl bg-surface-container-low p-space-md transition-colors hover:bg-surface-container sm:flex-row sm:items-center"
-          >
-            <div className="flex min-w-0 items-start gap-space-md">
-              <span className={cn('material-symbols-outlined mt-1 text-xl', item.iconTone)}>
-                {item.icon}
-              </span>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-space-xs">
-                  <span className="font-headline-sm text-body-md font-semibold text-on-surface">
-                    {item.title}
-                  </span>
-                  <span
-                    className={cn(
-                      'rounded px-space-xs py-0.5 font-label-sm text-label-sm',
-                      TAG_TONE[item.tag.tone] ?? TAG_TONE.neutral,
-                    )}
-                  >
-                    {item.tag.text}
-                  </span>
-                </div>
-                <p className="mt-0.5 font-body-sm text-body-sm text-on-surface-variant">{item.body}</p>
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center gap-space-md self-end sm:self-center">
-              <div className="text-right">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Confidence</span>
-                <p className={cn('font-label-md text-label-md font-semibold', item.confidenceTone)}>
-                  {item.confidence}%
-                </p>
-              </div>
-              <RecommendationActions item={item} />
-            </div>
-          </div>
-        ))}
+        <div className="flex flex-col items-center justify-center p-8 text-center text-on-surface-variant bg-surface-container-low rounded-xl">
+           <span className="material-symbols-outlined text-4xl mb-2 opacity-50">check_circle</span>
+           <p className="font-headline-sm">No Pending Guardrail Actions</p>
+           <p className="font-body-sm mt-1">The system is operating within optimal parameters.</p>
+        </div>
       </div>
 
       <div className="flex items-center justify-between pt-space-sm font-label-md text-label-md">
         <span className="text-on-surface-variant">System confidence baseline requirement: ≥ 85%</span>
-        <a
-          href="#queue"
+        <button
           className="inline-flex items-center gap-1 font-semibold text-primary transition-colors hover:text-primary-container"
         >
-          <span>View all 14 pending AI decisions</span>
+          <span>View history</span>
           <span className="material-symbols-outlined text-sm">arrow_forward</span>
-        </a>
+        </button>
       </div>
     </div>
   )

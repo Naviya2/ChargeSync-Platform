@@ -1,0 +1,411 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/api/planning_api_client.dart';
+import '../../../core/api/planning_models.dart';
+import '../../../features/reservations/screens/ai_planning_screen.dart';
+
+import 'package:geolocator/geolocator.dart';
+
+class SmartRecommendationCard extends StatefulWidget {
+  const SmartRecommendationCard({super.key});
+
+  @override
+  State<SmartRecommendationCard> createState() =>
+      _SmartRecommendationCardState();
+}
+
+class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
+  static Future<PlanningResponse>? _cachedPlanFuture;
+  Future<PlanningResponse>? _planFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_cachedPlanFuture != null) {
+      _planFuture = _cachedPlanFuture;
+    } else {
+      _fetchRecommendation();
+    }
+  }
+
+  void _fetchRecommendation() {
+    setState(() {
+      _planFuture = _fetchAndCachePlan();
+      _cachedPlanFuture = _planFuture;
+    });
+  }
+
+  Future<PlanningResponse> _fetchAndCachePlan() async {
+    double? currentLat;
+    double? currentLon;
+
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (serviceEnabled) {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
+        try {
+          Position position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low,
+            timeLimit: const Duration(seconds: 3),
+          );
+          currentLat = position.latitude;
+          currentLon = position.longitude;
+        } catch (_) {}
+      }
+    }
+
+    final req = PlanningRequest(
+      deadline: DateTime.now().add(const Duration(hours: 2)),
+      maxDistanceKm: 15.0,
+      pricePreference: 'Balanced',
+      currentLat: currentLat,
+      currentLon: currentLon,
+    );
+    return PlanningApiClient.instance.generateChargingPlan(req);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PlanningResponse>(
+      future: _planFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError ||
+            !snapshot.hasData ||
+            snapshot.data!.rankedItineraries.isEmpty) {
+          String reason = "No recommendations available right now";
+          if (snapshot.hasError) {
+            reason = snapshot.error.toString();
+          } else if (snapshot.hasData &&
+              snapshot.data!.agentReasoning.isNotEmpty) {
+            reason = snapshot.data!.agentReasoning;
+          }
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: AppColors.tertiary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'AI Smart Recommendation',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.tertiary,
+                            letterSpacing: 0.02,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.refresh,
+                        size: 16,
+                        color: AppColors.tertiary,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: _fetchRecommendation,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Icon(
+                  Icons.search_off_rounded,
+                  size: 48,
+                  color: AppColors.onSurfaceVariant,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No recommendations available right now',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  reason,
+                  style: GoogleFonts.inter(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        }
+
+        final response = snapshot.data!;
+        final topItinerary = response.rankedItineraries.first;
+        final durationMins = topItinerary.estimatedChargeDurationMins;
+        final estCost = topItinerary.costEstimate;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Ambient glow
+              Positioned(
+                left: -48,
+                bottom: -48,
+                child: Container(
+                  width: 192,
+                  height: 192,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.tertiaryContainer.withValues(alpha: 0.10),
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.auto_awesome_rounded,
+                            color: AppColors.tertiary,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'AI Smart Recommendation',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.tertiary,
+                              letterSpacing: 0.02,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.refresh,
+                              size: 16,
+                              color: AppColors.tertiary,
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            onPressed: _fetchRecommendation,
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.tertiaryContainer.withValues(
+                                alpha: 0.20,
+                              ),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              'Score: ${topItinerary.matchScore}/100',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.tertiary,
+                                letterSpacing: 0.06,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    topItinerary.stationName,
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                      letterSpacing: -0.01,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Key metrics grid
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const _MetricItem(
+                          label: 'Arrival',
+                          value: 'Soon',
+                          valueColor: AppColors.onSurface,
+                        ),
+                        const SizedBox(width: 8),
+                        _MetricItem(
+                          label: 'Duration',
+                          value: '$durationMins mins',
+                          valueColor: AppColors.onSurface,
+                        ),
+                        const SizedBox(width: 8),
+                        _MetricItem(
+                          label: 'Est. Cost',
+                          value: 'LKR ${estCost.toStringAsFixed(2)}',
+                          valueColor: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    response.agentReasoning,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Material(
+                    color: AppColors.surfaceContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AiPlanningScreen(),
+                          ),
+                        );
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Open AI Route Planner',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.onSurface,
+                                letterSpacing: 0.01,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                              color: AppColors.tertiary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MetricItem extends StatelessWidget {
+  const _MetricItem({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurfaceVariant,
+              letterSpacing: 0.06,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: valueColor,
+              letterSpacing: -0.005,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
