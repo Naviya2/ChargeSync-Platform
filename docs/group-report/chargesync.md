@@ -28,6 +28,8 @@ This document covers the four core business components (Functions 1–4), their 
 *   **POS**: Point of Sale (Staff mobile and web operational workflow)
 *   **UUID**: Universally Unique Identifier[cite: 1]
 *   **3NF**: Third Normal Form[cite: 1]
+*   **CDN**: Content Delivery Network (Cloudinary media asset delivery)
+*   **HMAC**: Hash-based Message Authentication Code (Internal service key authentication)
 
 ### 1.4 Document Overview
 Section 2 provides the overall product description and revised user roles[cite: 1]. Section 3 outlines detailed functional requirements and endpoints across all 4 functions[cite: 1]. Section 4 specifies the complete revised database schema[cite: 1]. Section 5 details interface requirements[cite: 1]. Section 6 defines system architecture and operational cross-function flows[cite: 1]. Section 7 presents non-functional requirements[cite: 1]. Section 8 details the Agentic AI subsystem[cite: 1]. Section 9 provides the revised Architecture Decision Records[cite: 1].
@@ -40,16 +42,16 @@ Section 2 provides the overall product description and revised user roles[cite: 
 ChargeSync is a self-contained system comprising a shared ASP.NET Core Web API and PostgreSQL database, a React web portal for station owners, platform administrators, and support staff, a Flutter mobile application serving both EV drivers and on-site station staff, and an internal Python/FastAPI/LangGraph Agentic AI service[cite: 1]. The Agentic AI service is reachable only via the ASP.NET Core backend[cite: 1].
 
 ### 2.2 Product Functions
-*   Vehicle registration and AI-driven vehicle-charger compatibility calculation[cite: 1].
+*   Vehicle registration, driver vehicle management, platform administrator vehicle management across all drivers, and AI-driven vehicle-charger compatibility calculation[cite: 1].
 *   Station, charger, operating-hours, and maintenance-window administration[cite: 1].
 *   Conflict-free reservation booking secured by advance virtual wallet payment, unique reservation QR token generation, staff-operated QR check-in, manual walk-in allocation, and AI charging planning[cite: 1].
-*   Staff-monitored charging session lifecycle tracking, hybrid baseline energy calculation with staff physical meter override, automated invoice generation supporting cash and wallet settlement, membership subscriptions, loyalty tracking, and support ticket triage[cite: 1].
+*   Staff-monitored charging session lifecycle tracking, hybrid baseline energy calculation with staff physical meter override and Cloudinary meter photo verification, automated invoice generation supporting cash and wallet settlement, membership subscriptions, loyalty tracking, and support ticket triage[cite: 1].
 *   A four-agent Agentic AI subsystem with human-in-the-loop review triggers[cite: 1].
 
 ### 2.3 User Classes and Characteristics
 *   **EV Driver**: Mobile app user[cite: 1]. Registers vehicles, requests AI charging plans, books slots via advance wallet payment, displays reservation QR codes, tracks charging history, and accesses loyalty rewards[cite: 1].
-*   **Station Staff / Station Owner**: Operates the React portal for administrative station setup, pricing, and analytics[cite: 1]. Operates the Flutter mobile app on-site to scan driver booking QR codes, admit unregistered walk-in drivers, inspect physical charger meters, enter energy overrides, stop sessions, and log cash payments.
-*   **Platform Administrator**: Full administrative access[cite: 1]. Approves stations, audits discrepancies between mathematical energy calculations and staff manual overrides, reviews AI-flagged actions, and manages user accounts[cite: 1].
+*   **Station Staff / Station Owner**: Operates the React portal for administrative station setup, pricing, charger provisioning, and utilization analytics (general support ticket triage is restricted to Platform Administrators and Support Staff)[cite: 1]. Operates the Flutter mobile app on-site to scan driver booking QR codes, admit unregistered walk-in drivers, inspect physical charger meters, capture meter photo evidence, enter energy overrides, stop sessions, and log cash payments.
+*   **Platform Administrator**: Full administrative access[cite: 1]. Manages all registered driver vehicles across the platform (create, view, update, delete any vehicle), reviews support tickets and meter photo verification records, approves stations, audits discrepancies between mathematical energy calculations and staff manual overrides, reviews AI-flagged actions, and manages user accounts[cite: 1].
 *   **Customer Support Manager**: Manages support tickets, refund requests, and billing disputes[cite: 1].
 
 ### 2.4 Operating Environment
@@ -58,12 +60,14 @@ ChargeSync is a self-contained system comprising a shared ASP.NET Core Web API a
 *   **Web Client**: React Single Page Application (SPA)[cite: 1].
 *   **Mobile Client**: Flutter application targeting Android (APK), providing dual role-based dashboards (Driver and Station Staff)[cite: 1].
 *   **Agentic AI Service**: Python + FastAPI + LangGraph[cite: 1].
+*   **Media Storage**: Cloudinary CDN for station images and physical meter reading photos.
+*   **CI/CD Pipeline**: GitHub Actions workflows for backend, web, and mobile targeting both `main` and `dev` branches.
 
 ### 2.5 Design and Implementation Constraints
 *   All client communications must route exclusively through the ASP.NET Core API[cite: 1].
-*   The Agentic AI service must remain an internal service invoked solely by ASP.NET Core[cite: 1].
+*   The Agentic AI service must remain an internal service invoked solely by ASP.NET Core, authenticated via an internal service authentication key (`X-Agent-Service-Key`)[cite: 1].
 *   No external payment gateway integration; payments are managed via an internal wallet ledger and staff cash logs[cite: 1].
-*   No IoT/hardware telemetry; session energy is derived via automated mathematical calculation and reconciled against manual staff meter input[cite: 1].
+*   No IoT/hardware telemetry; session energy is derived via automated mathematical calculation and reconciled against manual staff meter input and photographic evidence[cite: 1].
 
 ---
 
@@ -73,10 +77,10 @@ ChargeSync is a self-contained system comprising a shared ASP.NET Core Web API a
 Allows drivers to register vehicles and obtain compatibility calculations prior to travel[cite: 1].
 
 #### CRUD Operations
-*   **Create**: Register vehicle (make, model, connector type, battery capacity, max charge rate)[cite: 1].
-*   **Read**: View registered vehicles, search stations, view compatibility scores[cite: 1].
-*   **Update**: Edit vehicle specifications[cite: 1].
-*   **Delete**: Remove vehicle[cite: 1].
+*   **Create**: Register vehicle (make, model, connector type, battery capacity, max charge rate) by driver or platform administrator[cite: 1].
+*   **Read**: View registered vehicles (drivers view their own; administrators view all platform vehicles or filter by driver), search stations, view compatibility scores[cite: 1].
+*   **Update**: Edit vehicle specifications (drivers update their own; administrators update any vehicle)[cite: 1].
+*   **Delete**: Remove vehicle (drivers delete their own; administrators delete any vehicle)[cite: 1].
 
 #### Functional Requirements
 *   **FR-1.1**: Driver shall register a vehicle specifying make, model, connector type, battery capacity, and max charge rate[cite: 1].
@@ -84,13 +88,20 @@ Allows drivers to register vehicles and obtain compatibility calculations prior 
 *   **FR-1.3**: System shall compute a compatibility score and estimated charging time for a vehicle/charger pair[cite: 1].
 *   **FR-1.4**: System shall suggest alternative stations if incompatibility is detected[cite: 1].
 *   **FR-1.5**: Driver shall search nearby stations filtered by connector type and radius[cite: 1].
+*   **FR-1.6**: Platform Administrator shall view all registered vehicles across all drivers system-wide, search by driver, make, model, or license plate, filter by connector type, and create, update, or delete any vehicle record.
+*   **FR-1.7**: System shall allow authorized administrative roles (Admin, StationOwner) to retrieve vehicles belonging to a specific user.
 
 #### API Endpoints
 *   `POST /api/vehicles` - Register vehicle[cite: 1]
 *   `GET /api/vehicles` - List current driver's vehicles[cite: 1]
+*   `GET /api/vehicles/all` - List all registered vehicles across all drivers (Admin only)
+*   `GET /api/vehicles/user/{userId}` - Retrieve all vehicles for a specified user (Admin, StationOwner)
 *   `GET /api/vehicles/{id}` - Retrieve vehicle details[cite: 1]
 *   `PUT /api/vehicles/{id}` - Update vehicle[cite: 1]
+*   `PUT /api/vehicles/admin/{id}` - Update any vehicle specifications without ownership restriction (Admin only)
 *   `DELETE /api/vehicles/{id}` - Delete vehicle[cite: 1]
+*   `DELETE /api/vehicles/admin/{id}` - Delete any vehicle record without ownership restriction (Admin only)
+*   `GET /api/vehicles/{id}/compatible-stations` - Find compatible charging stations for a specific vehicle
 *   `GET /api/stations/nearby` - Search nearby stations[cite: 1]
 *   `GET /api/stations/{id}/compatibility` - Get compatibility score[cite: 1]
 
@@ -144,12 +155,13 @@ Coordinates AI-driven route and schedule recommendations, prevents double-bookin
 *   **FR-3.6**: System shall maintain a waitlist per charger and automatically promote the next queue entry upon reservation cancellation[cite: 1].
 *   **FR-3.7**: System shall generate an AI-ranked charging plan given driver constraints (deadline, distance, price preference)[cite: 1].
 *   **FR-3.8**: System shall record a full status history for every reservation transition[cite: 1].
+*   **FR-3.9**: System shall display physical meter photo evidence (captured upon session completion) within reservation details to enable staff and platform administrators to visually audit meter readings.
 
 #### API Endpoints
 *   `POST /api/reservations` - Create advance reservation with wallet pre-authorization[cite: 1]
 *   `POST /api/reservations/walk-in` - Staff-initiated reservation and immediate lock for walk-ins
 *   `GET /api/reservations` - List, filter, and paginate reservations[cite: 1]
-*   `GET /api/reservations/{id}` - Retrieve reservation details and QR payload[cite: 1]
+*   `GET /api/reservations/{id}` - Retrieve reservation details, QR payload, and linked session details (including meter photo URL)[cite: 1]
 *   `PUT /api/reservations/{id}/cancel` - Cancel reservation[cite: 1]
 *   `POST /api/reservations/staff-checkin` - Staff-scanned QR check-in endpoint
 *   `POST /api/charging-plan/generate` - Generate AI charging plan[cite: 1]
@@ -163,24 +175,25 @@ Handles session monitoring, hybrid mathematical-to-meter energy reconciliation, 
 #### CRUD Operations
 *   **Create**: Initiate charging session; issue invoice; create subscription; submit ticket; log points redemption[cite: 1].
 *   **Read**: View active session status, historical invoices, staff override logs, loyalty balances, support tickets[cite: 1].
-*   **Update**: Conclude charging session with physical meter input; change subscription plan; update ticket status[cite: 1].
+*   **Update**: Conclude charging session with physical meter input and photo upload; change subscription plan; update ticket status (Admin/Support only)[cite: 1].
 *   **Delete**: Cancel subscription; withdraw pending support ticket[cite: 1].
 
 #### Functional Requirements
 *   **FR-4.1**: System shall record session start upon staff QR verification or walk-in admission[cite: 1].
 *   **FR-4.2**: Station Staff shall conclude a charging session via mobile app when charging finishes or when the customer unplugs early.
 *   **FR-4.3**: System shall calculate a baseline `AutoCalculatedKwh` using the formula: Charger Output (kW) × Duration (Hours)[cite: 1].
-*   **FR-4.4**: Station Staff shall have the capability to input `StaffOverriddenKwh` read directly from the physical charger display to reflect non-linear charging tapers accurately.
+*   **FR-4.4**: Station Staff shall have the capability to input `StaffOverriddenKwh` read directly from the physical charger display and attach photographic evidence of the meter display (uploaded to Cloudinary) to substantiate the reading.
 *   **FR-4.5**: System shall compute the final invoice based on `StaffOverriddenKwh` (if present) or `AutoCalculatedKwh`, deducting pre-paid reservation deposits.
 *   **FR-4.6**: System shall record settlement method as either "Wallet" or "Cash" (collected on-site by staff).
 *   **FR-4.7**: System shall flag discrepancies exceeding 15% between auto-calculated and staff-overridden kWh for Platform Administrator fraud review.
 *   **FR-4.8**: System shall track loyalty points for registered users and compute tier status[cite: 1].
 *   **FR-4.9**: Driver shall redeem points for rewards subject to validation rules[cite: 1].
 *   **FR-4.10**: System shall triage support tickets and mandate human-in-the-loop review on refund requests exceeding $15.00 or loyalty redemptions exceeding 5,000 points[cite: 1].
+*   **FR-4.11**: Support ticket management interface shall be restricted to Platform Administrator and Support Staff roles within the web portal; station owners do not have access to general driver support tickets.
 
 #### API Endpoints
 *   `POST /api/sessions/start` - Record session initiation[cite: 1]
-*   `PUT /api/sessions/{id}/stop` - Stop session and submit physical meter reading[cite: 1]
+*   `PUT /api/sessions/{id}/stop` - Stop session, submit physical meter reading, and optional Cloudinary meter photo URL[cite: 1]
 *   `GET /api/payments/invoices/{userId}` - Retrieve customer invoice ledger[cite: 1]
 *   `POST /api/payments/invoices/{id}/settle` - Settle invoice via cash logging or wallet charge
 *   `POST /api/subscriptions` - Enroll in membership tier[cite: 1]
@@ -202,7 +215,7 @@ The PostgreSQL database is organized in Third Normal Form (3NF)[cite: 1].
 *   `Chargers` (1) to (N) `MaintenanceWindows`, `Reservations`, `WaitlistEntries`[cite: 1].
 *   `Reservations` (1) to (N) `ReservationStatusHistory`; `Reservations` (1) to (1) `ChargingSessions`[cite: 1].
 *   `Reservations.DriverId` is nullable to facilitate unregistered walk-ins.
-*   `ChargingSessions` (1) to (1) `PaymentInvoices`[cite: 1].
+*   `ChargingSessions` (1) to (1) `PaymentInvoices`[cite: 1]; `ChargingSessions` stores `MeterPhotoUrl` pointing to Cloudinary-stored physical meter photos.
 *   `Users` (1) to (1) `LoyaltyAccounts`; `LoyaltyAccounts` (1) to (N) `RewardRedemptions`[cite: 1].
 *   `AgentWorkflowRuns` tracks multi-agent planning state and links to `ChargingPlans`[cite: 1].
 
@@ -370,6 +383,7 @@ The PostgreSQL database is organized in Third Normal Form (3NF)[cite: 1].
 | `StaffOverriddenKwh`| DECIMAL(8,2)| NULL | Manual staff reading from physical charger screen |
 | `FinalEnergyDeliveredKwh` | DECIMAL(8,2)| NULL | Billed energy value used for invoice settlement |
 | `StaffUserId` | UUID | NULL, FK -> Users(Id) | Staff member supervising and closing session |
+| `MeterPhotoUrl` | VARCHAR(500) | NULL | Secure URL to physical meter display photo stored on Cloudinary |
 | `Status` | VARCHAR(20) | NOT NULL, DEFAULT 'InProgress', CHECK IN ('InProgress', 'Completed', 'DiscrepancyFlagged') | Session status |
 | `CreatedAt` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Creation timestamp[cite: 1] |
 | `UpdatedAt` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Modification timestamp[cite: 1] |
@@ -470,21 +484,25 @@ The PostgreSQL database is organized in Third Normal Form (3NF)[cite: 1].
 ## 5. External Interface Requirements
 
 ### 5.1 User Interfaces
-*   **React Web Portal**: Role-based access for Station Owners, Platform Administrators, and Support Staff[cite: 1]. Provides station management, charger provisioning, real-time availability tracking, utilization analytics, manual staff override dispute monitoring, and AI approval queues[cite: 1].
+*   **React Web Portal**: Role-based access for Station Owners, Platform Administrators, and Support Staff[cite: 1].
+    *   *Platform Administrator*: System-wide vehicle management (`/vehicles`) featuring a responsive vehicle card grid, cross-driver search, connector filter, battery statistics, and full vehicle CRUD modals; station approval; discrepancy fraud audit logs; user management; and support ticket triage.
+    *   *Station Owner*: Station registration, charger provisioning, operating hours, maintenance windows, and utilization analytics. (General support ticket triage is restricted to Platform Administrators and Support Staff).
+    *   *Reservation Details Modal*: Displays comprehensive booking telemetry, status timeline, and uploaded Cloudinary physical meter photo for visual inspection.
 *   **Flutter Mobile Application**:
     *   *Driver Mode*: Vehicle profiles, AI route planner, map discovery, advance wallet booking, reservation QR screen, session summaries, wallet reloads, and support tickets[cite: 1].
-    *   *Staff Mode (POS)*: QR camera scanner for verifying reservations, one-tap walk-in charger lock, active session dashboard, stop-session trigger with physical meter kWh input, and cash collection logging.
+    *   *Staff Mode (POS)*: QR camera scanner for verifying reservations, one-tap walk-in charger lock, active session dashboard, stop-session trigger with physical meter kWh input, Cloudinary meter photo capture and upload, and cash collection logging.
 
 ### 5.2 API Interfaces
 RESTful JSON over HTTPS secured via JWT bearer authentication[cite: 1]. Endpoints support role-based authorization ensuring drivers access only their data, staff access station-specific check-ins, and administrators access system-wide audit queues[cite: 1]. Swagger UI is enabled at `/swagger`[cite: 1].
 
 ### 5.3 Software Interfaces
 *   **PostgreSQL**: Connected through Entity Framework Core with the Npgsql data provider[cite: 1].
-*   **Agentic AI Service**: Internal Python/FastAPI service called exclusively by the ASP.NET Core `AgentClient`[cite: 1].
+*   **Agentic AI Service**: Internal Python/FastAPI service called exclusively by the ASP.NET Core `AgentClient`[cite: 1], secured by an internal service key header (`X-Agent-Service-Key`) using constant-time digest comparison.
 
 ### 5.4 Third-Party Interfaces
 *   **Google Maps API**: Distance calculation and station discovery[cite: 1].
 *   **Firebase Cloud Messaging (FCM)**: Push notifications to mobile users regarding booking confirmations, slot reminders, and waitlist promotions[cite: 1].
+*   **Cloudinary API**: Secure media upload and CDN delivery for station imagery and checkout meter display photos.
 
 ---
 
@@ -510,9 +528,9 @@ The system employs a client-server architecture[cite: 1]. Flutter (Driver/Staff)
 1.  **Vehicle Disconnect**: Driver requests check-out (e.g., stopping at 75% or 80% battery).
 2.  **Station Staff**: Taps "Stop Session" in the app.
 3.  **System**: Logs `EndTime` and calculates baseline `AutoCalculatedKwh` based on duration × output rate[cite: 1].
-4.  **Staff Override**: Staff inputs `StaffOverriddenKwh` as displayed on the physical charger meter.
+4.  **Staff Override & Photographic Proof**: Staff inputs `StaffOverriddenKwh` as displayed on the physical charger meter and captures/uploads a photo of the meter display directly to Cloudinary (`MeterPhotoUrl`) for photographic audit proof.
 5.  **Billing**: System generates `PaymentInvoices` applying credit for any advance deposit[cite: 1].
-6.  **Settlement**: Customer settles the net balance via virtual wallet or pays cash to staff; staff marks invoice as "Paid"[cite: 1]. Discrepancies > 15% between calculated and overridden kWh are logged for audit[cite: 1].
+6.  **Settlement**: Customer settles the net balance via virtual wallet or pays cash to staff; staff marks invoice as "Paid"[cite: 1]. Discrepancies > 15% between calculated and overridden kWh are logged for audit and review in the React portal[cite: 1].
 
 ---
 
@@ -526,11 +544,20 @@ The system employs a client-server architecture[cite: 1]. Flutter (Driver/Staff)
 *   JWT bearer authentication across all mobile and web API requests[cite: 1].
 *   Entity Framework Core parameterized queries to prevent SQL injection[cite: 1].
 *   Passwords hashed using bcrypt[cite: 1].
-*   **Staff Audit Trail**: Any manual override of energy consumption (`StaffOverriddenKwh`) must permanently record the `StaffUserId` alongside the `AutoCalculatedKwh` to trace cash fraud patterns.
+*   **Internal Service Authentication**: Inter-service communication between ASP.NET Core and the Python Agentic AI service is secured via an `X-Agent-Service-Key` header validated using constant-time string comparison (`secrets.compare_digest`) to prevent timing attacks.
+*   **Staff Audit Trail & Photographic Evidence**: Any manual override of energy consumption (`StaffOverriddenKwh`) must permanently record the `StaffUserId` alongside the `AutoCalculatedKwh` and optional Cloudinary `MeterPhotoUrl` to eliminate cash fraud patterns and substantiate energy billing.
 
 ### 7.3 Reliability and Availability
 *   ACID transactions across all multi-step booking, session termination, and invoice settlement operations[cite: 1].
 *   Third-party service degradations (Maps, FCM) must fail gracefully without blocking on-site physical charging[cite: 1].
+
+### 7.4 Quality Assurance and Continuous Integration
+*   **CI/CD Automation**: GitHub Actions pipelines configured for push and pull request triggers against both `main` and `dev` branches across `backend`, `web-react`, and `mobile-flutter`.
+*   **Automated Test Suites**:
+    *   *Backend*: 158+ unit tests implemented with xUnit and Moq covering `ReservationService`, slot exclusion validation, waitlist transitions, and charging session lifecycles.
+    *   *Agentic AI*: 24 pytest unit and integration tests verifying `PlanningCoordinatorAgent`, compatibility scoring algorithms, and `SupportAgent` decision matrices.
+    *   *Mobile (Flutter)*: Unit and widget tests for `PlanningApiClient`, `SmartRecommendationCard`, and `AiPlanningScreen` utilizing mockable HTTP clients and safe GPS service wrappers.
+    *   *Web (React)*: Vitest and React Testing Library tests verifying `ReservationDetailsModal`, vehicle management CRUD forms, and administrative route guards.
 
 ---
 
@@ -541,6 +568,14 @@ The system employs a client-server architecture[cite: 1]. Flutter (Driver/Staff)
 *   **Station Analysis Agent**: Evaluates real-time charger status, historical pricing, and utilization scores[cite: 1].
 *   **Charging Recommendation & Planning Agent (Coordinator)**: Synthesizes driver objectives, coordinates Compatibility and Station agents, and generates ranked itineraries[cite: 1]. Must handle records with null `DriverId` without failing availability models.
 *   **Validation & Support Agent**: Inspects session records, checks business constraints, flags overrides, and handles support triage[cite: 1].
+
+#### Agentic AI Endpoints
+*   `POST /api/compatibility/evaluate` - Single vehicle/charger hardware compatibility assessment
+*   `POST /api/compatibility/batch-evaluate` - Batch compatibility screening across multiple candidate stations
+*   `POST /api/station-analysis/evaluate` - Station utilization analysis and dynamic pricing assessment
+*   `POST /api/charging-plan/generate` - Multi-agent coordinator charging plan generation
+*   `POST /api/support/analyze` - Validation & Support Agent ticket triage, categorization, and refund recommendation (secured via `X-Agent-Service-Key`)
+*   `POST /api/workflows/support` - Coordinator Agent support triage workflow execution (secured via `X-Agent-Service-Key`)
 
 ### 8.2 Human-in-the-Loop Approval Triggers
 The following conditions halt agentic execution into a `PendingApproval` state requiring manual review in the React portal[cite: 1]:
@@ -559,3 +594,4 @@ The following conditions halt agentic execution into a `PendingApproval` state r
 *   **ADR-03: Concurrency Control for Slot Allocation**: PostgreSQL GiST exclusion constraints combined with pessimistic row-level locking (`SELECT ... FOR UPDATE`) to guarantee zero double-bookings across online reservations and on-site walk-ins[cite: 1].
 *   **ADR-04 (Revised): Hybrid Session Telemetry**: Replaces pure mathematical calculation with a dual-layer strategy. Baseline energy is mathematically computed from charger output and duration[cite: 1]; staff provides manual overrides from physical charger screens to reflect battery tapering without requiring live IoT telemetry.
 *   **ADR-05 (Revised): Internal Ledger & POS Cash Management**: Eliminates external payment gateway dependencies[cite: 1]. Advance bookings utilize an internal virtual wallet ledger, while on-site walk-ins and post-charge balances support physical cash collection recorded directly by staff.
+*   **ADR-06: Cloudinary for Meter Photo Evidence Storage**: To substantiate physical meter overrides without burdening the PostgreSQL database with binary BLOB storage, the mobile client uploads physical meter display photos directly to Cloudinary using signed parameters. The returned secure HTTPS URL is persisted in `ChargingSessions.MeterPhotoUrl` and served through Cloudinary CDN to the React web portal and mobile audit screens.
