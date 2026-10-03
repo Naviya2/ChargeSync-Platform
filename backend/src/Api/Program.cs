@@ -41,7 +41,9 @@ if (string.IsNullOrWhiteSpace(jwtSettings.Key))
 var groqApiKey = builder.Configuration["Groq:ApiKey"];
 if (string.IsNullOrWhiteSpace(groqApiKey))
 {
-    throw new InvalidOperationException("GROQ_API_KEY is not configured.");
+    // Groq key is optional at startup; AI planning endpoints will fail gracefully at request time.
+    // To configure: dotnet user-secrets set "Groq:ApiKey" "<your-key>" --project src/Api
+    Console.WriteLine("WARNING: Groq:ApiKey is not configured. AI planning features will be unavailable.");
 }
 
 builder.Services
