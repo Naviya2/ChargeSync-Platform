@@ -219,8 +219,8 @@ public class Reservation : AuditableEntity
             throw new ArgumentException("Reservation cannot be scheduled in the past.");
 
         var today = DateTimeOffset.UtcNow.Date;
-        var maxAllowedDate = today.AddDays(2); // Start time must be before midnight the day after tomorrow
+        var maxAllowedDate = today.AddDays(7); // Start time must be within 7 days
         if (startTime >= maxAllowedDate)
-            throw new ArgumentException("Reservations can only be made for today or tomorrow.");
+            throw new ArgumentException("Reservations can only be made up to 7 days in advance.");
     }
 }

@@ -260,13 +260,13 @@ Configured via `mobile-flutter/.env`:
 
 ### 10.2 Comprehensive Test Breakdown by Module
 
-#### A. ASP.NET Core Backend (228 Automated Tests)
+#### A. ASP.NET Core Backend (231 Automated Tests)
 
-##### Unit Test Suites (184 Tests)
+##### Unit Test Suites (187 Tests)
 | Test Suite File | Domain / Module | Focus & Scenarios Tested | Tests |
 |---|---|---|---|
 | `ReservationServiceTests.cs` | Reservations & Planning | Advance booking creation, wallet pre-auth deposit deduction, overlapping slot buffer validation, walk-in admission & session start, cancellation & refund, staff QR check-in, time window updates, hard delete with status history cleanup, availability slot calculation excluding maintenance and buffer overlaps, AI/staff approval workflow (RequiresApproval, station owner & admin ApproveAsync / RejectAsync), role-based approval authorization | 62 |
-| `ReservationTimezoneTests.cs` | Reservations | UTC and local timezone handling, ISO-8601 formatting, duration calculation | 5 |
+| `ReservationTimezoneTests.cs` | Reservations | UTC/local timezone conversion, 7-day advance booking window validation, past reservation rejection | 4 |
 | `ChargingPlansControllerTests.cs` | AI Charging Coordinator | Driver preference constraints, station filtering, distance checks, AI client dispatch, fallback handling | 8 |
 | `StationServiceTests.cs` | Stations & Chargers | Station CRUD, charger configuration, tariff updates, weekly operating hours schedules, maintenance window overlaps, spatial proximity filtering | 16 |
 | `ChargingSessionTests.cs` | Charging Sessions | Session initiation, energy meter readings, baseline vs override calculations, 15% discrepancy fraud flag, Cloudinary photo verification, stop session | 12 |
@@ -356,11 +356,11 @@ Executed via `flutter_test`:
 
 | Subsystem | Framework | Test Suites | Total Tests | Status |
 |---|---|---|---|---|
-| **Backend API** | xUnit, Moq, WebApplicationFactory | 30 suites (18 unit + 12 integration) | **228** | Passing (1 skipped) |
+| **Backend API** | xUnit, Moq, WebApplicationFactory | 30 suites (18 unit + 12 integration) | **231** | Passing (1 skipped) |
 | **Agentic AI** | pytest, anyio | 6 suites | **25** | Passing |
 | **Web Portal** | Vitest, React Testing Library | 13 suites | **46** | Passing |
 | **Mobile App** | flutter_test | 7 suites | **23** | Passing |
-| **Entire Platform** | **Full-Stack Automated Test Suite** | **56 Suites** | **322 Tests** | **Automated CI Verified** |
+| **Entire Platform** | **Full-Stack Automated Test Suite** | **56 Suites** | **325 Tests** | **Automated CI Verified** |
 
 ---
 
@@ -430,7 +430,7 @@ The ChargeSync platform exposes a unified, RESTful API surface across 15 control
 ### 11.6 Reservations & Planning (`/api/reservations`)
 | Method | Path | Auth / Role | Description |
 |---|---|---|---|
-| `POST` | `/api/reservations` | Driver | Create advance reservation with wallet balance pre-authorization |
+| `POST` | `/api/reservations` | Driver | Create advance reservation (up to 7 days ahead) with wallet balance pre-authorization |
 | `POST` | `/api/reservations/admin` | StationOwner, Admin | Create advance reservation on behalf of a customer |
 | `POST` | `/api/reservations/walk-in` | StationOwner, Admin | Admit an on-site walk-in driver without prior booking |
 | `GET` | `/api/reservations` | Authenticated | List reservations with status, date, and charger filters (paged) |

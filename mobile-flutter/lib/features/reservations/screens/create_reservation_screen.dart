@@ -220,7 +220,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final maxAllowedDate = DateTime.now().add(const Duration(days: 1));
+    final maxAllowedDate = DateTime.now().add(const Duration(days: 7));
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -317,7 +317,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                   const SizedBox(height: 24),
 
                   if (widget.preselectedArrivalTime == null) ...[
-                    // Date Selection (Constrained to today and tomorrow)
+                    // Date Selection (Constrained to 7 days in advance)
                     Text('3. Select Date', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
                     const SizedBox(height: 8),
                     InkWell(
@@ -326,7 +326,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                           context: context,
                           initialDate: _selectedDate.isAfter(maxAllowedDate) ? maxAllowedDate : _selectedDate,
                           firstDate: DateTime.now(),
-                          lastDate: maxAllowedDate, // Only allow today and tomorrow
+                          lastDate: maxAllowedDate, // Allow up to 7 days in advance
                         );
                         if (date != null) {
                           setState(() => _selectedDate = date);
