@@ -230,17 +230,34 @@ class _StationMapScreenState extends State<StationMapScreen> {
   }
 
   List<Station> get _filteredStations {
+    final query = _searchController.text.trim().toLowerCase();
+
     return _stations.where((s) {
-      if (_activeFilters.contains('available')) {
-        if (s.chargers == null || !s.chargers!.any((c) => c.status == 'Available')) return false;
+      if (query.isNotEmpty) {
+        if (!s.name.toLowerCase().contains(query) &&
+            !s.address.toLowerCase().contains(query)) {
+          return false;
+        }
       }
+
+      if (_activeFilters.contains('available')) {
+        if (s.chargers == null ||
+            !s.chargers!.any((c) => c.status == 'Available'))
+          return false;
+      }
+
       if (_activeFilters.contains('compatible')) {
         final activeVehicle = VehicleService.instance.activeVehicle;
         if (activeVehicle != null) {
           if (s.chargers == null) return false;
           final hasCompatible = s.chargers!.any((c) {
-            final connStr = c.connector.toUpperCase().replaceAll(' ', '').replaceAll('-', '');
-            final vehConn = activeVehicle.connector.toBackendString().toUpperCase();
+            final connStr = c.connector
+                .toUpperCase()
+                .replaceAll(' ', '')
+                .replaceAll('-', '');
+            final vehConn = activeVehicle.connector
+                .toBackendString()
+                .toUpperCase();
             return connStr.contains(vehConn) || vehConn.contains(connStr);
           });
           if (!hasCompatible) return false;
@@ -322,6 +339,38 @@ class _StationMapScreenState extends State<StationMapScreen> {
               showClear: _showClear,
               onSearchChanged: (val) {
                 setState(() => _showClear = val.isNotEmpty);
+                if (val.trim().isNotEmpty) {
+                  final stations = _filteredStations;
+                  if (stations.isNotEmpty) {
+                    if (stations.length == 1) {
+                      _mapController.move(
+                        LatLng(stations.first.latitude, stations.first.longitude), 
+                        15.0
+                      );
+                    } else {
+                      final bounds = LatLngBounds.fromPoints(
+                        stations
+                            .map((s) => LatLng(s.latitude, s.longitude))
+                            .toList(),
+                      );
+                      
+                      if (bounds.southWest == bounds.northEast) {
+                        _mapController.move(
+                          LatLng(stations.first.latitude, stations.first.longitude), 
+                          15.0
+                        );
+                      } else {
+                        _mapController.fitCamera(
+                          CameraFit.bounds(
+                            bounds: bounds,
+                            padding: const EdgeInsets.all(50),
+                            maxZoom: 15.0,
+                          ),
+                        );
+                      }
+                    }
+                  }
+                }
               },
               onClearSearch: () {
                 _searchController.clear();
@@ -385,13 +434,35 @@ class _StationMapScreenState extends State<StationMapScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _selectedStation!.name,
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.onSurface,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _selectedStation!.name,
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedStation = null;
+                            });
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: AppColors.onSurfaceVariant,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -607,15 +678,27 @@ class _StationMapScreenState extends State<StationMapScreen> {
 
     final chargers = station.chargers ?? [];
     final matchingChargers = chargers.where((c) {
-      final connStr = c.connector.toUpperCase().replaceAll(' ', '').replaceAll('-', '');
+      final connStr = c.connector
+          .toUpperCase()
+          .replaceAll(' ', '')
+          .replaceAll('-', '');
       final vehConn = activeVehicle.connector.toBackendString().toUpperCase();
       return connStr.contains(vehConn) || vehConn.contains(connStr);
     }).toList();
 
     if (matchingChargers.isNotEmpty) {
-      final bestPower = matchingChargers.map((c) => c.powerKw).reduce((a, b) => a > b ? a : b);
-      final effectiveKw = bestPower < activeVehicle.maxChargeRateKw ? bestPower : activeVehicle.maxChargeRateKw;
-      final mins = (activeVehicle.batteryCapacityKwh * 0.70 / (effectiveKw > 0 ? effectiveKw : 1) * 60).round();
+      final bestPower = matchingChargers
+          .map((c) => c.powerKw)
+          .reduce((a, b) => a > b ? a : b);
+      final effectiveKw = bestPower < activeVehicle.maxChargeRateKw
+          ? bestPower
+          : activeVehicle.maxChargeRateKw;
+      final mins =
+          (activeVehicle.batteryCapacityKwh *
+                  0.70 /
+                  (effectiveKw > 0 ? effectiveKw : 1) *
+                  60)
+              .round();
 
       return Container(
         margin: const EdgeInsets.only(top: 10),
@@ -627,12 +710,20 @@ class _StationMapScreenState extends State<StationMapScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 16),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: AppColors.primary,
+              size: 16,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 'Compatible with ${activeVehicle.fullName} (${activeVehicle.connector.shortName}) • ~${mins}m (10-80%)',
-                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ],
@@ -650,7 +741,11 @@ class _StationMapScreenState extends State<StationMapScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 16),
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: AppColors.error,
+              size: 16,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -658,11 +753,16 @@ class _StationMapScreenState extends State<StationMapScreen> {
                 children: [
                   Text(
                     'Incompatible with ${activeVehicle.fullName} (${activeVehicle.connector.shortName})',
-                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.error),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.error,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   GestureDetector(
-                    onTap: () => CompatibleStationsSheet.show(context, activeVehicle),
+                    onTap: () =>
+                        CompatibleStationsSheet.show(context, activeVehicle),
                     child: Text(
                       'Tap to view compatible alternatives nearby →',
                       style: GoogleFonts.inter(

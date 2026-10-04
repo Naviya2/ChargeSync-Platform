@@ -7,6 +7,7 @@ import MaintenanceTab from './tabs/MaintenanceTab'
 import { cn } from '../../../lib/cn'
 import { useUpdateStation } from '../hooks/useStations'
 import MapLocationPicker from '../../../components/shared/MapLocationPicker'
+import ImageUploader from '../../../components/shared/ImageUploader'
 import useDialogStore from '../../../store/dialogStore'
 
 export default function StationDetailConsole({ station }) {
@@ -18,7 +19,8 @@ export default function StationDetailConsole({ station }) {
     name: station?.name || '',
     address: station?.address || '',
     latitude: station?.latitude || '',
-    longitude: station?.longitude || ''
+    longitude: station?.longitude || '',
+    documents: station?.documentUrls || []
   })
 
   if (!station) {
@@ -43,11 +45,28 @@ export default function StationDetailConsole({ station }) {
 
   const handleEditSubmit = (e) => {
     e.preventDefault()
+    
+    if (form.name.trim().length < 3) {
+      useDialogStore.getState().alert({ title: 'Error', message: 'Station name must be at least 3 characters.', variant: 'danger' })
+      return
+    }
+
+    if (form.address.trim().length < 5) {
+      useDialogStore.getState().alert({ title: 'Error', message: 'Address must be at least 5 characters.', variant: 'danger' })
+      return
+    }
+
+    if (form.documents.length === 0) {
+      useDialogStore.getState().alert({ title: 'Error', message: 'Please upload at least one document or image.', variant: 'danger' })
+      return
+    }
+
     updateStation.mutate(
       { 
         id: station.id, 
         data: {
           ...form,
+          documentUrls: form.documents,
           latitude: parseFloat(form.latitude),
           longitude: parseFloat(form.longitude)
         } 
@@ -124,6 +143,12 @@ export default function StationDetailConsole({ station }) {
               longitude={form.longitude}
               onLocationChange={(lat, lng) => setForm({ ...form, latitude: lat.toFixed(6), longitude: lng.toFixed(6) })}
               onAddressFetched={(address) => setForm((prev) => ({ ...prev, address }))}
+            />
+          </div>
+          <div className="mt-space-md">
+            <ImageUploader 
+                urls={form.documents}
+                onChange={(urls) => setForm({ ...form, documents: urls })}
             />
           </div>
           <div className="mt-space-lg flex justify-end">
