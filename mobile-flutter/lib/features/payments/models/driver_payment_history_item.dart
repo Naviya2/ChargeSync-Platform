@@ -1,3 +1,5 @@
+import 'payment_models.dart';
+
 class DriverPaymentHistoryItem {
   const DriverPaymentHistoryItem({
     required this.referenceId,
@@ -7,6 +9,7 @@ class DriverPaymentHistoryItem {
     required this.direction,
     required this.occurredAt,
     required this.method,
+    this.invoice,
   });
 
   final String referenceId;
@@ -16,6 +19,7 @@ class DriverPaymentHistoryItem {
   final String direction;
   final DateTime occurredAt;
   final String method;
+  final PaymentInvoice? invoice;
 
   bool get isCredit => direction == 'In';
 
@@ -28,5 +32,8 @@ class DriverPaymentHistoryItem {
         direction: json['direction'] as String,
         occurredAt: DateTime.parse(json['occurredAt'] as String).toLocal(),
         method: json['method'] as String,
+        invoice: json['invoice'] == null
+            ? null
+            : PaymentInvoice.fromJson(json['invoice'] as Map<String, dynamic>),
       );
 }

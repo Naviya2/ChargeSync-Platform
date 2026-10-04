@@ -78,6 +78,7 @@ class PaymentInvoice {
     this.discountAmount = 0,
     required this.advanceDeducted,
     required this.netAmountDue,
+    this.refundedAmount = 0,
     required this.paymentMethod,
     required this.status,
     required this.issuedAt,
@@ -96,6 +97,7 @@ class PaymentInvoice {
   final double discountAmount;
   final double advanceDeducted;
   final double netAmountDue;
+  final double refundedAmount;
   final String? paymentMethod;
   final String status;
   final DateTime issuedAt;
@@ -119,6 +121,7 @@ class PaymentInvoice {
       discountAmount: number('discountAmount'),
       advanceDeducted: number('advanceDeducted'),
       netAmountDue: number('netAmountDue'),
+      refundedAmount: number('refundedAmount'),
       paymentMethod: json['paymentMethod'] as String?,
       status: json['status'] as String? ?? 'Pending',
       issuedAt: DateTime.parse(json['issuedAt'] as String).toLocal(),
