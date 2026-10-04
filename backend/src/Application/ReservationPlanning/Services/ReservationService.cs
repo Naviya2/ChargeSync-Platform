@@ -358,7 +358,7 @@ public sealed class ReservationService : IReservationService
         var now = DateTimeOffset.UtcNow;
         if (now < reservation.StartTime || now > reservation.EndTime)
         {
-            throw new InvalidOperationException($"Check-in is only allowed during the scheduled reservation window: {reservation.StartTime.ToLocalTime():t} - {reservation.EndTime.ToLocalTime():t}.");
+            throw new InvalidOperationException($"Check-in is only allowed during the scheduled reservation window: {reservation.StartTime:t} - {reservation.EndTime:t}.");
         }
 
         var oldStatus = reservation.Status;

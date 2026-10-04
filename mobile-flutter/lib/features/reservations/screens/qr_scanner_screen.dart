@@ -104,7 +104,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       setState(() {
         _isSuccess = false;
         _isLoading = false;
-        _hasScanned = false; // Allow scanning again
       });
 
       String errorMessage = e.toString();
@@ -123,7 +122,13 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               ),
             ],
           ),
-        );
+        ).then((_) {
+          if (mounted) {
+            setState(() {
+              _hasScanned = false;
+            });
+          }
+        });
       }
     }
   }
