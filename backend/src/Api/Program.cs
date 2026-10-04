@@ -18,7 +18,6 @@ builder.Services
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddApplication();
-AgentClient.DependencyInjection.AddAgentClient(builder.Services, builder.Configuration);
 var workflowPolicy = builder.Configuration.GetSection("SupportWorkflow").Get<Application.Support.SupportWorkflowPolicy>() ?? new();
 if (workflowPolicy.RefundApprovalThresholdLkr < 0) throw new InvalidOperationException("Refund approval threshold cannot be negative.");
 builder.Services.AddSingleton(workflowPolicy);
