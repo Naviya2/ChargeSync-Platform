@@ -101,12 +101,22 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
       if (!initial) {
         for (var r in items) {
           if (!_lastStatuses.containsKey(r.id)) {
-            _addNotification(
-              title: 'New Reservation',
-              body: 'A driver just made a new reservation at your station.',
-              icon: Icons.confirmation_number_rounded,
-              color: AppColors.primary,
-            );
+            if (r.status == 'Pending') {
+              // New approval-required reservation
+              _addNotification(
+                title: 'Approval Request Received',
+                body: 'A driver is requesting approval for a session at ${r.stationName}. Tap Approvals tab to review.',
+                icon: Icons.pending_actions_rounded,
+                color: Colors.orange,
+              );
+            } else {
+              _addNotification(
+                title: 'New Reservation',
+                body: 'A driver just made a new reservation at your station.',
+                icon: Icons.confirmation_number_rounded,
+                color: AppColors.primary,
+              );
+            }
           } else {
             final prev = _lastStatuses[r.id];
             if (prev != null && prev != 'Cancelled' && r.status == 'Cancelled') {
@@ -141,6 +151,44 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
     super.dispose();
   }
 
+  Future<void> _approveReservation(String id) async {
+    try {
+      await ReservationApiClient.instance.approveReservation(id);
+      _addNotification(
+        title: 'Reservation Approved',
+        body: 'The reservation has been approved and the advance fee deducted.',
+        icon: Icons.check_circle_rounded,
+        color: Colors.green,
+      );
+      await _loadReservations();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to approve: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectReservation(String id) async {
+    try {
+      await ReservationApiClient.instance.rejectReservation(id);
+      _addNotification(
+        title: 'Reservation Rejected',
+        body: 'The reservation request has been declined.',
+        icon: Icons.cancel_rounded,
+        color: Colors.orange,
+      );
+      await _loadReservations();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to reject: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   Future<void> _logout() async {
     await AuthService.instance.logout();
     if (!mounted) return;
@@ -163,7 +211,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
         children: [
           // ── Content ──────────────────────────────────────────────
           IndexedStack(
-            index: _currentTab < 6 ? _currentTab : 0,
+            index: _currentTab < 7 ? _currentTab : 0,
             children: [
               _StaffHomeTab(
                 reservations: _currentReservations,
@@ -177,6 +225,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
                 reservations: _currentReservations,
                 isLoading: _reservationsLoading,
                 onRefresh: () => _loadReservations(),
+                onApprove: _approveReservation,
+                onReject: _rejectReservation,
               ),
             ],
           ),
@@ -588,6 +638,13 @@ class _StaffHomeTab extends StatelessWidget {
             subtitle: 'Complete charging, verify energy, invoice, and take payment.',
             onTap: () => onTabSelected(4),
           ),
+          const SizedBox(height: 16),
+          _ActionCard(
+            icon: Icons.pending_actions_rounded,
+            title: 'Pending Approvals',
+            subtitle: 'Review AI-flagged reservations requiring approval.',
+            onTap: () => onTabSelected(5),
+          ),
         ],
       ),
     );
@@ -599,11 +656,15 @@ class _CurrentReservationsTab extends StatelessWidget {
   final List<ReservationDto> reservations;
   final bool isLoading;
   final VoidCallback onRefresh;
+  final void Function(String) onApprove;
+  final void Function(String) onReject;
 
   const _CurrentReservationsTab({
     required this.reservations,
     required this.isLoading,
     required this.onRefresh,
+    required this.onApprove,
+    required this.onReject,
   });
 
   String _fmt(DateTime dt) {
@@ -724,6 +785,40 @@ class _CurrentReservationsTab extends StatelessWidget {
                             color: AppColors.onSurfaceVariant, fontSize: 12)),
                   ],
                 ),
+                if (res.status == 'Pending') ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => onReject(res.id),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Reject'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => onApprove(res.id),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Approve'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           );
@@ -798,12 +893,14 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.badge,
   });
 
   final IconData icon;
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final int? badge;
 
   @override
   Widget build(BuildContext context) {
@@ -817,7 +914,32 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 22, color: color),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(icon, size: 22, color: color),
+                if (badge != null && badge! > 0)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        badge.toString(),
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 4),
             Text(
               label,
@@ -837,3 +959,10 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+

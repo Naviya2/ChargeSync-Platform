@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useReservationDetail, useReservationHistory, useCancelReservation, useUpdateReservation, useDeleteReservation } from '../hooks/useReservations'
+import { useReservationDetail, useReservationHistory, useCancelReservation, useUpdateReservation, useDeleteReservation, useApproveReservation, useRejectReservation } from '../hooks/useReservations'
 import { format } from 'date-fns'
 import { Button, Spinner } from '../../../components/ui'
 import { useNotificationStore } from '../../../store/notificationStore'
@@ -14,43 +14,70 @@ const STATUS_COLORS = {
 
 /** Inline confirmation banner rendered inside the modal */
 function InlineConfirmBanner({ action, onConfirm, onCancel, isPending }) {
-  const isDanger = action === 'delete'
+  let isDanger = false;
+  let isSuccess = false;
+  let title = '';
+  let subtitle = '';
+  let confirmText = '';
+  let icon = '';
+
+  if (action === 'delete') {
+    isDanger = true;
+    title = 'Permanently delete this reservation?';
+    subtitle = 'This action cannot be undone. All associated data will be removed.';
+    confirmText = isPending ? 'Deleting…' : 'Yes, Delete';
+    icon = 'delete_forever';
+  } else if (action === 'cancel') {
+    title = 'Cancel this reservation?';
+    subtitle = 'The advance deposit will be refunded to the driver\'s wallet.';
+    confirmText = isPending ? 'Cancelling…' : 'Yes, Cancel Booking';
+    icon = 'warning';
+  } else if (action === 'approve') {
+    isSuccess = true;
+    title = 'Approve this reservation request?';
+    subtitle = 'The driver will be charged the advance fee and the slot will be confirmed.';
+    confirmText = isPending ? 'Approving…' : 'Yes, Approve';
+    icon = 'check_circle';
+  } else if (action === 'reject') {
+    isDanger = true;
+    title = 'Reject this reservation request?';
+    subtitle = 'The driver will be notified that the request was declined.';
+    confirmText = isPending ? 'Rejecting…' : 'Yes, Reject';
+    icon = 'cancel';
+  }
+
+  const bgClass = isDanger ? 'border-red-200 bg-red-50' : isSuccess ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50';
+  const textClass = isDanger ? 'text-red-800' : isSuccess ? 'text-green-800' : 'text-amber-800';
+  const subTextClass = isDanger ? 'text-red-600' : isSuccess ? 'text-green-600' : 'text-amber-600';
+  const iconClass = isDanger ? 'text-red-500' : isSuccess ? 'text-green-500' : 'text-amber-500';
+  const btnClass = isDanger ? 'bg-red-600 hover:bg-red-700' : isSuccess ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600';
+
   return (
-    <div className={`mx-6 mb-4 rounded-xl border p-4 flex items-start gap-4 ${
-      isDanger
-        ? 'border-red-200 bg-red-50'
-        : 'border-amber-200 bg-amber-50'
-    }`}>
-      <span className={`material-symbols-outlined text-2xl mt-0.5 ${isDanger ? 'text-red-500' : 'text-amber-500'}`}>
-        {isDanger ? 'delete_forever' : 'warning'}
+    <div className={`mx-6 mb-4 rounded-xl border p-4 flex items-start gap-4 ${bgClass}`}>
+      <span className={`material-symbols-outlined text-2xl mt-0.5 ${iconClass}`}>
+        {icon}
       </span>
       <div className="flex-1">
-        <p className={`text-sm font-semibold ${isDanger ? 'text-red-800' : 'text-amber-800'}`}>
-          {isDanger ? 'Permanently delete this reservation?' : 'Cancel this reservation?'}
+        <p className={`text-sm font-semibold ${textClass}`}>
+          {title}
         </p>
-        <p className={`text-xs mt-0.5 ${isDanger ? 'text-red-600' : 'text-amber-600'}`}>
-          {isDanger
-            ? 'This action cannot be undone. All associated data will be removed.'
-            : 'The advance deposit will be refunded to the driver\'s wallet.'}
+        <p className={`text-xs mt-0.5 ${subTextClass}`}>
+          {subtitle}
         </p>
         <div className="flex gap-2 mt-3">
           <button
             onClick={onConfirm}
             disabled={isPending}
-            className={`rounded-lg px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition disabled:opacity-60 ${
-              isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-500 hover:bg-amber-600'
-            }`}
+            className={`rounded-lg px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition disabled:opacity-60 ${btnClass}`}
           >
-            {isPending
-              ? (isDanger ? 'Deleting…' : 'Cancelling…')
-              : (isDanger ? 'Yes, Delete' : 'Yes, Cancel Booking')}
+            {confirmText}
           </button>
           <button
             onClick={onCancel}
             disabled={isPending}
             className="rounded-lg border border-gray-200 bg-white px-4 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-60"
           >
-            Keep Reservation
+            Cancel
           </button>
         </div>
       </div>
@@ -64,6 +91,8 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
   const { mutate: cancelReservation, isPending: isCancelling } = useCancelReservation()
   const { mutate: updateReservation, isPending: isUpdating } = useUpdateReservation()
   const { mutate: deleteReservation, isPending: isDeleting } = useDeleteReservation()
+  const { mutate: approveReservation, isPending: isApproving } = useApproveReservation()
+  const { mutate: rejectReservation, isPending: isRejecting } = useRejectReservation()
 
   const notify = useNotificationStore((s) => s.notify)
 
@@ -71,7 +100,7 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
   const [editStartTime, setEditStartTime] = useState('')
   const [editEndTime, setEditEndTime] = useState('')
 
-  // 'delete' | 'cancel' | null
+  // 'delete' | 'cancel' | 'approve' | 'reject' | null
   const [confirmAction, setConfirmAction] = useState(null)
 
   if (!reservationId) return null
@@ -117,6 +146,10 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
       deleteReservation(reservationId, { onSuccess: onClose })
     } else if (confirmAction === 'cancel') {
       cancelReservation(reservationId, { onSuccess: onClose })
+    } else if (confirmAction === 'approve') {
+      approveReservation(reservationId, { onSuccess: onClose })
+    } else if (confirmAction === 'reject') {
+      rejectReservation(reservationId, { onSuccess: onClose })
     }
   }
 
@@ -149,7 +182,7 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
               action={confirmAction}
               onConfirm={handleConfirm}
               onCancel={() => setConfirmAction(null)}
-              isPending={isCancelling || isDeleting}
+              isPending={isCancelling || isDeleting || isApproving || isRejecting}
             />
           </div>
         )}
@@ -342,7 +375,29 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>Close</Button>
-            {isEditing ? (
+            
+            {reservation?.status === 'Pending' ? (
+              <>
+                <Button 
+                  variant="danger" 
+                  onClick={() => setConfirmAction('reject')}
+                  disabled={isRejecting || !!confirmAction}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <span className="material-symbols-outlined text-sm">cancel</span>
+                  {isRejecting ? 'Rejecting...' : 'Reject Request'}
+                </Button>
+                <Button 
+                  variant="brand" 
+                  onClick={() => setConfirmAction('approve')}
+                  disabled={isApproving || !!confirmAction}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                  {isApproving ? 'Approving...' : 'Approve Request'}
+                </Button>
+              </>
+            ) : isEditing ? (
               <>
                 <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel Edit</Button>
                 <Button variant="brand" onClick={handleSaveUpdate} disabled={isUpdating}>
@@ -355,7 +410,7 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
               </Button>
             )}
 
-            {(reservation?.status === 'Pending' || reservation?.status === 'Confirmed') && !isEditing ? (
+            {(reservation?.status === 'Confirmed') && !isEditing ? (
               <Button
                 variant="outline"
                 onClick={() => setConfirmAction('cancel')}

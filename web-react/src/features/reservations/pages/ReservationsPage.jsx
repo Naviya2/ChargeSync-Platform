@@ -6,6 +6,7 @@ import { Card, Spinner } from '../../../components/ui'
 import ReservationDetailsModal from '../components/ReservationDetailsModal'
 import AddReservationModal from '../components/AddReservationModal'
 import { useNotificationStore } from '../../../store/notificationStore'
+import PendingApprovalsCard from '../../stations/components/PendingApprovalsCard'
 
 // Consistent status badge colors (light & dark mode aware via CSS overrides)
 const STATUS_STYLES = {
@@ -20,6 +21,7 @@ export default function ReservationsPage() {
   const [selectedId, setSelectedId] = useState(null)
   const [search, setSearch] = useState('')
   const [sortOrder, setSortOrder] = useState('time_desc')
+  const [showPendingOnly, setShowPendingOnly] = useState(false)
   const notify = useNotificationStore((s) => s.notify)
   const prevCountRef = useRef(0)
   const prevStatusRef = useRef({})
@@ -29,6 +31,8 @@ export default function ReservationsPage() {
   const reservations = data?.items || []
 
   const filtered = reservations.filter((r) => {
+    if (showPendingOnly && r.status !== 'Pending') return false
+    
     const q = search.toLowerCase()
     return (
       !q ||
@@ -58,6 +62,8 @@ export default function ReservationsPage() {
         title="Reservations"
         description="Manage upcoming and past charging slot reservations."
       />
+      
+      <PendingApprovalsCard />
 
       {/* Search and Sort bar */}
       <div className="flex w-full flex-col sm:flex-row items-center gap-4">
@@ -95,6 +101,18 @@ export default function ReservationsPage() {
             <option value="customer">Customer Name</option>
           </select>
         </div>
+
+        <button
+          onClick={() => setShowPendingOnly(!showPendingOnly)}
+          className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition shadow-sm w-full sm:w-auto ${
+            showPendingOnly 
+              ? 'border-amber-300 bg-amber-50 text-amber-700' 
+              : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <span className="material-symbols-outlined text-base">pending_actions</span>
+          Pending Approvals
+        </button>
         
         <button
           onClick={() => setIsAddModalOpen(true)}

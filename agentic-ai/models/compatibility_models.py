@@ -44,6 +44,8 @@ class StationInput(BaseModel):
     longitude: float = Field(..., ge=-180, le=180, description="Longitude")
     distance_km: Optional[float] = Field(0.0, ge=0, description="Distance from driver in km")
     chargers: List[ChargerInput] = Field(default_factory=list, description="List of chargers at this station")
+    closing_time: Optional[str] = Field(None, description="Station closing time (HH:MM)")
+    maintenance_window_start: Optional[str] = Field(None, description="Start time of upcoming maintenance window (ISO format)")
 
 class VehicleInput(BaseModel):
     vehicle_id: str = Field(..., description="Vehicle UUID")

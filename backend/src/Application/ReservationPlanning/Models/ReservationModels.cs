@@ -18,6 +18,9 @@ public sealed class CreateReservationRequest
 
     /// <summary>Advance deposit amount the driver agrees to pay from their wallet.</summary>
     public decimal AdvanceDepositAmount { get; set; }
+
+    /// <summary>True if the reservation requires station owner approval (e.g. maintenance buffer).</summary>
+    public bool RequiresApproval { get; set; }
 }
 
 /// <summary>

@@ -37,7 +37,9 @@ void main() {
             'estimated_charge_duration_mins': 30,
             'waitlist_override_required': true,
             'cost_estimate': 12.50,
-            'match_score': 95
+            'match_score': 95,
+            'maintenance_buffer_conflict': true,
+            'conflict_reason': 'Finishes near maintenance'
           }
         ],
         'requires_approval': true,
@@ -56,6 +58,8 @@ void main() {
       expect(itinerary.stationName, 'Test Station');
       expect(itinerary.costEstimate, 12.50);
       expect(itinerary.waitlistOverrideRequired, true);
+      expect(itinerary.maintenanceBufferConflict, true);
+      expect(itinerary.conflictReason, 'Finishes near maintenance');
     });
   });
 

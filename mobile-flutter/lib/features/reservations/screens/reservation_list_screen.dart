@@ -224,7 +224,7 @@ class _ReservationListScreenState extends State<ReservationListScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        res.status,
+                        res.status == 'Pending' ? 'Pending Approval' : res.status,
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,

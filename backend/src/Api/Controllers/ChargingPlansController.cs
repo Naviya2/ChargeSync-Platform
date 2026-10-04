@@ -106,10 +106,11 @@ public class ChargingPlansController : ControllerBase
                         Latitude = s.Latitude,
                         Longitude = s.Longitude,
                         DistanceKm = distance,
+                        ClosingTime = s.OperatingHours.FirstOrDefault(o => o.DayOfWeek == currentDayOfWeek)?.CloseTime.ToString(@"hh\:mm"),
+                        MaintenanceWindowStart = s.Chargers.SelectMany(c => c.MaintenanceWindows).Where(m => m.StartTime > now).OrderBy(m => m.StartTime).FirstOrDefault()?.StartTime.ToString("O"),
                         Chargers = s.Chargers
-                            .Where(c => c.Status == Domain.Enums.ChargerStatus.Available && 
-                                        !activeReservations.Any(r => r.ChargerId == c.Id) &&
-                                        !c.MaintenanceWindows.Any(m => m.StartTime < upcomingLimit && m.EndTime > now))
+                            .Where(c => (c.Status == Domain.Enums.ChargerStatus.Available || c.Status == Domain.Enums.ChargerStatus.Occupied) &&
+                                        !c.MaintenanceWindows.Any(m => m.StartTime <= now && m.EndTime > now))
                             .Select(c => new AgentChargerInput
                             {
                                 ChargerId = c.Id.ToString(),
@@ -117,7 +118,7 @@ public class ChargingPlansController : ControllerBase
                                 Connector = c.Connector.ToString(),
                                 PowerKw = c.PowerKw,
                                 Tariff = c.Tariff,
-                                Status = c.Status.ToString(),
+                                Status = activeReservations.Any(r => r.ChargerId == c.Id) ? "Occupied" : c.Status.ToString(),
                                 BayLabel = c.BayLabel
                             }).ToList()
                     };

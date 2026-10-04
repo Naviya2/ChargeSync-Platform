@@ -24,6 +24,8 @@ class ItineraryStep(BaseModel):
     waitlist_override_required: bool = Field(False, description="If this implies jumping waitlist")
     cost_estimate: float = Field(0.0, description="Estimated cost for charging")
     match_score: int = Field(0, description="Score out of 100")
+    maintenance_buffer_conflict: bool = Field(False, description="True if charge finishes near maintenance/closing")
+    conflict_reason: Optional[str] = Field(None, description="Reason for the buffer conflict")
 
 class PlanningResponse(BaseModel):
     plan_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique generated plan ID")

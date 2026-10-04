@@ -31,6 +31,10 @@ vi.mock('../../../src/features/stations/components/StationCardGrid', () => ({
   )
 }))
 
+vi.mock('../../../src/features/stations/components/PendingApprovalsCard', () => ({
+  default: () => <div data-testid="pending-approvals-card">Pending Approvals</div>
+}))
+
 const mockStationsDto = [
   { id: 's1', name: 'Station 1', status: 'Active', chargers: [] },
   { id: 's2', name: 'Station 2', status: 'Pending', chargers: [] }
@@ -51,6 +55,7 @@ test('renders loading state when isLoading is true', () => {
 test('renders MyStationsPage with all subcomponents for normal user', () => {
   render(<MyStationsPage />)
   expect(screen.getByTestId('stations-header')).toBeInTheDocument()
+  expect(screen.getByTestId('pending-approvals-card')).toBeInTheDocument()
   expect(screen.getByTestId('station-kpi-strip')).toHaveTextContent('KPIs: 4')
   expect(screen.getByTestId('station-filter-bar')).toBeInTheDocument()
   expect(screen.getByTestId('station-card-grid')).toHaveTextContent('Grid Items: 2')
@@ -60,5 +65,6 @@ test('renders MyStationsPage with all subcomponents for admin', () => {
   render(<MyStationsPage isAdmin={true} />)
   expect(useStations).toHaveBeenCalled()
   expect(screen.getByTestId('stations-header')).toBeInTheDocument()
+  expect(screen.getByTestId('pending-approvals-card')).toBeInTheDocument()
   expect(screen.getByTestId('station-card-grid')).toHaveTextContent('Grid Items: 2')
 })

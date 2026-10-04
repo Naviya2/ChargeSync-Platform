@@ -212,4 +212,194 @@ public sealed class ReservationServiceTests : IDisposable
         var updatedDriver = await _db.Users.FindAsync(driver.Id);
         Assert.Equal(500m, updatedDriver!.WalletBalance);
     }
+
+    [Fact]
+    public async Task CreateAsync_WithRequiresApproval_LeavesReservationPendingAndDoesNotDeductBalance()
+    {
+        var driver = await CreateDriverAsync(500m);
+        var charger = await CreateChargerAsync();
+        var request = new CreateReservationRequest
+        {
+            ChargerId = charger.Id,
+            VehicleId = Guid.NewGuid(),
+            StartTime = DateTimeOffset.UtcNow.AddHours(1),
+            EndTime = DateTimeOffset.UtcNow.AddHours(2),
+            AdvanceDepositAmount = 100m,
+            RequiresApproval = true
+        };
+
+        var result = await _service.CreateAsync(driver.Id, request);
+
+        Assert.NotNull(result);
+        Assert.Equal(ReservationStatus.Pending, result.Status);
+
+        var updatedDriver = await _db.Users.FindAsync(driver.Id);
+        Assert.Equal(500m, updatedDriver!.WalletBalance); // Not deducted yet
+
+        var histories = await _db.ReservationStatusHistories.Where(h => h.ReservationId == result.Id).ToListAsync();
+        Assert.Contains(histories, h => h.NewStatus == ReservationStatus.Pending);
+    }
+
+    [Fact]
+    public async Task ApproveAsync_AsStationOwner_ApprovesReservationDeductsBalanceAndConfirms()
+    {
+        var driver = await CreateDriverAsync(500m);
+        var charger = await CreateChargerAsync();
+        var station = await _db.Stations.FindAsync(charger.StationId);
+        var ownerId = station!.OwnerId;
+
+        var request = new CreateReservationRequest
+        {
+            ChargerId = charger.Id,
+            VehicleId = Guid.NewGuid(),
+            StartTime = DateTimeOffset.UtcNow.AddHours(1),
+            EndTime = DateTimeOffset.UtcNow.AddHours(2),
+            AdvanceDepositAmount = 100m,
+            RequiresApproval = true
+        };
+
+        var reservation = await _service.CreateAsync(driver.Id, request);
+        Assert.Equal(ReservationStatus.Pending, reservation.Status);
+
+        var approved = await _service.ApproveAsync(ownerId, UserRole.StationOwner.ToString(), reservation.Id);
+
+        Assert.NotNull(approved);
+        Assert.Equal(ReservationStatus.Confirmed, approved.Status);
+
+        var updatedDriver = await _db.Users.FindAsync(driver.Id);
+        Assert.Equal(400m, updatedDriver!.WalletBalance); // 100 deducted
+
+        var histories = await _db.ReservationStatusHistories.Where(h => h.ReservationId == reservation.Id).ToListAsync();
+        Assert.Contains(histories, h => h.OldStatus == ReservationStatus.Pending && h.NewStatus == ReservationStatus.Confirmed);
+    }
+
+    [Fact]
+    public async Task ApproveAsync_AsDriver_ThrowsForbiddenAccessException()
+    {
+        var driver = await CreateDriverAsync(500m);
+        var charger = await CreateChargerAsync();
+
+        var request = new CreateReservationRequest
+        {
+            ChargerId = charger.Id,
+            VehicleId = Guid.NewGuid(),
+            StartTime = DateTimeOffset.UtcNow.AddHours(1),
+            EndTime = DateTimeOffset.UtcNow.AddHours(2),
+            AdvanceDepositAmount = 100m,
+            RequiresApproval = true
+        };
+
+        var reservation = await _service.CreateAsync(driver.Id, request);
+
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+            _service.ApproveAsync(driver.Id, UserRole.Driver.ToString(), reservation.Id));
+    }
+
+    [Fact]
+    public async Task ApproveAsync_AsUnauthorizedOwner_ThrowsForbiddenAccessException()
+    {
+        var driver = await CreateDriverAsync(500m);
+        var charger = await CreateChargerAsync();
+        var anotherOwner = User.Create("AnotherOwner", "another@owner.com", "hash", UserRole.StationOwner);
+        _db.Users.Add(anotherOwner);
+        await _db.SaveChangesAsync();
+
+        var request = new CreateReservationRequest
+        {
+            ChargerId = charger.Id,
+            VehicleId = Guid.NewGuid(),
+            StartTime = DateTimeOffset.UtcNow.AddHours(1),
+            EndTime = DateTimeOffset.UtcNow.AddHours(2),
+            AdvanceDepositAmount = 100m,
+            RequiresApproval = true
+        };
+
+        var reservation = await _service.CreateAsync(driver.Id, request);
+
+        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
+            _service.ApproveAsync(anotherOwner.Id, UserRole.StationOwner.ToString(), reservation.Id));
+    }
+
+    [Fact]
+    public async Task ApproveAsync_DriverHasInsufficientBalance_ThrowsInvalidOperationException()
+    {
+        var driver = await CreateDriverAsync(500m); // Starts with 500
+        var charger = await CreateChargerAsync();
+        var station = await _db.Stations.FindAsync(charger.StationId);
+        var ownerId = station!.OwnerId;
+
+        var request = new CreateReservationRequest
+        {
+            ChargerId = charger.Id,
+            VehicleId = Guid.NewGuid(),
+            StartTime = DateTimeOffset.UtcNow.AddHours(1),
+            EndTime = DateTimeOffset.UtcNow.AddHours(2),
+            AdvanceDepositAmount = 100m,
+            RequiresApproval = true
+        };
+
+        var reservation = await _service.CreateAsync(driver.Id, request);
+
+        // Driver spends their balance elsewhere before approval
+        driver.DeductBalance(450m); // Remaining balance is 50, but deposit requires 100
+        await _db.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.ApproveAsync(ownerId, UserRole.StationOwner.ToString(), reservation.Id));
+    }
+
+    [Fact]
+    public async Task RejectAsync_AsStationOwner_CancelsPendingReservationWithoutDeductingBalance()
+    {
+        var driver = await CreateDriverAsync(500m);
+        var charger = await CreateChargerAsync();
+        var station = await _db.Stations.FindAsync(charger.StationId);
+        var ownerId = station!.OwnerId;
+
+        var request = new CreateReservationRequest
+        {
+            ChargerId = charger.Id,
+            VehicleId = Guid.NewGuid(),
+            StartTime = DateTimeOffset.UtcNow.AddHours(1),
+            EndTime = DateTimeOffset.UtcNow.AddHours(2),
+            AdvanceDepositAmount = 100m,
+            RequiresApproval = true
+        };
+
+        var reservation = await _service.CreateAsync(driver.Id, request);
+        Assert.Equal(ReservationStatus.Pending, reservation.Status);
+
+        await _service.RejectAsync(ownerId, UserRole.StationOwner.ToString(), reservation.Id);
+
+        var updatedReservation = await _db.Reservations.FindAsync(reservation.Id);
+        Assert.Equal(ReservationStatus.Cancelled, updatedReservation!.Status);
+
+        var updatedDriver = await _db.Users.FindAsync(driver.Id);
+        Assert.Equal(500m, updatedDriver!.WalletBalance); // Untouched
+    }
+
+    [Fact]
+    public async Task RejectAsync_NonPendingStatus_ThrowsInvalidOperationException()
+    {
+        var driver = await CreateDriverAsync(500m);
+        var charger = await CreateChargerAsync();
+        var station = await _db.Stations.FindAsync(charger.StationId);
+        var ownerId = station!.OwnerId;
+
+        var request = new CreateReservationRequest
+        {
+            ChargerId = charger.Id,
+            VehicleId = Guid.NewGuid(),
+            StartTime = DateTimeOffset.UtcNow.AddHours(1),
+            EndTime = DateTimeOffset.UtcNow.AddHours(2),
+            AdvanceDepositAmount = 100m,
+            RequiresApproval = false // Immediately confirmed
+        };
+
+        var reservation = await _service.CreateAsync(driver.Id, request);
+        Assert.Equal(ReservationStatus.Confirmed, reservation.Status);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _service.RejectAsync(ownerId, UserRole.StationOwner.ToString(), reservation.Id));
+    }
 }

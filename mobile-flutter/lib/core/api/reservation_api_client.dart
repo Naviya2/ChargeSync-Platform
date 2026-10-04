@@ -109,6 +109,15 @@ class ReservationApiClient {
     await _put('/api/reservations/$id/cancel');
   }
 
+  Future<ReservationDto> approveReservation(String id) async {
+    final result = await _post('/api/reservations/$id/approve', null);
+    return ReservationDto.fromJson(result);
+  }
+
+  Future<void> rejectReservation(String id) async {
+    await _post('/api/reservations/$id/reject', null);
+  }
+
   Future<WaitlistEntryDto> joinWaitlist(JoinWaitlistRequest request) async {
     final result = await _post('/api/waitlist', request.toJson());
     return WaitlistEntryDto.fromJson(result);

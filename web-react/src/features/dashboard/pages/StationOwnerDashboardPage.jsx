@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMyStations } from '../../stations/hooks/useStations'
 import { useReservationsList } from '../../reservations/hooks/useReservations'
 import DashboardHeader from '../components/DashboardHeader'
@@ -11,6 +12,7 @@ export default function StationOwnerDashboardPage() {
   const [timeframe, setTimeframe] = useState(TIMEFRAMES[0])
   const [customRange, setCustomRange] = useState({ start: '', end: '' })
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const navigate = useNavigate()
   const { data: stations, isLoading: isStationsLoading } = useMyStations()
   const { data: reservationsData, isLoading: isReservationsLoading } = useReservationsList({}, { refetchInterval: 10000 })
 
@@ -45,6 +47,7 @@ export default function StationOwnerDashboardPage() {
   const completed = reservations.filter(r => r.status === 'Completed').length
   const ongoing = reservations.filter(r => r.status === 'CheckedIn').length
   const cancelled = reservations.filter(r => r.status === 'Cancelled').length
+  const pending = reservations.filter(r => r.status === 'Pending').length
   const total = reservations.length
 
   const activeReservations = reservations.filter(r => r.status === 'Confirmed' || r.status === 'CheckedIn' || r.status === 'Pending')
@@ -59,9 +62,13 @@ export default function StationOwnerDashboardPage() {
         setCustomRange={setCustomRange}
       />
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <Card className="p-6 bg-white border-l-4 border-amber-500 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/reservations')}>
+          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pending Approvals</h3>
+          <div className="mt-2 text-3xl font-bold text-gray-900">{pending}</div>
+        </Card>
         <Card className="p-6 bg-white border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow">
-          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Reservations</h3>
+          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total</h3>
           <div className="mt-2 text-3xl font-bold text-gray-900">{total}</div>
         </Card>
         <Card className="p-6 bg-white border-l-4 border-emerald-500 shadow-sm hover:shadow-md transition-shadow">
