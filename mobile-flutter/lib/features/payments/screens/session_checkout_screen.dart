@@ -680,7 +680,7 @@ class _SessionCheckoutScreenState extends State<SessionCheckoutScreen> {
       borderRadius: BorderRadius.circular(18),
       border: Border.all(color: AppColors.outlineVariant),
     ),
-    child: child,
+    child: Material(type: MaterialType.transparency, child: child),
   );
 
   InputDecoration _inputDecoration(String label) => InputDecoration(
