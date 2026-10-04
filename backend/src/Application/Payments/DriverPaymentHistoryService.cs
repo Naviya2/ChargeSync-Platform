@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Payments;
 
-public sealed class DriverPaymentHistoryService(IAppDbContext db)
+public sealed class DriverPaymentHistoryService(IAppDbContext db, IPaymentService payments)
 {
     public async Task<IReadOnlyList<DriverPaymentHistoryItemDto>> GetAsync(Guid driverId, CancellationToken ct = default)
     {
@@ -31,9 +31,13 @@ public sealed class DriverPaymentHistoryService(IAppDbContext db)
             .Where(i => i.DriverId == driverId).ToListAsync(ct);
         foreach (var invoice in invoices)
         {
-            if (invoice.Status is InvoiceStatus.Paid or InvoiceStatus.Refunded && invoice.NetAmountDue > 0 && invoice.SettledAt is { } settledAt)
-                items.Add(new(invoice.Id, "ChargingPayment", "Charging balance after advance", invoice.NetAmountDue,
-                    "Out", settledAt, invoice.PaymentMethod?.ToString() ?? "Wallet"));
+            if (invoice.Status is InvoiceStatus.Paid or InvoiceStatus.Refunded && invoice.SettledAt is { } settledAt)
+            {
+                var receipt = await payments.ToDtoAsync(invoice, ct);
+                items.Add(new(invoice.Id, "ChargingPayment", "Charging invoice", invoice.NetAmountDue,
+                    invoice.NetAmountDue > 0 ? "Out" : "Info", settledAt,
+                    invoice.PaymentMethod?.ToString() ?? "Wallet", receipt));
+            }
             var excessAdvance = invoice.Session.Reservation.AdvanceDepositAmount - invoice.AdvanceDeducted;
             if (excessAdvance > 0)
                 items.Add(new(invoice.Id, "AdvanceRefund", "Unused reservation advance returned", excessAdvance,

@@ -7,4 +7,5 @@ public sealed record DriverPaymentHistoryItemDto(
     decimal Amount,
     string Direction,
     DateTimeOffset OccurredAt,
-    string Method);
+    string Method,
+    PaymentInvoiceDto? Invoice = null);

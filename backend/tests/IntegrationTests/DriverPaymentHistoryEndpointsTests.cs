@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Application.Authentication.Models;
 using Application.Payments.Models;
 using Domain.Entities;
@@ -55,17 +57,23 @@ public sealed class DriverPaymentHistoryEndpointsTests : IClassFixture<ChargeSyn
             var charged = Reservation.Create(auth.User.Id, charger.Id, start.AddHours(2), start.AddHours(3), 500);
             charged.ConfirmWithQrCode(Guid.NewGuid().ToString());
             charged.CheckIn();
+            var covered = Reservation.Create(auth.User.Id, charger.Id, start.AddHours(6), start.AddHours(7), 500);
+            covered.ConfirmWithQrCode(Guid.NewGuid().ToString());
+            covered.CheckIn();
             var someoneElses = Reservation.Create(other.Id, charger.Id, start.AddHours(4), start.AddHours(5), 999);
             someoneElses.ConfirmWithQrCode(Guid.NewGuid().ToString());
-            db.Reservations.AddRange(cancelled, charged, someoneElses);
+            db.Reservations.AddRange(cancelled, charged, covered, someoneElses);
             await db.SaveChangesAsync();
 
             var session = ChargingSession.Start(charged, owner.Id, DateTimeOffset.UtcNow.AddHours(-1));
             session.Stop(DateTimeOffset.UtcNow, 20, null);
             var invoice = PaymentInvoice.Issue(session, auth.User.Id, 100, 500);
             invoice.Settle(PaymentMethod.Wallet);
-            db.ChargingSessions.Add(session);
-            db.PaymentInvoices.Add(invoice);
+            var coveredSession = ChargingSession.Start(covered, owner.Id, DateTimeOffset.UtcNow.AddHours(-1));
+            coveredSession.Stop(DateTimeOffset.UtcNow.AddMinutes(-30), 20, null);
+            var coveredInvoice = PaymentInvoice.Issue(coveredSession, auth.User.Id, 40, 500);
+            db.ChargingSessions.AddRange(session, coveredSession);
+            db.PaymentInvoices.AddRange(invoice, coveredInvoice);
             var plan = new MembershipPlan { Id = Guid.NewGuid(), Name = "Plus", MonthlyFee = 300 };
             db.MembershipPlans.Add(plan);
             db.Subscriptions.Add(new Subscription { DriverId = auth.User.Id, PlanId = plan.Id, Plan = plan,
@@ -77,12 +85,26 @@ public sealed class DriverPaymentHistoryEndpointsTests : IClassFixture<ChargeSyn
             await db.SaveChangesAsync();
         }
 
-        var history = (await client.GetFromJsonAsync<List<DriverPaymentHistoryItemDto>>("/api/payments/history"))!;
-        Assert.Equal(9, history.Count);
-        Assert.Equal(2, history.Count(item => item.Type == "ReservationAdvance" && item.Amount == 500));
+        var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        jsonOptions.Converters.Add(new JsonStringEnumConverter());
+        var history = (await client.GetFromJsonAsync<List<DriverPaymentHistoryItemDto>>(
+            "/api/payments/history", jsonOptions))!;
+        Assert.Equal(12, history.Count);
+        Assert.Equal(3, history.Count(item => item.Type == "ReservationAdvance" && item.Amount == 500));
         Assert.Contains(history, item => item.Type == "CancellationFee" && item.Amount == 500 && item.Direction == "Out");
         Assert.Contains(history, item => item.Type == "AdvanceRefund" && item.Amount == 500 && item.Direction == "In");
-        Assert.Contains(history, item => item.Type == "ChargingPayment" && item.Amount == 1500 && item.Direction == "Out");
+        var chargedInvoice = Assert.Single(history.Where(item => item.Type == "ChargingPayment" && item.Amount == 1500));
+        Assert.Equal("Out", chargedInvoice.Direction);
+        Assert.Equal(chargedInvoice.ReferenceId, chargedInvoice.Invoice?.Id);
+        Assert.Equal("History Station", chargedInvoice.Invoice?.StationName);
+        Assert.Equal(500, chargedInvoice.Invoice?.AdvanceDeducted);
+        Assert.Equal(1500, chargedInvoice.Invoice?.NetAmountDue);
+        var advancePaidInvoice = Assert.Single(history.Where(item => item.Type == "ChargingPayment" && item.Amount == 0));
+        Assert.Equal("Info", advancePaidInvoice.Direction);
+        Assert.Equal(400, advancePaidInvoice.Invoice?.GrossAmount);
+        Assert.Equal(400, advancePaidInvoice.Invoice?.AdvanceDeducted);
+        Assert.Equal(0, advancePaidInvoice.Invoice?.NetAmountDue);
+        Assert.Contains(history, item => item.Type == "AdvanceRefund" && item.Amount == 100 && item.Direction == "In");
         Assert.Contains(history, item => item.Type == "MembershipPayment" && item.Amount == 300);
         Assert.Contains(history, item => item.Type == "MembershipCredit" && item.Amount == 100);
         Assert.Contains(history, item => item.Type == "WalletTopUp" && item.Amount == 1000);
