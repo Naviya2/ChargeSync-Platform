@@ -260,12 +260,12 @@ Configured via `mobile-flutter/.env`:
 
 ### 10.2 Comprehensive Test Breakdown by Module
 
-#### A. ASP.NET Core Backend (179 Automated Tests)
+#### A. ASP.NET Core Backend (228 Automated Tests)
 
-##### Unit Test Suites (135 Tests)
+##### Unit Test Suites (184 Tests)
 | Test Suite File | Domain / Module | Focus & Scenarios Tested | Tests |
 |---|---|---|---|
-| `ReservationServiceTests.cs` | Reservations & Planning | Advance booking creation, concurrent slot locking, wallet pre-auth, walk-in admission, cancellation with penalty, waitlist auto-promotion, QR staff check-in, status lifecycle | 60+ |
+| `ReservationServiceTests.cs` | Reservations & Planning | Advance booking creation, wallet pre-auth deposit deduction, overlapping slot buffer validation, walk-in admission & session start, cancellation & refund, staff QR check-in, time window updates, hard delete with status history cleanup, availability slot calculation excluding maintenance and buffer overlaps, AI/staff approval workflow (RequiresApproval, station owner & admin ApproveAsync / RejectAsync), role-based approval authorization | 62 |
 | `ReservationTimezoneTests.cs` | Reservations | UTC and local timezone handling, ISO-8601 formatting, duration calculation | 5 |
 | `ChargingPlansControllerTests.cs` | AI Charging Coordinator | Driver preference constraints, station filtering, distance checks, AI client dispatch, fallback handling | 8 |
 | `StationServiceTests.cs` | Stations & Chargers | Station CRUD, charger configuration, tariff updates, weekly operating hours schedules, maintenance window overlaps, spatial proximity filtering | 16 |
@@ -344,7 +344,7 @@ Executed via `flutter_test`:
 |---|---|---|---|
 | `support_workflow_test.dart` | Support & Invoices | Ticket creation, invoice validation retry, error containment, draft message preservation, offline retry | 8 |
 | `planning_api_client_test.dart` | AI Planning Client | `PlanningRequest` JSON serialization, `PlanningResponse` deserialization, HTTP 200 parsing, HTTP 500 error propagation | 4 |
-| `reservation_models_test.dart` | Reservation Models | `ReservationDto`, `CreateReservationRequest`, `WaitlistEntryDto` JSON parsing | 4 |
+| `reservation_models_test.dart` | Reservation Models | `ReservationDto`, `CreateReservationRequest` (with `requiresApproval`), JSON serialization | 4 |
 | `charger_test.dart` | Station Management | Charger model serialization, power rating presentation, status badges | 2 |
 | `station_test.dart` | Station Management | Station model serialization, tariff display, distance format calculation | 2 |
 | `widget_test.dart` | App Shell | App bootstrapping, role-based navigation bar rendering, home screen initialisation | 2 |
@@ -356,11 +356,11 @@ Executed via `flutter_test`:
 
 | Subsystem | Framework | Test Suites | Total Tests | Status |
 |---|---|---|---|---|
-| **Backend API** | xUnit, Moq, WebApplicationFactory | 30 suites (18 unit + 12 integration) | **179** | Passing (1 skipped) |
+| **Backend API** | xUnit, Moq, WebApplicationFactory | 30 suites (18 unit + 12 integration) | **228** | Passing (1 skipped) |
 | **Agentic AI** | pytest, anyio | 6 suites | **25** | Passing |
 | **Web Portal** | Vitest, React Testing Library | 13 suites | **46** | Passing |
 | **Mobile App** | flutter_test | 7 suites | **23** | Passing |
-| **Entire Platform** | **Full-Stack Automated Test Suite** | **56 Suites** | **273 Tests** | **Automated CI Verified** |
+| **Entire Platform** | **Full-Stack Automated Test Suite** | **56 Suites** | **322 Tests** | **Automated CI Verified** |
 
 ---
 
@@ -437,7 +437,7 @@ The ChargeSync platform exposes a unified, RESTful API surface across 15 control
 | `GET` | `/api/reservations/availability` | Authenticated | Query real-time available time slots for a specific charger and date |
 | `GET` | `/api/reservations/{id}` | Authenticated | Retrieve reservation details, QR token, and linked charging session with meter photo |
 | `PUT` | `/api/reservations/{id}` | StationOwner, Admin | Update reservation details, slot times, or vehicle assignment |
-| `PUT` | `/api/reservations/{id}/cancel` | Authenticated | Cancel reservation, release pre-auth, and promote next driver from waitlist |
+| `PUT` | `/api/reservations/{id}/cancel` | Authenticated | Cancel reservation and refund advance deposit to driver wallet |
 | `POST` | `/api/reservations/{id}/approve` | StationOwner, Admin | Approve an AI-suggested or pending reservation request |
 | `POST` | `/api/reservations/{id}/reject` | StationOwner, Admin | Reject a pending reservation request |
 | `DELETE` | `/api/reservations/{id}` | StationOwner, Admin | Delete a cancelled or rejected reservation |
