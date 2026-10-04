@@ -18,6 +18,8 @@ public sealed class CreateReservationRequest
 
     /// <summary>Advance deposit amount the driver agrees to pay from their wallet.</summary>
     public decimal AdvanceDepositAmount { get; set; }
+    /// <summary>Fee shown by booking-charges. A stale/missing acknowledgement cannot authorize extra money.</summary>
+    public decimal? ExpectedCancellationFees { get; set; }
 }
 
 /// <summary>

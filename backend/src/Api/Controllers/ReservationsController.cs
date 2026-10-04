@@ -25,6 +25,11 @@ public sealed class ReservationsController : ControllerBase
     private Guid RequesterId => _currentUser.Id ?? Guid.Empty;
     private string RequesterRole => _currentUser.Role?.ToString() ?? string.Empty;
 
+    [HttpGet("booking-charges")]
+    [Authorize(Policy = AuthorizationPolicies.Driver)]
+    public async Task<ActionResult<BookingChargesDto>> BookingCharges(CancellationToken cancellationToken) =>
+        Ok(await _reservationService.GetBookingChargesAsync(RequesterId, cancellationToken));
+
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.Driver)]
     public async Task<ActionResult<ReservationDto>> Create([FromBody] CreateReservationRequest request, CancellationToken cancellationToken)
