@@ -5,6 +5,7 @@ import '../../core/api/auth_service.dart';
 import '../auth/sign_in_screen.dart';
 import '../vehicles/vehicles_list_screen.dart';
 import '../../features/support/screens/support_tickets_screen.dart';
+import '../../features/payments/screens/driver_payment_history_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -92,7 +93,46 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 32),
 
-          // My Vehicles Tile (if Driver)
+          // Driver payment history and account shortcuts
+          if (user.role.toLowerCase() == 'driver')
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                tileColor: AppColors.surfaceContainerLow,
+                leading: const Icon(
+                  Icons.receipt_long_rounded,
+                  color: AppColors.primary,
+                ),
+                title: Text(
+                  'Payment history',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+                subtitle: Text(
+                  'Bookings, charging, memberships and wallet activity',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.onSurfaceVariant,
+                ),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DriverPaymentHistoryScreen(),
+                  ),
+                ),
+              ),
+            ),
+
           if (user.role.toLowerCase() == 'driver')
             Container(
               margin: const EdgeInsets.only(bottom: 16),
