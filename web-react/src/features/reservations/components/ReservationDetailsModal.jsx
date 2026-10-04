@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useReservationDetail, useReservationHistory, useCancelReservation, useUpdateReservation, useDeleteReservation } from '../hooks/useReservations'
 import { format } from 'date-fns'
 import { Button, Spinner } from '../../../components/ui'
-import { useNotificationStore } from '../../../store/notificationStore'
+import { useAuthStore } from '../../../store/authStore'
 
 const STATUS_COLORS = {
   Pending:   'bg-yellow-100 text-yellow-800',
@@ -13,7 +13,7 @@ const STATUS_COLORS = {
 }
 
 /** Inline confirmation banner rendered inside the modal */
-function InlineConfirmBanner({ action, onConfirm, onCancel, isPending }) {
+function InlineConfirmBanner({ action, onConfirm, onCancel, isPending, isDriver }) {
   const isDanger = action === 'delete'
   return (
     <div className={`mx-6 mb-4 rounded-xl border p-4 flex items-start gap-4 ${
@@ -31,7 +31,9 @@ function InlineConfirmBanner({ action, onConfirm, onCancel, isPending }) {
         <p className={`text-xs mt-0.5 ${isDanger ? 'text-red-600' : 'text-amber-600'}`}>
           {isDanger
             ? 'This action cannot be undone. All associated data will be removed.'
-            : 'The advance deposit will be refunded to the driver\'s wallet.'}
+            : isDriver
+              ? 'Your advance deposit will be refunded. Cancelling less than 2 hours before the booked start (including after it) adds a LKR 500 fee to your next booking. Cancelling 2 hours or more before start is free. Previously paid cancellation fees are not refunded.'
+              : 'The advance deposit will be refunded to the driver. Staff cancellation does not add a late fee. Previously paid cancellation fees are not refunded.'}
         </p>
         <div className="flex gap-2 mt-3">
           <button
@@ -59,13 +61,12 @@ function InlineConfirmBanner({ action, onConfirm, onCancel, isPending }) {
 }
 
 export default function ReservationDetailsModal({ reservationId, onClose }) {
+  const isDriver = useAuthStore((state) => state.user?.role === 'Driver')
   const { data: reservation, isLoading } = useReservationDetail(reservationId)
   const { data: history, isLoading: isHistoryLoading } = useReservationHistory(reservationId)
   const { mutate: cancelReservation, isPending: isCancelling } = useCancelReservation()
   const { mutate: updateReservation, isPending: isUpdating } = useUpdateReservation()
   const { mutate: deleteReservation, isPending: isDeleting } = useDeleteReservation()
-
-  const notify = useNotificationStore((s) => s.notify)
 
   const [isEditing, setIsEditing] = useState(false)
   const [editStartTime, setEditStartTime] = useState('')
@@ -150,6 +151,7 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
               onConfirm={handleConfirm}
               onCancel={() => setConfirmAction(null)}
               isPending={isCancelling || isDeleting}
+              isDriver={isDriver}
             />
           </div>
         )}
@@ -251,6 +253,12 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
               )}
 
               {/* Deposit */}
+              {(reservation.lateCancellationFee > 0 || reservation.cancellationFeesPaid > 0) && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  {reservation.lateCancellationFee > 0 && <p>Late cancellation fee assessed: LKR {reservation.lateCancellationFee.toFixed(2)}. Charged with the driver&apos;s next booking.</p>}
+                  {reservation.cancellationFeesPaid > 0 && <p>Previous cancellation fees paid with this booking: LKR {reservation.cancellationFeesPaid.toFixed(2)} (non-refundable; separate from the advance).</p>}
+                </div>
+              )}
               {reservation.advanceDepositAmount > 0 && (
                 <div className="rounded-xl bg-emerald-50 p-4 border border-emerald-100 flex items-center gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
