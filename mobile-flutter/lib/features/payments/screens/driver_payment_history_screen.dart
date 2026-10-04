@@ -38,11 +38,12 @@ class _DriverPaymentHistoryScreenState
               PaymentApiClient.instance.getDriverHistory)();
       if (!mounted) return;
       setState(() => _items = items);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(
-        () => _error =
-            'Could not load payment history. Check your connection and try again.',
+        () => _error = error is PaymentHistoryLoadException
+            ? error.message
+            : 'Could not load payment history. Check your connection and try again.',
       );
     } finally {
       if (mounted) setState(() => _loading = false);

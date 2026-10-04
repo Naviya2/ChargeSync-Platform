@@ -1,3 +1,4 @@
+import 'package:chargesync/features/payments/api/payment_api_client.dart';
 import 'package:chargesync/features/payments/models/driver_payment_history_item.dart';
 import 'package:chargesync/features/payments/screens/driver_payment_history_screen.dart';
 import 'package:flutter/material.dart';
@@ -84,5 +85,26 @@ void main() {
     expect(attempts, 2);
     expect(find.text('No payments or wallet activity yet.'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shows the reason when payment history is unavailable', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DriverPaymentHistoryScreen(
+          loadHistory: () async => throw const PaymentHistoryLoadException(
+            'Your session has expired. Sign out and sign in again.',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Your session has expired. Sign out and sign in again.'),
+      findsOneWidget,
+    );
+    expect(find.text('Retry'), findsOneWidget);
   });
 }
