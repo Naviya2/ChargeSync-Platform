@@ -9,6 +9,7 @@ import '../../../core/api/reservation_api_client.dart';
 import '../../../core/api/reservation_models.dart';
 import '../../../core/api/vehicle_api_client.dart';
 import '../../../core/api/vehicle_models.dart';
+import '../widgets/reservation_charge_dialog.dart';
 
 class CreateReservationScreen extends StatefulWidget {
   final Station station;
@@ -16,13 +17,14 @@ class CreateReservationScreen extends StatefulWidget {
   const CreateReservationScreen({super.key, required this.station});
 
   @override
-  State<CreateReservationScreen> createState() => _CreateReservationScreenState();
+  State<CreateReservationScreen> createState() =>
+      _CreateReservationScreenState();
 }
 
 class _CreateReservationScreenState extends State<CreateReservationScreen> {
   Charger? _selectedCharger;
   DateTime _selectedDate = DateTime.now();
-  
+
   List<Vehicle> _myVehicles = [];
   Vehicle? _selectedVehicle;
 
@@ -36,7 +38,8 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.station.chargers != null && widget.station.chargers!.isNotEmpty) {
+    if (widget.station.chargers != null &&
+        widget.station.chargers!.isNotEmpty) {
       _selectedCharger = widget.station.chargers!.first;
     }
     _loadVehicles();
@@ -58,17 +61,24 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingVehicles = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load vehicles: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load vehicles: $e')));
       }
     }
   }
 
   int get _calculatedDurationMinutes {
-    if (_selectedVehicle == null || _selectedCharger == null) return 60; // Default
-    
+    if (_selectedVehicle == null || _selectedCharger == null) {
+      return 60; // Default
+    }
+
     // Time = Capacity / Power (hours)
     // Power is min of what charger can supply and what vehicle can accept
-    final effectivePowerKw = min(_selectedCharger!.powerKw, _selectedVehicle!.maxChargeRateKw);
+    final effectivePowerKw = min(
+      _selectedCharger!.powerKw,
+      _selectedVehicle!.maxChargeRateKw,
+    );
     if (effectivePowerKw <= 0) return 60;
 
     final hours = _selectedVehicle!.batteryCapacityKwh / effectivePowerKw;
@@ -98,51 +108,45 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingSlots = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load availability: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load availability: $e')),
+        );
       }
     }
   }
 
   Future<void> _makeReservation() async {
-    if (_selectedCharger == null || _selectedSlot == null || _selectedVehicle == null) return;
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Confirm Reservation'),
-          content: const Text('An advance fee of 500 LKR will be deducted from your wallet. Do you want to proceed?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirm != true) return;
+    if (_isSubmitting ||
+        _selectedCharger == null ||
+        _selectedSlot == null ||
+        _selectedVehicle == null) {
+      return;
+    }
 
     setState(() => _isSubmitting = true);
-
     try {
+      final charges = await ReservationApiClient.instance.getBookingCharges();
+      if (!mounted) return;
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => ReservationChargeDialog(charges: charges),
+      );
+
+      if (!mounted || confirm != true) return;
+
       final request = CreateReservationRequest(
         chargerId: _selectedCharger!.id,
         vehicleId: _selectedVehicle!.id,
         startTime: _selectedSlot!.startTime,
         endTime: _selectedSlot!.endTime,
-        advanceDepositAmount: 500.0,
+        advanceDepositAmount: ReservationChargeDialog.advanceAmount,
+        expectedCancellationFees: charges.pendingCancellationFees,
       );
 
       await ReservationApiClient.instance.createReservation(request);
 
       if (!mounted) return;
-      
+
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -161,15 +165,20 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
       Navigator.pop(context); // Go back to map
     } catch (e) {
       if (!mounted) return;
-      
+
       String errorMessage = e.toString();
       if (errorMessage.contains('incomplete reservation')) {
-        errorMessage = 'You already have an incomplete reservation for this vehicle today. Please complete or cancel it first.';
+        errorMessage =
+            'You already have an incomplete reservation for this vehicle today. Please complete or cancel it first.';
       } else if (errorMessage.contains('Insufficient wallet balance')) {
-        errorMessage = 'Balance is not sufficient to make the advance payment, go to wallet and topup your wallet please.';
+        errorMessage =
+            'Your wallet cannot cover the advance plus outstanding cancellation fees. Add money to your wallet and try again.';
       } else {
         // Strip out the "ApiException" prefix if it exists to make it cleaner
-        errorMessage = errorMessage.replaceAll(RegExp(r'ApiException.*:\s*'), '');
+        errorMessage = errorMessage.replaceAll(
+          RegExp(r'ApiException.*:\s*'),
+          '',
+        );
       }
 
       // Show failure message directly in a popup as well for better visibility
@@ -220,32 +229,51 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                 children: [
                   Text(
                     widget.station.name,
-                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     widget.station.address,
-                    style: GoogleFonts.inter(fontSize: 14, color: AppColors.onSurfaceVariant),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 24),
 
                   // Charger Selection
-                  Text('1. Select Charger', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                  Text(
+                    '1. Select Charger',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  if (widget.station.chargers == null || widget.station.chargers!.isEmpty)
+                  if (widget.station.chargers == null ||
+                      widget.station.chargers!.isEmpty)
                     const Text('No chargers available')
                   else
                     DropdownButtonFormField<Charger>(
                       initialValue: _selectedCharger,
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         filled: true,
                         fillColor: AppColors.surfaceContainer,
                       ),
                       items: widget.station.chargers!.map((charger) {
                         return DropdownMenuItem(
                           value: charger,
-                          child: Text('${charger.identifier} (${charger.powerKw} kW)'),
+                          child: Text(
+                            '${charger.identifier} (${charger.powerKw} kW)',
+                          ),
                         );
                       }).toList(),
                       onChanged: (c) {
@@ -256,22 +284,35 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                   const SizedBox(height: 24),
 
                   // Vehicle Selection
-                  Text('2. Select Vehicle', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                  Text(
+                    '2. Select Vehicle',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (_myVehicles.isEmpty)
-                    const Text('No vehicles registered. Please add a vehicle first.')
+                    const Text(
+                      'No vehicles registered. Please add a vehicle first.',
+                    )
                   else
                     DropdownButtonFormField<Vehicle>(
                       initialValue: _selectedVehicle,
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         filled: true,
                         fillColor: AppColors.surfaceContainer,
                       ),
                       items: _myVehicles.map((vehicle) {
                         return DropdownMenuItem(
                           value: vehicle,
-                          child: Text('${vehicle.make} ${vehicle.model} (${vehicle.batteryCapacityKwh} kWh)'),
+                          child: Text(
+                            '${vehicle.make} ${vehicle.model} (${vehicle.batteryCapacityKwh} kWh)',
+                          ),
                         );
                       }).toList(),
                       onChanged: (v) {
@@ -279,28 +320,41 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                         _fetchAvailability();
                       },
                     ),
-                  
+
                   if (_selectedVehicle != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
                         'Estimated Charge Time: $_calculatedDurationMinutes mins',
-                        style: GoogleFonts.inter(color: AppColors.primary, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  
+
                   const SizedBox(height: 24),
 
                   // Date Selection (Constrained to today and tomorrow)
-                  Text('3. Select Date', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                  Text(
+                    '3. Select Date',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   InkWell(
                     onTap: () async {
                       final date = await showDatePicker(
                         context: context,
-                        initialDate: _selectedDate.isAfter(maxAllowedDate) ? maxAllowedDate : _selectedDate,
+                        initialDate: _selectedDate.isAfter(maxAllowedDate)
+                            ? maxAllowedDate
+                            : _selectedDate,
                         firstDate: DateTime.now(),
-                        lastDate: maxAllowedDate, // Only allow today and tomorrow
+                        lastDate:
+                            maxAllowedDate, // Only allow today and tomorrow
                       );
                       if (date != null) {
                         setState(() => _selectedDate = date);
@@ -316,8 +370,14 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(DateFormat('yyyy-MM-dd').format(_selectedDate), style: GoogleFonts.inter(fontSize: 16)),
-                          const Icon(Icons.calendar_today, color: AppColors.primary),
+                          Text(
+                            DateFormat('yyyy-MM-dd').format(_selectedDate),
+                            style: GoogleFonts.inter(fontSize: 16),
+                          ),
+                          const Icon(
+                            Icons.calendar_today,
+                            color: AppColors.primary,
+                          ),
                         ],
                       ),
                     ),
@@ -326,23 +386,35 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                   const SizedBox(height: 24),
 
                   // Time Slot Selection
-                  Text('4. Select Available Time', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                  Text(
+                    '4. Select Available Time',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (_isLoadingSlots)
                     const Center(child: CircularProgressIndicator())
                   else if (_availableSlots.isEmpty)
-                    const Text('No slots available for this date at this time. Come back later.')
+                    const Text(
+                      'No slots available for this date at this time. Come back later.',
+                    )
                   else
                     DropdownButtonFormField<TimeSlotDto>(
                       value: _selectedSlot,
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         filled: true,
                         fillColor: AppColors.surfaceContainer,
                         hintText: 'Choose a Time Slot',
                       ),
                       items: _availableSlots.map((slot) {
-                        final timeString = '${DateFormat('HH:mm').format(slot.startTime.toLocal())} - ${DateFormat('HH:mm').format(slot.endTime.toLocal())}';
+                        final timeString =
+                            '${DateFormat('HH:mm').format(slot.startTime.toLocal())} - ${DateFormat('HH:mm').format(slot.endTime.toLocal())}';
                         return DropdownMenuItem(
                           value: slot,
                           child: Text(timeString),
@@ -365,12 +437,22 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.onPrimary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      onPressed: (_isSubmitting || _selectedSlot == null) ? null : _makeReservation,
+                      onPressed: (_isSubmitting || _selectedSlot == null)
+                          ? null
+                          : _makeReservation,
                       child: _isSubmitting
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : Text('Confirm Reservation', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : Text(
+                              'Confirm Reservation',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],
