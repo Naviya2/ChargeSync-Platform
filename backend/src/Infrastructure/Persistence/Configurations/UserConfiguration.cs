@@ -61,6 +61,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsConcurrencyToken()
             .HasDefaultValue(0m);
 
+        builder.Property(u => u.PendingCancellationFees)
+            .HasPrecision(10, 2)
+            .IsConcurrencyToken()
+            .HasDefaultValue(0m);
+
         builder.Property(u => u.CreatedAt)
             .IsRequired()
             .HasDefaultValueSql("now()")
