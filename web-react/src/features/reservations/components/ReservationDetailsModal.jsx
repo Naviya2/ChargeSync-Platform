@@ -224,6 +224,32 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
                 </div>
               </div>
 
+              {/* Walk-in Details */}
+              {!reservation.driverId && (
+                <div className="rounded-xl bg-indigo-50 p-4 border border-indigo-100 flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                    <span className="material-symbols-outlined">badge</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xs font-semibold text-indigo-700 uppercase tracking-wider">Walk-In Customer Details</h3>
+                    <div className="grid grid-cols-3 gap-4 mt-2">
+                      <div>
+                        <div className="text-xs text-indigo-500 font-medium">Name</div>
+                        <div className="text-sm font-bold text-indigo-700">{reservation.walkInCustomerName || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-indigo-500 font-medium">Vehicle No.</div>
+                        <div className="text-sm font-bold text-indigo-700">{reservation.walkInVehicleNumber || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-indigo-500 font-medium">Battery Capacity</div>
+                        <div className="text-sm font-bold text-indigo-700">{reservation.walkInBatteryCapacity ? `${reservation.walkInBatteryCapacity} kWh` : 'N/A'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Deposit */}
               {reservation.advanceDepositAmount > 0 && (
                 <div className="rounded-xl bg-emerald-50 p-4 border border-emerald-100 flex items-center gap-4">
@@ -234,6 +260,42 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
                     <h3 className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Advance Deposit Paid</h3>
                     <div className="text-xl font-bold text-emerald-600 mt-0.5">Rs. {reservation.advanceDepositAmount.toFixed(2)}</div>
                   </div>
+                </div>
+              )}
+
+              {/* Invoice Details */}
+              {reservation.status === 'Completed' && reservation.invoiceNetAmount != null && (
+                <div className="rounded-xl bg-blue-50 p-4 border border-blue-100 mt-4 flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <span className="material-symbols-outlined">receipt_long</span>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xs font-semibold text-blue-700 uppercase tracking-wider">Final Session Invoice</h3>
+                    <div className="grid grid-cols-3 gap-4 mt-2">
+                      <div>
+                        <div className="text-xs text-blue-500 font-medium">Final Cost</div>
+                        <div className="text-sm font-bold text-blue-700">Rs. {reservation.invoiceNetAmount.toFixed(2)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-blue-500 font-medium">Energy</div>
+                        <div className="text-sm font-bold text-blue-700">{reservation.finalEnergyDeliveredKwh?.toFixed(2) || 'N/A'} kWh</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-blue-500 font-medium">Payment Method</div>
+                        <div className="text-sm font-bold text-blue-700">{reservation.invoicePaymentMethod || 'N/A'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Meter Photo */}
+              {reservation.sessionMeterPhotoUrl && (
+                <div className="rounded-xl bg-gray-50 p-4 border border-gray-100 mt-4">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Meter Photo</h3>
+                  <a href={reservation.sessionMeterPhotoUrl} target="_blank" rel="noopener noreferrer" className="block max-w-sm">
+                    <img src={reservation.sessionMeterPhotoUrl} alt="Meter Reading" className="max-h-48 rounded-lg object-contain border border-gray-200 bg-white" />
+                  </a>
                 </div>
               )}
 

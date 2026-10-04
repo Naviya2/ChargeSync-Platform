@@ -38,7 +38,7 @@ class PlanningCoordinatorAgent:
                 avg_tariff = sum(tariffs) / len(tariffs)
                 
         # Calculate real utilization metric (placeholder based on current real status)
-        busy_chargers = len([c for c in station.chargers if c.status.upper() not in ["AVAILABLE", "UNKNOWN"]])
+        busy_chargers = len([c for c in station.chargers if (c.status or "UNKNOWN").upper() not in ["AVAILABLE", "UNKNOWN"]])
         total_chargers = len(station.chargers)
         real_utilization = (busy_chargers / total_chargers * 100.0) if total_chargers > 0 else 0.0
         
@@ -48,7 +48,7 @@ class PlanningCoordinatorAgent:
             station_data=StationDataInput(
                 station_id=station.station_id,
                 historical_utilization_percent=real_utilization,
-                live_chargers=[ChargerStatus(charger_id=c.charger_id, status=c.status) for c in station.chargers],
+                live_chargers=[ChargerStatus(charger_id=c.charger_id, status=c.status or "UNKNOWN") for c in station.chargers],
                 pricing=PricingHistory(
                     current_price_per_kwh=avg_tariff, 
                     average_price_per_kwh=100.0, 
@@ -73,7 +73,7 @@ class PlanningCoordinatorAgent:
             return PlanningResponse(
                 plan_id=str(uuid.uuid4()),
                 ranked_itineraries=[],
-                requires_approval=is_urgent,
+                requires_approval=False,
                 agent_reasoning="Missing vehicle or candidate stations data from backend."
             )
         
@@ -119,24 +119,40 @@ class PlanningCoordinatorAgent:
         
         Constraints:
         - Only use the vetted stations provided above.
-        - If 'Is Urgent' is True, you MUST set 'requires_approval' to True, because the driver needs to jump the waitlist.
         - Prices must be realistic for Sri Lanka (LKR), usually between 1000 and 5000 LKR.
         - Use UUIDs for station_id and charger_id if not provided in the vetted list.
         - Return 2 itineraries if possible.
-        - The agent_reasoning should clearly explain why you picked these based on their Price Preference, Deadline, and the pre-computed availability/compatibility scores.
+        - The agent_reasoning should clearly explain why you picked these based on their Price Preference, Deadline, Distance (distance_km), and the pre-computed availability/compatibility scores.
+        - Rank the closest stations higher if Price Preference is not heavily skewed towards 'Budget', otherwise balance distance and cost.
         """
         
         try:
             response = self.llm.invoke(system_prompt)
-            # Ensure plan_id is populated
-            if not response.plan_id:
-                response.plan_id = str(uuid.uuid4())
-            return response
+            # Ensure plan_id is populated safely (langchain might return a generic BaseModel without this attribute if missing in LLM output)
+            if isinstance(response, dict):
+                if not response.get("plan_id"):
+                    response["plan_id"] = str(uuid.uuid4())
+                return PlanningResponse(**response)
+            else:
+                if not getattr(response, "plan_id", None):
+                    setattr(response, "plan_id", str(uuid.uuid4()))
+                
+                if isinstance(response, PlanningResponse):
+                    return response
+                
+                # If it's a generic BaseModel, try converting it
+                if hasattr(response, "dict"):
+                    return PlanningResponse(**response.dict())
+                elif hasattr(response, "model_dump"):
+                    return PlanningResponse(**response.model_dump())
+                
+                from typing import cast
+                return cast(PlanningResponse, response)
         except Exception as e:
             # Fallback in case the LLM fails to parse structured output
             print(f"LLM Error: {e}")
             traceback.print_exc()
-            requires_approval = is_urgent
+            requires_approval = False
             itineraries: List[ItineraryStep] = []
             
             itineraries.append(ItineraryStep(
@@ -145,7 +161,7 @@ class PlanningCoordinatorAgent:
                 charger_id=str(uuid.uuid4()),
                 estimated_arrival_time=now + timedelta(minutes=15),
                 estimated_charge_duration_mins=30,
-                waitlist_override_required=requires_approval,
+                waitlist_override_required=False,
                 cost_estimate=3500.00,
                 match_score=95 if request.price_preference != 'Budget' else 75
             ))

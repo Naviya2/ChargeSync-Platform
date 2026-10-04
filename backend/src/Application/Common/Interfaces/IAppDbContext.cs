@@ -10,6 +10,7 @@ namespace Application.Common.Interfaces;
 /// </summary>
 public interface IAppDbContext
 {
+    DbSet<Domain.Support.AgentWorkflowRun> AgentWorkflowRuns { get; }
     DbSet<Domain.Support.SupportTicket> SupportTickets { get; }
     DbSet<Domain.Support.SupportMessage> SupportMessages { get; }
     DbSet<Domain.Wallets.WalletTopUp> WalletTopUps { get; }
@@ -37,7 +38,7 @@ public interface IAppDbContext
 
     DbSet<ReservationStatusHistory> ReservationStatusHistories { get; }
 
-    DbSet<WaitlistEntry> WaitlistEntries { get; }
+
 
     DbSet<ChargingSession> ChargingSessions { get; }
 

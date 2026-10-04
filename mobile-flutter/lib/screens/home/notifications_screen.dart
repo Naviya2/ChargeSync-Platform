@@ -40,6 +40,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   !dismissedIds.contains(r.id) &&
                   (r.status == 'Confirmed' || 
                   r.status == 'Pending' || 
+                  r.status == 'CheckedIn' ||
+                  r.status == 'Completed' ||
                   (r.status == 'Cancelled' && 
                    r.startTime.toLocal().isAfter(DateTime.now().subtract(const Duration(hours: 24))))))
               .toList();
@@ -123,18 +125,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   child: ListTile(
                     leading: Icon(
+                      res.status == 'CheckedIn' ? Icons.bolt_rounded :
+                      res.status == 'Completed' ? Icons.check_circle_rounded :
                       isCancelled ? Icons.cancel : (isLate ? Icons.warning_amber_rounded : Icons.calendar_today),
                       color: isLate || isCancelled ? AppColors.error : AppColors.primary,
                     ),
                     title: Text(
+                      res.status == 'CheckedIn' ? 'Session Started' :
+                      res.status == 'Completed' ? 'Session Completed' :
                       isCancelled ? 'Reservation Cancelled' : (isLate ? 'Missed Session Alert!' : 'Upcoming Reservation Reminder'),
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.bold,
-                        color: isLate || isCancelled ? AppColors.error : AppColors.onSurface,
+                        color: res.status == 'CheckedIn' || res.status == 'Completed' ? AppColors.primary :
+                               isLate || isCancelled ? AppColors.error : AppColors.onSurface,
                       ),
                     ),
                     subtitle: Text(
-                      isCancelled
+                      res.status == 'CheckedIn'
+                          ? 'Your charging session at ${res.stationName} has started. You can view live usage in your reservations.'
+                          : res.status == 'Completed'
+                          ? 'Your charging session at ${res.stationName} is completed. Thank you for using ChargeSync!'
+                          : isCancelled
                           ? (isStationOwner || AuthService.instance.currentUser?.role == 'Staff'
                               ? 'Reservation at ${DateFormat('HH:mm').format(res.startTime.toLocal())} was cancelled.'
                               : 'Your reservation at ${DateFormat('HH:mm').format(res.startTime.toLocal())} was cancelled.')

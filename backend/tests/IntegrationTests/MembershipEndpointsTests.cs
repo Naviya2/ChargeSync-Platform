@@ -82,7 +82,7 @@ public sealed class MembershipEndpointsTests(ChargeSyncApiFactory factory) : ICl
             db.LoyaltyAccounts.Add(account); await db.SaveChangesAsync();
         }
         var rewards = (await driver.GetFromJsonAsync<List<Reward>>("/api/loyalty/rewards"))!;
-        var request = await driver.PostAsJsonAsync("/api/loyalty/redeem", new { rewardId = rewards[1].Id, requestId = Guid.NewGuid() });
+        var request = await driver.PostAsJsonAsync("/api/loyalty/redeem", new { rewardId = rewards.Single(r => r.Id == Guid.Parse("20000000-0000-0000-0000-000000000002")).Id, requestId = Guid.NewGuid() });
         request.EnsureSuccessStatusCode();
         var redemption = (await request.Content.ReadFromJsonAsync<RewardRedemption>())!;
         Assert.Equal("Pending", redemption.Status);
@@ -98,5 +98,32 @@ public sealed class MembershipEndpointsTests(ChargeSyncApiFactory factory) : ICl
         Assert.Equal(6000m, (await context.Users.FindAsync(id))!.WalletBalance);
         Assert.Equal(0, (await context.LoyaltyAccounts.FindAsync(id))!.PointsBalance);
         Assert.Equal(auth.User.Id, (await context.RewardRedemptions.FindAsync(redemption.Id))!.ReviewedBy);
+    }
+
+    [Fact]
+    public async Task LoyaltyThreshold_3000ExecutesAnd6000WaitsForAdmin()
+    {
+        var (driver, id) = await Driver();
+        var under = new Reward { Id = Guid.NewGuid(), Name = "LKR 3,000 test reward", PointsCost = 3000, WalletCredit = 3000, RequiresApproval = false };
+        var over = new Reward { Id = Guid.NewGuid(), Name = "LKR 6,000 threshold reward", PointsCost = 6000, WalletCredit = 6000, RequiresApproval = false };
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var account = new LoyaltyAccount { DriverId = id }; account.Earn(9000);
+            db.LoyaltyAccounts.Add(account); db.Rewards.AddRange(under, over); await db.SaveChangesAsync();
+        }
+        var underResponse = await driver.PostAsJsonAsync("/api/loyalty/redeem", new { rewardId = under.Id, requestId = Guid.NewGuid() });
+        underResponse.EnsureSuccessStatusCode();
+        var underResult = (await underResponse.Content.ReadFromJsonAsync<RewardRedemption>())!;
+        Assert.Equal("Approved", underResult.Status);
+        var overResponse = await driver.PostAsJsonAsync("/api/loyalty/redeem", new { rewardId = over.Id, requestId = Guid.NewGuid() });
+        overResponse.EnsureSuccessStatusCode();
+        var overResult = (await overResponse.Content.ReadFromJsonAsync<RewardRedemption>())!;
+        Assert.Equal("Pending", overResult.Status);
+        using var verify = factory.Services.CreateScope();
+        var context = verify.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.Equal(3000, (await context.Users.FindAsync(id))!.WalletBalance);
+        Assert.Equal(0, (await context.LoyaltyAccounts.FindAsync(id))!.PointsBalance);
+        Assert.Null((await context.RewardRedemptions.FindAsync(overResult.Id))!.ReviewedAt);
     }
 }

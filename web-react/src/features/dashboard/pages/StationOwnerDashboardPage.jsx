@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useMyStations } from '../../stations/hooks/useStations'
 import { useReservationsList } from '../../reservations/hooks/useReservations'
 import DashboardHeader from '../components/DashboardHeader'
-import WaitlistApprovals from '../../approvals/components/WaitlistApprovals'
 import { Card, Spinner } from '../../../components/ui'
 import { format } from 'date-fns'
 import { TIMEFRAMES } from '../data/dashboardData'
@@ -60,8 +59,6 @@ export default function StationOwnerDashboardPage() {
         setCustomRange={setCustomRange}
       />
       
-      <WaitlistApprovals />
-
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="p-6 bg-white border-l-4 border-blue-500 shadow-sm hover:shadow-md transition-shadow">
           <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Reservations</h3>

@@ -1,4 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
+from secrets import compare_digest
+import logging
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from models.compatibility_models import (
@@ -22,6 +24,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     description="Intelligent Agentic AI service for ChargeSync EV Platform",
 )
+logger = logging.getLogger(__name__)
 
 # Enable CORS for local testing and ASP.NET Core backend communication
 app.add_middleware(
@@ -96,6 +99,40 @@ async def generate_charging_plan(request: PlanningRequest, agent: PlanningCoordi
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Charging plan generation failed: {str(e)}")
+
+from agents.support_agent import SupportAgent
+from models.support_models import SupportRequest, SupportSuggestion
+
+support_agent = SupportAgent()
+
+def require_backend_key(x_agent_service_key: str = Header(default="")):
+    if not settings.AGENT_SERVICE_API_KEY:
+        raise HTTPException(status_code=503, detail="Internal agent authentication is not configured.")
+    if not compare_digest(x_agent_service_key, settings.AGENT_SERVICE_API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid agent service credentials.")
+
+@app.post("/api/support/analyze", response_model=SupportSuggestion, tags=["Validation & Support Agent"], dependencies=[Depends(require_backend_key)])
+def analyze_support(request: SupportRequest):
+    try:
+        return support_agent.analyze(request)
+    except Exception as error:
+        logger.error("Support analysis failed: %s, provider status: %s",
+                     type(error).__name__, getattr(error, "status_code", "none"))
+        raise HTTPException(status_code=503, detail="Support analysis is temporarily unavailable.")
+
+from agents.coordinator_agent import CoordinatorAgent
+from models.workflow_models import WorkflowRequest, WorkflowResponse
+
+coordinator = CoordinatorAgent(support_agent)
+
+@app.post("/api/workflows/support", response_model=WorkflowResponse, dependencies=[Depends(require_backend_key)], tags=["Validation & Support Agent"])
+def run_support_workflow(request: WorkflowRequest):
+    try:
+        return coordinator.run(request)
+    except Exception as error:
+        logger.error("Support workflow failed: %s, provider status: %s",
+                     type(error).__name__, getattr(error, "status_code", "none"))
+        raise HTTPException(status_code=503, detail="Support workflow is temporarily unavailable.")
 
 if __name__ == "__main__":
     import uvicorn

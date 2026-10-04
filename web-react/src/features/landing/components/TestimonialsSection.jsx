@@ -19,7 +19,7 @@ const ITEMS = [
   },
   {
     quote:
-      "Managing 45 electric delivery vans requires guaranteed charging slots. ChargeSync's commercial waitlist overrides keep our deliveries on schedule.",
+      "Managing 45 electric delivery vans requires guaranteed charging slots. ChargeSync's smart reservations keep our deliveries on schedule.",
     initials: 'DL',
     name: 'David L.',
     role: 'Logistics Fleet Operations Lead',

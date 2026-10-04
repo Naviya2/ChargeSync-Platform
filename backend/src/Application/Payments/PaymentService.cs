@@ -162,6 +162,7 @@ public sealed class PaymentService : IPaymentService
             DiscountPercentage = invoice.DiscountPercentage,
             AdvanceDeducted = invoice.AdvanceDeducted,
             NetAmountDue = invoice.NetAmountDue,
+            RefundedAmount = invoice.RefundedAmount,
             PaymentMethod = invoice.PaymentMethod,
             Status = invoice.Status,
             IssuedAt = invoice.IssuedAt,

@@ -67,7 +67,9 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
       double? currentLat;
       double? currentLon;
 
-      if (serviceEnabled && (permission == LocationPermission.whileInUse || permission == LocationPermission.always)) {
+      if (serviceEnabled &&
+          (permission == LocationPermission.whileInUse ||
+              permission == LocationPermission.always)) {
         try {
           Position position = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.high,
@@ -134,14 +136,23 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
           children: [
             Text(
               'Set Your Constraints',
-              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.onSurface,
+              ),
             ),
             const SizedBox(height: 16),
             // Deadline
             ListTile(
               tileColor: AppColors.surfaceContainerLow,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              leading: const Icon(Icons.calendar_today, color: AppColors.primary),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              leading: const Icon(
+                Icons.calendar_today,
+                color: AppColors.primary,
+              ),
               title: const Text('Target Arrival Date'),
               subtitle: Text(DateFormat('MMM dd, yyyy').format(_selectedDate)),
               onTap: _selectDate,
@@ -149,7 +160,9 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
             const SizedBox(height: 8),
             ListTile(
               tileColor: AppColors.surfaceContainerLow,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               leading: const Icon(Icons.access_time, color: AppColors.primary),
               title: const Text('Target Arrival Time'),
               subtitle: Text(_selectedTime.format(context)),
@@ -157,7 +170,10 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
             ),
             const SizedBox(height: 16),
             // Distance
-            Text('Max Search Radius (${_maxDistance.toInt()} km)', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            Text(
+              'Max Search Radius (${_maxDistance.toInt()} km)',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
             Slider(
               value: _maxDistance,
               min: 5,
@@ -168,7 +184,10 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
             ),
             const SizedBox(height: 8),
             // Price Preference
-            Text('Optimization Goal', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            Text(
+              'Optimization Goal',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
             SegmentedButton<String>(
               segments: const [
@@ -177,7 +196,8 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                 ButtonSegment(value: 'Speed', label: Text('Speed')),
               ],
               selected: {_pricePreference},
-              onSelectionChanged: (set) => setState(() => _pricePreference = set.first),
+              onSelectionChanged: (set) =>
+                  setState(() => _pricePreference = set.first),
               style: ButtonStyle(
                 backgroundColor: WidgetStateProperty.resolveWith((states) {
                   if (states.contains(WidgetState.selected)) {
@@ -198,16 +218,30 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _isLoading ? null : _generatePlan,
-                icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.auto_awesome),
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.auto_awesome),
                 label: Text(
                   _isLoading ? 'Analyzing options...' : 'Generate AI Plan',
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: AppColors.onPrimary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -221,15 +255,29 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                 Center(
                   child: Column(
                     children: [
-                      const Icon(Icons.search_off_rounded, size: 64, color: AppColors.onSurfaceVariant),
+                      const Icon(
+                        Icons.search_off_rounded,
+                        size: 64,
+                        color: AppColors.onSurfaceVariant,
+                      ),
                       const SizedBox(height: 16),
-                      Text('No recommendations available right now', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                      Text(
+                        'No recommendations available right now',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           _planningResponse!.agentReasoning,
-                          style: GoogleFonts.inter(color: AppColors.onSurfaceVariant, height: 1.5),
+                          style: GoogleFonts.inter(
+                            color: AppColors.onSurfaceVariant,
+                            height: 1.5,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -237,14 +285,23 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                   ),
                 ),
               ] else ...[
-                Text('Agent Recommendation', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                Text(
+                  'Agent Recommendation',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppColors.primaryContainer.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.5),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -253,7 +310,10 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                       Expanded(
                         child: Text(
                           _planningResponse!.agentReasoning,
-                          style: GoogleFonts.inter(fontSize: 14, color: AppColors.onSurface),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: AppColors.onSurface,
+                          ),
                         ),
                       ),
                     ],
@@ -261,130 +321,163 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                 ),
                 const SizedBox(height: 16),
                 ..._planningResponse!.rankedItineraries.map((itinerary) {
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                itinerary.stationName,
-                                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Score: ${itinerary.matchScore}',
-                                style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: AppColors.onPrimaryContainer),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.flash_on, size: 16, color: AppColors.secondary),
-                            const SizedBox(width: 4),
-                            Text('${itinerary.estimatedChargeDurationMins} mins charge time', style: GoogleFonts.inter(fontSize: 14, color: AppColors.onSurfaceVariant)),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.attach_money, size: 16, color: Colors.green),
-                            const SizedBox(width: 4),
-                            Text('LKR ${itinerary.costEstimate.toStringAsFixed(2)} estimated cost', style: GoogleFonts.inter(fontSize: 14, color: AppColors.onSurfaceVariant)),
-                          ],
-                        ),
-                        if (itinerary.waitlistOverrideRequired) ...[
-                          const SizedBox(height: 8),
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange),
-                              const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  'Requires Waitlist Override (Admin Approval)',
-                                  style: GoogleFonts.inter(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
+                                  itinerary.stationName,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Score: ${itinerary.matchScore}',
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.onPrimaryContainer,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: () async {
-                              try {
-                                // Fetch real station to avoid mock data
-                                final allStations = await StationApiClient.instance.getAllStations();
-                                final realStation = allStations.firstWhere(
-                                  (s) => s.id == itinerary.stationId,
-                                  orElse: () => throw Exception('Station not found in active directory'),
-                                );
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.flash_on,
+                                size: 16,
+                                color: AppColors.secondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${itinerary.estimatedChargeDurationMins} mins charge time',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.attach_money,
+                                size: 16,
+                                color: Colors.green,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'LKR ${itinerary.costEstimate.toStringAsFixed(2)} estimated cost',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
 
-                                if (mounted) {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => CreateReservationScreen(
-                                        station: Station(
-                                          id: realStation.id,
-                                          name: realStation.name,
-                                          address: realStation.address,
-                                          latitude: realStation.latitude,
-                                          longitude: realStation.longitude,
-                                          ownerId: realStation.ownerId,
-                                          status: realStation.status.name,
-                                          chargers: realStation.chargers.map<Charger>((c) => Charger(
-                                            id: c.id,
-                                            stationId: c.stationId,
-                                            identifier: c.identifier,
-                                            connector: c.connector.name,
-                                            powerKw: c.powerKw,
-                                            tariff: c.tariff,
-                                            status: c.status.name,
-                                            bayLabel: c.bayLabel,
-                                          )).toList(),
-                                        ),
-                                      ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: () async {
+                                try {
+                                  // Fetch real station to avoid mock data
+                                  final allStations = await StationApiClient
+                                      .instance
+                                      .getAllStations();
+                                  final realStation = allStations.firstWhere(
+                                    (s) => s.id == itinerary.stationId,
+                                    orElse: () => throw Exception(
+                                      'Station not found in active directory',
                                     ),
                                   );
+
+                                  if (mounted) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => CreateReservationScreen(
+                                          station: Station(
+                                            id: realStation.id,
+                                            name: realStation.name,
+                                            address: realStation.address,
+                                            latitude: realStation.latitude,
+                                            longitude: realStation.longitude,
+                                            ownerId: realStation.ownerId,
+                                            status: realStation.status.name,
+                                            chargers: realStation.chargers
+                                                .map<Charger>(
+                                                  (c) => Charger(
+                                                    id: c.id,
+                                                    stationId: c.stationId,
+                                                    identifier: c.identifier,
+                                                    connector: c.connector.name,
+                                                    powerKw: c.powerKw,
+                                                    tariff: c.tariff,
+                                                    status: c.status.name,
+                                                    bayLabel: c.bayLabel,
+                                                  ),
+                                                )
+                                                .toList(),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Failed to load station details: $e',
+                                        ),
+                                      ),
+                                    );
+                                  }
                                 }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Failed to load station details: $e')),
-                                  );
-                                }
-                              }
-                            },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primary,
-                              side: const BorderSide(color: AppColors.primary),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                side: const BorderSide(
+                                  color: AppColors.primary,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Select this Plan'),
                             ),
-                            child: const Text('Select this Plan'),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
               ],
             ],
           ],

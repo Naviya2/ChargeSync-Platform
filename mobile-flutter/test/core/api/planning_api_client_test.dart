@@ -1,6 +1,12 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:chargesync/core/api/planning_models.dart';
+import 'package:chargesync/core/api/planning_api_client.dart';
+import 'package:chargesync/core/api/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
   group('PlanningModels Test', () {
@@ -50,6 +56,73 @@ void main() {
       expect(itinerary.stationName, 'Test Station');
       expect(itinerary.costEstimate, 12.50);
       expect(itinerary.waitlistOverrideRequired, true);
+    });
+  });
+
+  group('PlanningApiClient Http Tests', () {
+    setUp(() async {
+      PlanningApiClient.instance.tokenProvider = () async => 'fake_token';
+    });
+
+    test('generateChargingPlan returns PlanningResponse on 200', () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/api/charging-plan/generate')) {
+          return http.Response(
+            jsonEncode({
+              'plan_id': 'mock-plan-123',
+              'ranked_itineraries': [
+                {
+                  'station_id': 's-123',
+                  'station_name': 'Mock Station',
+                  'charger_id': 'c-1',
+                  'estimated_arrival_time': '2026-01-01T12:00:00.000Z',
+                  'estimated_charge_duration_mins': 15,
+                  'waitlist_override_required': false,
+                  'cost_estimate': 10.0,
+                  'match_score': 100
+                }
+              ],
+              'requires_approval': false,
+              'agent_reasoning': 'Mocked reasoning'
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('Not Found', 404);
+      });
+
+      PlanningApiClient.instance.httpClient = mockClient;
+
+      final request = PlanningRequest(
+        deadline: DateTime.utc(2026, 1, 1),
+        maxDistanceKm: 10,
+        pricePreference: 'Speed'
+      );
+
+      final response = await PlanningApiClient.instance.generateChargingPlan(request);
+      
+      expect(response.planId, 'mock-plan-123');
+      expect(response.agentReasoning, 'Mocked reasoning');
+      expect(response.rankedItineraries.length, 1);
+      expect(response.rankedItineraries[0].stationName, 'Mock Station');
+    });
+
+    test('generateChargingPlan throws Exception on 500', () async {
+      final mockClient = MockClient((request) async {
+        return http.Response('Internal Server Error', 500);
+      });
+
+      PlanningApiClient.instance.httpClient = mockClient;
+
+      final request = PlanningRequest(
+        deadline: DateTime.utc(2026, 1, 1),
+      );
+
+      expect(
+        () => PlanningApiClient.instance.generateChargingPlan(request),
+        throwsA(isA<Exception>()),
+      );
     });
   });
 }

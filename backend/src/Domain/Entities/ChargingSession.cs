@@ -30,15 +30,13 @@ public sealed class ChargingSession : AuditableEntity
     public Reservation Reservation { get; private set; } = null!;
     public User? StaffUser { get; private set; }
     public PaymentInvoice? Invoice { get; private set; }
-    public byte[]? MeterPhoto { get; private set; }
-    public string? MeterPhotoContentType { get; private set; }
+    public string? MeterPhotoUrl { get; private set; }
 
-    public void AttachMeterPhoto(byte[] data, string contentType)
+    public void AttachMeterPhoto(string url)
     {
-        if (data.Length == 0 || data.Length > 5 * 1024 * 1024)
-            throw new ArgumentException("Meter photo must be between 1 byte and 5 MB.");
-        MeterPhoto = data.ToArray();
-        MeterPhotoContentType = contentType;
+        if (string.IsNullOrWhiteSpace(url))
+            throw new ArgumentException("Meter photo URL cannot be empty.");
+        MeterPhotoUrl = url;
     }
 
     public static ChargingSession Start(
@@ -74,8 +72,8 @@ public sealed class ChargingSession : AuditableEntity
         StaffOverriddenKwh = staffOverriddenKwh;
         FinalEnergyDeliveredKwh = staffOverriddenKwh ?? automaticKwh;
 
-        var discrepancyRatio = automaticKwh == 0 || staffOverriddenKwh is null
-            ? 0
+        var discrepancyRatio = staffOverriddenKwh is null ? 0
+            : automaticKwh == 0 ? (staffOverriddenKwh.Value == 0 ? 0 : 1)
             : Math.Abs(staffOverriddenKwh.Value - automaticKwh) / automaticKwh;
 
         Status = discrepancyRatio > 0.15m

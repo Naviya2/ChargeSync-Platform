@@ -99,10 +99,7 @@ namespace Infrastructure.Persistence.Migrations
                         .HasPrecision(8, 2)
                         .HasColumnType("numeric(8,2)");
 
-                    b.Property<byte[]>("MeterPhoto")
-                        .HasColumnType("bytea");
-
-                    b.Property<string>("MeterPhotoContentType")
+                    b.Property<string>("MeterPhotoUrl")
                         .HasColumnType("text");
 
                     b.Property<Guid>("ReservationId")
@@ -265,6 +262,11 @@ namespace Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<decimal>("RefundedAmount")
+                        .IsConcurrencyToken()
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uuid");
 
@@ -356,6 +358,15 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("VehicleId")
                         .HasColumnType("uuid");
 
+                    b.Property<double?>("WalkInBatteryCapacity")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("WalkInCustomerName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WalkInVehicleNumber")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ChargerId");
@@ -365,6 +376,8 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("ReservationQRCode")
                         .IsUnique()
                         .HasFilter("\"ReservationQRCode\" IS NOT NULL");
+
+                    b.HasIndex("VehicleId");
 
                     b.HasIndex("ChargerId", "StartTime", "EndTime");
 
@@ -523,56 +536,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Vehicles");
-                });
-
-            modelBuilder.Entity("Domain.Entities.WaitlistEntry", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<Guid>("ChargerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("DriverId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Priority")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<DateTimeOffset>("RequestedStartTime")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasDefaultValue("Waiting");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("now()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DriverId");
-
-                    b.HasIndex("ChargerId", "Status", "Priority");
-
-                    b.ToTable("WaitlistEntries", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_WaitlistEntries_Status", "\"Status\" IN ('Waiting', 'Promoted', 'Expired')");
-                        });
                 });
 
             modelBuilder.Entity("Domain.Loyalty.LoyaltyAccount", b =>
@@ -852,6 +815,120 @@ namespace Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_Subscriptions_Status", "\"Status\" IN ('Active', 'Cancelled', 'Expired', 'Changed')");
                         });
+                });
+
+            modelBuilder.Entity("Domain.Support.AgentWorkflowRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<decimal?>("Amount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<bool>("ApprovalRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("AuditJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Decision")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("InputJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset?>("LeaseUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Objective")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ResultJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RevisionNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("TicketId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TicketVersion")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WorkflowType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("ReviewedBy");
+
+                    b.HasIndex("TicketId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "NextAttemptAt");
+
+                    b.ToTable("AgentWorkflowRuns", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Support.SupportMessage", b =>
@@ -1248,12 +1325,26 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.Reservation", b =>
                 {
+                    b.HasOne("Domain.Entities.Charger", "Charger")
+                        .WithMany()
+                        .HasForeignKey("ChargerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Domain.Users.User", "Driver")
                         .WithMany()
                         .HasForeignKey("DriverId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Domain.Entities.Vehicle", "Vehicle")
+                        .WithMany()
+                        .HasForeignKey("VehicleId");
+
+                    b.Navigation("Charger");
+
                     b.Navigation("Driver");
+
+                    b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("Domain.Entities.ReservationStatusHistory", b =>
@@ -1294,17 +1385,6 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("Domain.Entities.WaitlistEntry", b =>
-                {
-                    b.HasOne("Domain.Users.User", "Driver")
-                        .WithMany()
-                        .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Driver");
                 });
 
             modelBuilder.Entity("Domain.Loyalty.LoyaltyAccount", b =>
@@ -1372,6 +1452,26 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("Domain.Support.AgentWorkflowRun", b =>
+                {
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Support.SupportTicket", null)
+                        .WithOne()
+                        .HasForeignKey("Domain.Support.AgentWorkflowRun", "TicketId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Support.SupportMessage", b =>

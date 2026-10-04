@@ -15,7 +15,7 @@ public sealed class SessionFilter
 
 public sealed class ChargingSessionDto
 {
-    public bool HasMeterPhoto { get; set; }
+    public string? MeterPhotoUrl { get; set; }
     public Guid Id { get; set; }
     public Guid ReservationId { get; set; }
     public Guid ChargerId { get; set; }
@@ -38,4 +38,10 @@ public sealed class SessionCompletionDto
 {
     public ChargingSessionDto Session { get; set; } = null!;
     public PaymentInvoiceDto Invoice { get; set; } = null!;
+}
+
+public sealed class StopSessionRequest
+{
+    public decimal? StaffOverriddenKwh { get; set; }
+    public string? MeterPhotoUrl { get; set; }
 }

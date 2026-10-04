@@ -21,6 +21,7 @@ export const roleRoutes = {
     ROUTES.APPROVALS,
     ROUTES.SUPPORT,
     ROUTES.USERS,
+    ROUTES.VEHICLES,
   ],
 }
 

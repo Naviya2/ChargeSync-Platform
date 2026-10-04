@@ -12,7 +12,8 @@ class SmartRecommendationCard extends StatefulWidget {
   const SmartRecommendationCard({super.key});
 
   @override
-  State<SmartRecommendationCard> createState() => _SmartRecommendationCardState();
+  State<SmartRecommendationCard> createState() =>
+      _SmartRecommendationCardState();
 }
 
 class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
@@ -39,11 +40,12 @@ class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
   Future<PlanningResponse> _fetchAndCachePlan() async {
     double? currentLat;
     double? currentLon;
-    
+
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (serviceEnabled) {
       LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
         try {
           Position position = await Geolocator.getCurrentPosition(
             desiredAccuracy: LocationAccuracy.low,
@@ -74,12 +76,15 @@ class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (snapshot.hasError || !snapshot.hasData || snapshot.data!.rankedItineraries.isEmpty) {
+        if (snapshot.hasError ||
+            !snapshot.hasData ||
+            snapshot.data!.rankedItineraries.isEmpty) {
           String reason = "No recommendations available right now";
           if (snapshot.hasError) {
-             reason = snapshot.error.toString();
-          } else if (snapshot.hasData && snapshot.data!.agentReasoning.isNotEmpty) {
-             reason = snapshot.data!.agentReasoning;
+            reason = snapshot.error.toString();
+          } else if (snapshot.hasData &&
+              snapshot.data!.agentReasoning.isNotEmpty) {
+            reason = snapshot.data!.agentReasoning;
           }
 
           return Container(
@@ -100,34 +105,63 @@ class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Row(
-                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                   children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.auto_awesome_rounded, color: AppColors.tertiary, size: 18),
-                          const SizedBox(width: 6),
-                          Text(
-                            'AI Smart Recommendation',
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.tertiary, letterSpacing: 0.02),
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: AppColors.tertiary,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'AI Smart Recommendation',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.tertiary,
+                            letterSpacing: 0.02,
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.refresh,
+                        size: 16,
+                        color: AppColors.tertiary,
                       ),
-                      IconButton(
-                         icon: const Icon(Icons.refresh, size: 16, color: AppColors.tertiary),
-                         padding: EdgeInsets.zero,
-                         constraints: const BoxConstraints(),
-                         onPressed: _fetchRecommendation,
-                      ),
-                   ],
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: _fetchRecommendation,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
-                const Icon(Icons.search_off_rounded, size: 48, color: AppColors.onSurfaceVariant),
+                const Icon(
+                  Icons.search_off_rounded,
+                  size: 48,
+                  color: AppColors.onSurfaceVariant,
+                ),
                 const SizedBox(height: 12),
-                Text('No recommendations available right now', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.onSurface), textAlign: TextAlign.center),
+                Text(
+                  'No recommendations available right now',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   reason,
-                  style: GoogleFonts.inter(color: AppColors.onSurfaceVariant, fontSize: 13, height: 1.5),
+                  style: GoogleFonts.inter(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
@@ -198,7 +232,11 @@ class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.refresh, size: 16, color: AppColors.tertiary),
+                            icon: const Icon(
+                              Icons.refresh,
+                              size: 16,
+                              color: AppColors.tertiary,
+                            ),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                             onPressed: _fetchRecommendation,
@@ -288,7 +326,9 @@ class _SmartRecommendationCardState extends State<SmartRecommendationCard> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const AiPlanningScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const AiPlanningScreen(),
+                          ),
                         );
                       },
                       child: Padding(

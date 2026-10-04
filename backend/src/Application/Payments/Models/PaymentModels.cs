@@ -29,6 +29,7 @@ public sealed class PaymentInvoiceDto
     public decimal DiscountPercentage { get; set; }
     public decimal AdvanceDeducted { get; set; }
     public decimal NetAmountDue { get; set; }
+    public decimal RefundedAmount { get; set; }
     public PaymentMethod? PaymentMethod { get; set; }
     public InvoiceStatus Status { get; set; }
     public DateTimeOffset IssuedAt { get; set; }

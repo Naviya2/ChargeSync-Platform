@@ -28,6 +28,15 @@ public sealed class ReservationDto
     public string ChargerName { get; set; } = string.Empty;
     public string VehicleName { get; set; } = string.Empty;
     public string DriverName { get; set; } = string.Empty;
+
+    public decimal? FinalEnergyDeliveredKwh { get; set; }
+    public decimal? InvoiceNetAmount { get; set; }
+    public string? InvoicePaymentMethod { get; set; }
+
+    public string? WalkInCustomerName { get; set; }
+    public string? WalkInVehicleNumber { get; set; }
+    public double? WalkInBatteryCapacity { get; set; }
+    public string? SessionMeterPhotoUrl { get; set; }
 }
 
 /// <summary>Lightweight item used in paginated list responses.</summary>

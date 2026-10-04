@@ -14,6 +14,8 @@ public static class DependencyInjection
         services.AddScoped<Application.Memberships.MemberService>();
         services.AddScoped<Application.Wallets.WalletService>();
         services.AddScoped<Application.Support.SupportService>();
+        services.AddScoped<Application.Support.SupportAnalysisService>();
+        services.AddScoped<Application.Support.SupportWorkflowService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IResourceGuard, ResourceGuard>();
 
@@ -23,7 +25,6 @@ public static class DependencyInjection
         services.AddScoped<Application.Vehicles.IVehicleService, Application.Vehicles.VehicleService>();
 
         services.AddScoped<Application.ReservationPlanning.IReservationService, Application.ReservationPlanning.ReservationService>();
-        services.AddScoped<Application.ReservationPlanning.IWaitlistService, Application.ReservationPlanning.WaitlistService>();
         services.AddScoped<Application.Sessions.ISessionService, Application.Sessions.SessionService>();
         services.AddScoped<Application.Payments.IPaymentService, Application.Payments.PaymentService>();
 
