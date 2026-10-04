@@ -5,7 +5,10 @@ import ReservationsPage from '@/features/reservations/pages/ReservationsPage';
 import { useReservationsList } from '@/features/reservations/hooks/useReservations';
 
 vi.mock('@/features/reservations/hooks/useReservations', () => ({
-  useReservationsList: vi.fn()
+  useReservationsList: vi.fn(),
+  usePendingApprovalsQuery: vi.fn(() => ({ data: { items: [] }, isLoading: false })),
+  useApproveReservation: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useRejectReservation: vi.fn(() => ({ mutate: vi.fn(), isPending: false }))
 }));
 
 vi.mock('@/features/reservations/components/ReservationDetailsModal', () => ({
@@ -24,6 +27,10 @@ vi.mock('@/features/reservations/components/AddReservationModal', () => ({
       <button onClick={onClose}>Close Add</button>
     </div>
   )
+}));
+
+vi.mock('@/features/stations/components/PendingApprovalsCard', () => ({
+  default: () => <div data-testid="pending-approvals-card">Pending Approvals</div>
 }));
 
 vi.mock('@/store/notificationStore', () => ({

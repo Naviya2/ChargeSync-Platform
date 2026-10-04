@@ -1,9 +1,7 @@
 import { useReservationsList } from '../../reservations/hooks/useReservations'
-import { Card, Spinner } from '../../../components/ui'
+import { Spinner } from '../../../components/ui'
 import PageHeader from '../../../components/shared/PageHeader'
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -11,7 +9,6 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Legend,
   AreaChart,
   Area
 } from 'recharts'

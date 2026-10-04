@@ -15,7 +15,6 @@ export default function Topbar() {
   const notifications = allNotifications.filter(n => !n.transient)
   const dismissNotification = useNotificationStore((s) => s.dismiss)
   const clearNotifications = useNotificationStore((s) => s.clear)
-  const notify = useNotificationStore((s) => s.notify)
 
   const { data: myStations = [] } = useMyStations()
   const { data: allStations = [] } = useStations()

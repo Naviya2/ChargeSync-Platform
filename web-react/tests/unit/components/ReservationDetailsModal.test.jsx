@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ReservationDetailsModal from '@/features/reservations/components/ReservationDetailsModal';
-import { useUpdateReservation, useCancelReservation, useDeleteReservation } from '@/features/reservations/hooks/useReservations';
+import { useUpdateReservation, useCancelReservation, useDeleteReservation, useApproveReservation, useRejectReservation } from '@/features/reservations/hooks/useReservations';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +30,14 @@ vi.mock('@/features/reservations/hooks/useReservations', () => ({
     isPending: false
   })),
   useDeleteReservation: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false
+  })),
+  useApproveReservation: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false
+  })),
+  useRejectReservation: vi.fn(() => ({
     mutate: vi.fn(),
     isPending: false
   }))
@@ -107,7 +115,7 @@ describe('ReservationDetailsModal', () => {
   });
 
   it('allows editing reservation time', async () => {
-    currentReservationData = defaultReservation;
+    currentReservationData = { ...defaultReservation, status: 'Confirmed' };
     const mockUpdate = vi.fn((payload, { onSuccess }) => {
       onSuccess();
     });
@@ -133,7 +141,7 @@ describe('ReservationDetailsModal', () => {
   });
 
   it('handles cancellation workflow', async () => {
-    currentReservationData = defaultReservation;
+    currentReservationData = { ...defaultReservation, status: 'Confirmed' };
     const mockCancel = vi.fn((id, { onSuccess }) => {
       onSuccess();
     });
@@ -157,7 +165,7 @@ describe('ReservationDetailsModal', () => {
   });
 
   it('handles deletion workflow', async () => {
-    currentReservationData = defaultReservation;
+    currentReservationData = { ...defaultReservation, status: 'Cancelled' };
     const mockDelete = vi.fn((id, { onSuccess }) => {
       onSuccess();
     });
