@@ -1,0 +1,10 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/scratch*
+**/*.user
+**/*.db
+appsettings.Development.json
+tests/
