@@ -20,7 +20,7 @@ export default defineConfig({
     // in backend/ — it listens on http://localhost:5035.
     proxy: {
       '/api': {
-        target: 'http://localhost:5035',
+        target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:5035',
         changeOrigin: true,
         secure: false,
       },

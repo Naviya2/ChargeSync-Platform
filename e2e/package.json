@@ -1,0 +1,7 @@
+{
+  "name": "chargesync-live-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node run.mjs" },
+  "devDependencies": { "playwright": "1.63.0", "@puppeteer/browsers": "3.2.3" }
+}
