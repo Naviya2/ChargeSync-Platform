@@ -7,6 +7,8 @@ class ReservationDto {
   final DateTime endTime;
   final String? reservationQRCode;
   final double advanceDepositAmount;
+  final double lateCancellationFee;
+  final double cancellationFeesPaid;
   final String status;
   final String stationName;
   final double stationLatitude;
@@ -27,6 +29,8 @@ class ReservationDto {
     required this.endTime,
     this.reservationQRCode,
     required this.advanceDepositAmount,
+    this.lateCancellationFee = 0,
+    this.cancellationFeesPaid = 0,
     required this.status,
     this.stationName = '',
     this.stationLatitude = 0.0,
@@ -49,6 +53,10 @@ class ReservationDto {
       endTime: DateTime.parse(json['endTime']).toLocal(),
       reservationQRCode: json['reservationQRCode'],
       advanceDepositAmount: (json['advanceDepositAmount'] as num).toDouble(),
+      lateCancellationFee:
+          (json['lateCancellationFee'] as num?)?.toDouble() ?? 0,
+      cancellationFeesPaid:
+          (json['cancellationFeesPaid'] as num?)?.toDouble() ?? 0,
       status: json['status'],
       stationName: json['stationName'] ?? '',
       stationLatitude: (json['stationLatitude'] as num?)?.toDouble() ?? 0.0,
@@ -56,7 +64,8 @@ class ReservationDto {
       chargerName: json['chargerName'] ?? '',
       vehicleName: json['vehicleName'] ?? '',
       driverName: json['driverName'] ?? '',
-      finalEnergyDeliveredKwh: (json['finalEnergyDeliveredKwh'] as num?)?.toDouble(),
+      finalEnergyDeliveredKwh: (json['finalEnergyDeliveredKwh'] as num?)
+          ?.toDouble(),
       invoiceNetAmount: (json['invoiceNetAmount'] as num?)?.toDouble(),
       invoicePaymentMethod: json['invoicePaymentMethod'],
     );
@@ -69,6 +78,7 @@ class CreateReservationRequest {
   final DateTime startTime;
   final DateTime endTime;
   final double advanceDepositAmount;
+  final double? expectedCancellationFees;
   final bool requiresApproval;
 
   CreateReservationRequest({
@@ -77,17 +87,35 @@ class CreateReservationRequest {
     required this.startTime,
     required this.endTime,
     required this.advanceDepositAmount,
+    this.expectedCancellationFees,
     this.requiresApproval = false,
   });
 
   Map<String, dynamic> toJson() => {
-        'chargerId': chargerId,
-        'vehicleId': vehicleId,
-        'startTime': startTime.toIso8601String(),
-        'endTime': endTime.toIso8601String(),
-        'advanceDepositAmount': advanceDepositAmount,
-        'requiresApproval': requiresApproval,
-      };
+    'chargerId': chargerId,
+    'vehicleId': vehicleId,
+    'startTime': startTime.toIso8601String(),
+    'endTime': endTime.toIso8601String(),
+    'advanceDepositAmount': advanceDepositAmount,
+    'requiresApproval': requiresApproval,
+    if (expectedCancellationFees != null)
+      'expectedCancellationFees': expectedCancellationFees,
+  };
+}
+
+class BookingCharges {
+  final double walletBalance;
+  final double pendingCancellationFees;
+
+  const BookingCharges({
+    required this.walletBalance,
+    required this.pendingCancellationFees,
+  });
+
+  factory BookingCharges.fromJson(Map<String, dynamic> json) => BookingCharges(
+    walletBalance: (json['walletBalance'] as num).toDouble(),
+    pendingCancellationFees: (json['pendingCancellationFees'] as num).toDouble(),
+  );
 }
 
 class WaitlistEntryDto {
@@ -133,11 +161,11 @@ class JoinWaitlistRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'chargerId': chargerId,
-        'requestedStartTime': requestedStartTime.toIso8601String(),
-        'maxPriceWillingToPay': maxPriceWillingToPay,
-        'pricePreference': pricePreference,
-      };
+    'chargerId': chargerId,
+    'requestedStartTime': requestedStartTime.toIso8601String(),
+    'maxPriceWillingToPay': maxPriceWillingToPay,
+    'pricePreference': pricePreference,
+  };
 }
 
 class PagedResult<T> {
@@ -155,7 +183,10 @@ class PagedResult<T> {
     required this.totalPages,
   });
 
-  factory PagedResult.fromJson(Map<String, dynamic> json, T Function(Map<String, dynamic>) fromJsonT) {
+  factory PagedResult.fromJson(
+    Map<String, dynamic> json,
+    T Function(Map<String, dynamic>) fromJsonT,
+  ) {
     return PagedResult<T>(
       items: (json['items'] as List).map((e) => fromJsonT(e)).toList(),
       totalCount: json['totalCount'],

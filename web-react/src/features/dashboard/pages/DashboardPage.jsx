@@ -3,14 +3,18 @@ import { ROLES } from '../../../lib/constants'
 import PlaceholderPage from '../../../components/shared/PlaceholderPage'
 import AdminDashboardPage from './AdminDashboardPage'
 import StationOwnerDashboardPage from './StationOwnerDashboardPage'
+import SupportManagerDashboardPage from './SupportManagerDashboardPage'
 
 /**
  * Role-aware dashboard entry point at /dashboard.
- * Admins get the full platform dashboard; other roles get a placeholder
- * until their role-specific dashboard is built.
+ * Admins, station owners and support managers get their own dashboards.
  */
 export default function DashboardPage() {
   const role = useAuthStore((s) => s.user?.role)
+
+  if (role === ROLES.SUPPORT_MANAGER) {
+    return <SupportManagerDashboardPage />
+  }
 
   if (role === ROLES.ADMIN) {
     return <AdminDashboardPage />

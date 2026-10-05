@@ -322,6 +322,15 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(8,2)")
                         .HasDefaultValue(0m);
 
+                    b.Property<decimal>("CancellationFeesPaid")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("ChargerId")
                         .HasColumnType("uuid");
 
@@ -336,14 +345,22 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("EndTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<decimal>("LateCancellationFee")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<string>("ReservationQRCode")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
                     b.Property<DateTimeOffset>("StartTime")
+                        .IsConcurrencyToken()
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
@@ -1147,6 +1164,13 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("PasswordHash")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<decimal>("PendingCancellationFees")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(20)

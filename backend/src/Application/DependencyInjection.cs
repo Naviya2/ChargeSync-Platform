@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<Application.ReservationPlanning.IReservationService, Application.ReservationPlanning.ReservationService>();
         services.AddScoped<Application.Sessions.ISessionService, Application.Sessions.SessionService>();
         services.AddScoped<Application.Payments.IPaymentService, Application.Payments.PaymentService>();
+        services.AddScoped<Application.Payments.DriverPaymentHistoryService>();
 
         return services;
     }

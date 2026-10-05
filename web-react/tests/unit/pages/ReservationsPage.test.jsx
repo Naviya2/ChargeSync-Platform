@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ReservationsPage from '@/features/reservations/pages/ReservationsPage';
 import { useReservationsList } from '@/features/reservations/hooks/useReservations';
+import { useAuthStore } from '@/store/authStore';
 
 vi.mock('@/features/reservations/hooks/useReservations', () => ({
   useReservationsList: vi.fn(),
@@ -45,6 +46,7 @@ describe('ReservationsPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    useAuthStore.setState({ user: { id: 'admin-1', role: 'Admin' } });
   });
 
   it('renders loading state', () => {
@@ -111,5 +113,41 @@ describe('ReservationsPage', () => {
     await user.click(closeBtn);
 
     expect(screen.queryByTestId('details-modal')).not.toBeInTheDocument();
+  });
+
+  it('filters by booking status and can clear an empty filter result', async () => {
+    useReservationsList.mockReturnValue({ data: { items: mockReservations }, isLoading: false, isError: false });
+    const user = userEvent.setup();
+    render(<ReservationsPage />);
+    const filters = screen.getByRole('group', { name: 'Reservation status filters' });
+    await user.click(within(filters).getByRole('button', { name: 'Pending' }));
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+    expect(screen.queryByText('Bob')).not.toBeInTheDocument();
+    await user.click(within(filters).getByRole('button', { name: 'Completed' }));
+    expect(screen.getByText('No matching reservations found.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }));
+    expect(screen.getByText('Bob')).toBeInTheDocument();
+  });
+
+  it('requests the next API page and preserves sorting controls', async () => {
+    useReservationsList.mockReturnValue({ data: { items: mockReservations, totalCount: 21, totalPages: 2 }, isLoading: false, isError: false });
+    const user = userEvent.setup();
+    render(<ReservationsPage />);
+    expect(screen.getByRole('button', { name: 'Previous reservations page' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Next reservations page' }));
+    expect(useReservationsList).toHaveBeenLastCalledWith({ page: 2, pageSize: 20 }, { refetchInterval: 10000 });
+    expect(screen.getByRole('button', { name: 'Next reservations page' })).toBeDisabled();
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Sort reservations' }), 'time_asc');
+    const rows = screen.getAllByRole('row');
+    expect(within(rows[1]).getByText('Alice')).toBeInTheDocument();
+  });
+
+  it('keeps support managers out of staff-only creation and approval controls', () => {
+    useAuthStore.setState({ user: { id: 'support-1', role: 'SupportManager' } });
+    useReservationsList.mockReturnValue({ data: { items: mockReservations }, isLoading: false, isError: false });
+    render(<ReservationsPage />);
+    expect(screen.queryByRole('button', { name: /Add Reservation/i })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('pending-approvals-card')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /View Details/i })).toHaveLength(2);
   });
 });

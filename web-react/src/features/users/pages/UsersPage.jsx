@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../hooks/useUsers'
 import PageHeader from '../../../components/shared/PageHeader'
 import { Spinner } from '../../../components/ui'
-import { cn } from '../../../lib/cn'
 
 const ROLE_MAP = {
   0: 'Driver',

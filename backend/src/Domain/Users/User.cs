@@ -48,6 +48,21 @@ public class User : AuditableEntity
 
     /// <summary>Prepaid wallet balance used for advance reservation deposits.</summary>
     public decimal WalletBalance { get; private set; }
+    public decimal PendingCancellationFees { get; private set; }
+
+    public void AddCancellationFee(decimal amount)
+    {
+        if (amount <= 0) throw new ArgumentException("Cancellation fee must be positive.");
+        PendingCancellationFees += amount;
+    }
+
+    public decimal CollectCancellationFees()
+    {
+        var amount = PendingCancellationFees;
+        DeductBalance(amount);
+        PendingCancellationFees = 0m;
+        return amount;
+    }
     public Guid MembershipVersion { get; private set; }
     public void TouchMembership() => MembershipVersion = Guid.NewGuid();
 

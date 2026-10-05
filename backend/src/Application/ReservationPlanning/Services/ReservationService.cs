@@ -16,11 +16,21 @@ public sealed class ReservationService : IReservationService
 {
     private readonly IAppDbContext _db;
     private readonly ISessionService _sessions;
+    private readonly TimeProvider _clock;
 
-    public ReservationService(IAppDbContext db, ISessionService sessions)
+    public ReservationService(IAppDbContext db, ISessionService sessions, TimeProvider? clock = null)
     {
         _db = db;
         _sessions = sessions;
+        _clock = clock ?? TimeProvider.System;
+    }
+
+    public async Task<BookingChargesDto> GetBookingChargesAsync(Guid driverId, CancellationToken cancellationToken = default)
+    {
+        var driver = await _db.Users.AsNoTracking()
+            .SingleOrDefaultAsync(u => u.Id == driverId && u.Role == UserRole.Driver && u.IsActive, cancellationToken)
+            ?? throw new ForbiddenAccessException();
+        return new(driver.WalletBalance, driver.PendingCancellationFees);
     }
 
     // ── Create advance reservation ────────────────────────────────────────────
@@ -36,9 +46,13 @@ public sealed class ReservationService : IReservationService
             ?? throw new NotFoundException(nameof(User), driverId);
 
         // 2. Verify sufficient wallet balance (domain guard also validates this).
-        if (driver.WalletBalance < request.AdvanceDepositAmount)
+        if (request.AdvanceDepositAmount < 0) throw new ArgumentException("Advance deposit cannot be negative.");
+        if ((request.ExpectedCancellationFees ?? 0m) != driver.PendingCancellationFees)
+            throw new PaymentConflictException("Cancellation fees changed. Review the booking charges and confirm again.");
+        var totalCharge = request.AdvanceDepositAmount + driver.PendingCancellationFees;
+        if (driver.WalletBalance < totalCharge)
             throw new InvalidOperationException(
-                $"Insufficient wallet balance. Available: {driver.WalletBalance:C}, required: {request.AdvanceDepositAmount:C}.");
+                $"Insufficient wallet balance. Available: LKR {driver.WalletBalance:0.00}, required: LKR {totalCharge:0.00} (advance plus cancellation fees).");
 
         // 3. Verify the charger exists.
         var chargerExists = await _db.Chargers
@@ -88,6 +102,7 @@ public sealed class ReservationService : IReservationService
         {
             // 5. Deduct the advance deposit from the driver's wallet.
             driver.DeductBalance(request.AdvanceDepositAmount);
+            reservation.RecordCancellationFeesPaid(driver.CollectCancellationFees());
 
             // 6. Generate a cryptographically unique QR token and confirm the reservation.
             var qrToken = GenerateQrToken();
@@ -98,7 +113,7 @@ public sealed class ReservationService : IReservationService
             RecordHistory(reservation, oldStatus: ReservationStatus.Pending, newStatus: ReservationStatus.Confirmed, actorId: driverId);
         }
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await SaveFinancialChangesAsync(cancellationToken);
         return ToDto(reservation);
     }
 
@@ -247,6 +262,9 @@ public sealed class ReservationService : IReservationService
                 EndTime = r.EndTime,
                 ReservationQRCode = r.ReservationQRCode,
                 AdvanceDepositAmount = r.AdvanceDepositAmount,
+                LateCancellationFee = r.LateCancellationFee,
+                CancellationFeesPaid = r.CancellationFeesPaid,
+                CancelledAt = r.CancelledAt,
                 Status = r.Status,
                 CreatedAt = r.CreatedAt,
                 StationName = r.Charger.Station.Name,
@@ -315,30 +333,43 @@ public sealed class ReservationService : IReservationService
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new NotFoundException(nameof(Reservation), id);
 
-        // Only the owning driver or an admin/staff can cancel.
-        if (reservation.DriverId != null && reservation.DriverId != requesterId)
+        var requester = await _db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == requesterId && u.IsActive, cancellationToken)
+            ?? throw new ForbiddenAccessException();
+        var isDriverCancellation = requester.Role == UserRole.Driver && reservation.DriverId == requesterId;
+        if (!isDriverCancellation && requester.Role != UserRole.Admin)
         {
-            var requester = await _db.Users.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == requesterId, cancellationToken)
-                ?? throw new NotFoundException(nameof(User), requesterId);
-
-            if (requester.Role == UserRole.Driver)
+            if (requester.Role != UserRole.StationOwner || !await _db.Chargers.AnyAsync(c =>
+                c.Id == reservation.ChargerId && c.Station.OwnerId == requesterId, cancellationToken))
                 throw new ForbiddenAccessException();
         }
 
+        var cancelledAt = _clock.GetUtcNow();
+        var fee = isDriverCancellation ? CancellationPolicy.Fee(reservation.StartTime, cancelledAt) : 0m;
         var oldStatus = reservation.Status;
-        reservation.Cancel();
+        reservation.Cancel(fee, cancelledAt);
 
         // Refund the advance deposit back to the driver's wallet.
-        if (reservation.DriverId.HasValue && reservation.AdvanceDepositAmount > 0)
+        // Previously collected cancellation fees are not advance credit and are never refunded here.
+        if (reservation.DriverId.HasValue)
         {
             var driver = await _db.Users
-                .FirstOrDefaultAsync(u => u.Id == reservation.DriverId.Value, cancellationToken);
-            driver?.CreditBalance(reservation.AdvanceDepositAmount);
+                .SingleAsync(u => u.Id == reservation.DriverId.Value, cancellationToken);
+            driver.CreditBalance(reservation.AdvanceDepositAmount);
+            if (fee > 0) driver.AddCancellationFee(fee);
         }
 
         RecordHistory(reservation, oldStatus, ReservationStatus.Cancelled, actorId: requesterId);
-        await _db.SaveChangesAsync(cancellationToken);
+        await SaveFinancialChangesAsync(cancellationToken);
+    }
+
+    private async Task SaveFinancialChangesAsync(CancellationToken ct)
+    {
+        try { await _db.SaveChangesAsync(ct); }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new PaymentConflictException("Reservation or wallet changed. Refresh and try again.");
+        }
     }
 
     // ── Staff QR check-in ─────────────────────────────────────────────────────
@@ -488,6 +519,9 @@ public sealed class ReservationService : IReservationService
                 throw new ForbiddenAccessException();
         }
 
+        if (reservation.LateCancellationFee > 0 || reservation.CancellationFeesPaid > 0)
+            throw new InvalidOperationException("Reservations with cancellation fee records must be retained for payment history.");
+
         // Also delete associated history
         var history = await _db.ReservationStatusHistories
             .Where(h => h.ReservationId == id)
@@ -607,6 +641,9 @@ public sealed class ReservationService : IReservationService
         EndTime = r.EndTime,
         ReservationQRCode = r.ReservationQRCode,
         AdvanceDepositAmount = r.AdvanceDepositAmount,
+        LateCancellationFee = r.LateCancellationFee,
+        CancellationFeesPaid = r.CancellationFeesPaid,
+        CancelledAt = r.CancelledAt,
         Status = r.Status,
         CreatedAt = r.CreatedAt,
         StationName = r.Charger?.Station?.Name ?? string.Empty,

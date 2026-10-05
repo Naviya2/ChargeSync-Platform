@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ReservationDetailsModal from '@/features/reservations/components/ReservationDetailsModal';
-import { useUpdateReservation, useCancelReservation, useDeleteReservation, useApproveReservation, useRejectReservation } from '@/features/reservations/hooks/useReservations';
+import { useUpdateReservation, useCancelReservation, useDeleteReservation } from '@/features/reservations/hooks/useReservations';
+import { useAuthStore } from '@/store/authStore';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ vi.mock('@/features/reservations/hooks/useReservations', () => ({
 }));
 
 describe('ReservationDetailsModal', () => {
+  afterEach(() => useAuthStore.setState({ user: null }));
   const defaultReservation = {
     id: 'res-123',
     driverId: 'drv-456',
@@ -164,6 +166,55 @@ describe('ReservationDetailsModal', () => {
     expect(mockOnClose).toHaveBeenCalled();
   });
 
+  it('warns a driver about the late fee and shows the advance separately', async () => {
+    useAuthStore.setState({ user: { id: 'drv-456', role: 'Driver' } });
+    currentReservationData = { ...defaultReservation, status: 'Confirmed', advanceDepositAmount: 500 };
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ReservationDetailsModal reservationId={defaultReservation.id} onClose={vi.fn()} />
+      </QueryClientProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /cancel booking/i }));
+    expect(screen.getByText(/Cancelling less than 2 hours before the booked start/)).toBeInTheDocument();
+    expect(screen.getByText(/Cancelling 2 hours or more before start is free/)).toBeInTheDocument();
+    expect(screen.getByText('Advance Deposit Paid')).toBeInTheDocument();
+  });
+
+  it('offers approval and rejection for pending requests instead of cancellation', () => {
+    useAuthStore.setState({ user: { id: 'owner-1', role: 'StationOwner' } });
+    currentReservationData = defaultReservation;
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ReservationDetailsModal reservationId={defaultReservation.id} onClose={vi.fn()} />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByRole('button', { name: /approve request/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reject request/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /cancel booking/i })).not.toBeInTheDocument();
+  });
+
+  it('shows staff cancellation and both fee records without claiming a new fee', () => {
+    useAuthStore.setState({ user: { id: 'owner-1', role: 'StationOwner' } });
+    currentReservationData = {
+      ...defaultReservation,
+      status: 'Confirmed',
+      lateCancellationFee: 500,
+      cancellationFeesPaid: 1000,
+    };
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ReservationDetailsModal reservationId={defaultReservation.id} onClose={vi.fn()} />
+      </QueryClientProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /cancel booking/i }));
+    expect(screen.getByText(/Staff cancellation does not add a late fee/)).toBeInTheDocument();
+    expect(screen.getByText(/Late cancellation fee assessed: LKR 500.00/)).toBeInTheDocument();
+    expect(screen.getByText(/Previous cancellation fees paid with this booking: LKR 1000.00/)).toBeInTheDocument();
+  });
+
   it('handles deletion workflow', async () => {
     currentReservationData = { ...defaultReservation, status: 'Cancelled' };
     const mockDelete = vi.fn((id, { onSuccess }) => {
@@ -186,5 +237,17 @@ describe('ReservationDetailsModal', () => {
     
     expect(mockDelete).toHaveBeenCalledWith('res-123', expect.any(Object));
     expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it('lets a support viewer inspect a booking without mutation controls', () => {
+    currentReservationData = { ...defaultReservation, status: 'Confirmed' };
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ReservationDetailsModal reservationId={defaultReservation.id} readOnly onClose={vi.fn()} />
+      </QueryClientProvider>
+    );
+    expect(screen.getByText('Reservation Details')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /delete|edit time|cancel booking|approve request|reject request/i })).not.toBeInTheDocument();
   });
 });

@@ -45,21 +45,6 @@ export default function AnalyticsPage() {
     count
   }))
 
-  const CustomTooltip = ({ active, payload, label, prefix = '' }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="rounded-xl border border-outline-variant bg-surface-container-low/95 p-3 shadow-lg backdrop-blur-md">
-          <p className="font-label-md text-on-surface-variant mb-1">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="font-metric-num-sm text-on-surface" style={{ color: entry.color }}>
-              {entry.name}: {prefix}{entry.value}
-            </p>
-          ))}
-        </div>
-      )
-    }
-    return null
-  }
 
   return (
     <div className="flex w-full flex-col gap-space-xl">
@@ -125,4 +110,20 @@ export default function AnalyticsPage() {
       </div>
     </div>
   )
+}
+
+const CustomTooltip = ({ active, payload, label, prefix = '' }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-xl border border-outline-variant bg-surface-container-low/95 p-3 shadow-lg backdrop-blur-md">
+        <p className="font-label-md text-on-surface-variant mb-1">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="font-metric-num-sm text-on-surface" style={{ color: entry.color }}>
+            {entry.name}: {prefix}{entry.value}
+          </p>
+        ))}
+      </div>
+    )
+  }
+  return null
 }

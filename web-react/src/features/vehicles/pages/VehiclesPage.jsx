@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useVehicles, useCreateVehicle, useUpdateVehicle, useDeleteVehicle } from '../hooks/useVehicles'
 import { useUsers } from '../../users/hooks/useUsers'
-import PageHeader from '../../../components/shared/PageHeader'
 import { Spinner } from '../../../components/ui'
 
 const CONNECTOR_OPTIONS = [

@@ -83,10 +83,10 @@ void main() {
     await tester.ensureVisible(selector);
     await tester.tap(selector);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Test station • LKR 100.00').last);
+    await tester.tap(find.text('Test station • LKR 100.00 • #invoice').last);
     await tester.pumpAndSettle();
     expect(find.textContaining('No paid invoices found'), findsNothing);
-    expect(find.text('Test station • LKR 100.00'), findsOneWidget);
+    expect(find.text('Test station • LKR 100.00 • #invoice'), findsOneWidget);
   });
 
   test(

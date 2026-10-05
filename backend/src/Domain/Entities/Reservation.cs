@@ -84,6 +84,16 @@ public class Reservation : AuditableEntity
     /// Zero for walk-ins (cash is collected on-site by staff).
     /// </summary>
     public decimal AdvanceDepositAmount { get; private set; }
+    public decimal LateCancellationFee { get; private set; }
+    public decimal CancellationFeesPaid { get; private set; }
+    public DateTimeOffset? CancelledAt { get; private set; }
+
+    public void RecordCancellationFeesPaid(decimal amount)
+    {
+        if (Status != ReservationStatus.Pending || amount < 0)
+            throw new InvalidOperationException("Cancellation fees can only be recorded on a new booking.");
+        CancellationFeesPaid = amount;
+    }
 
     // ── Status ───────────────────────────────────────────────────────────────
     public ReservationStatus Status { get; private set; }
@@ -186,12 +196,15 @@ public class Reservation : AuditableEntity
     /// Cancels the reservation The caller is responsible for
     /// applying the refund policy on the driver's wallet.
     /// </summary>
-    public void Cancel()
+    public void Cancel(decimal lateCancellationFee = 0m, DateTimeOffset? cancelledAt = null)
     {
-        if (Status is ReservationStatus.CheckedIn or ReservationStatus.Completed)
+        if (Status is not (ReservationStatus.Pending or ReservationStatus.Confirmed))
             throw new InvalidOperationException(
                 $"Cannot cancel a reservation with status: {Status}.");
 
+        if (lateCancellationFee < 0) throw new ArgumentException("Cancellation fee cannot be negative.");
+        LateCancellationFee = lateCancellationFee;
+        CancelledAt = cancelledAt ?? DateTimeOffset.UtcNow;
         Status = ReservationStatus.Cancelled;
     }
 

@@ -282,13 +282,16 @@ class _CreateSupportTicketScreenState extends State<CreateSupportTicketScreen> {
             ],
             DropdownButtonFormField<String>(
               initialValue: _invoiceId,
+              isExpanded: true,
               decoration: const InputDecoration(labelText: 'Paid invoice'),
               items: _invoices
                   .map(
                     (i) => DropdownMenuItem<String>(
                       value: i['id'],
                       child: Text(
-                        '${i['stationName']} • LKR ${((i['grossAmount'] ?? 0) as num).toStringAsFixed(2)}',
+                        '${i['stationName']} • LKR ${((i['grossAmount'] ?? 0) as num).toStringAsFixed(2)} • #${(i['id'] as String).split('-').first}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   )
@@ -399,17 +402,19 @@ class _SupportTicketDetailScreenState extends State<SupportTicketDetailScreen>
           });
         }
       } catch (_) {
-        if (mounted && version == _changeVersion)
+        if (mounted && version == _changeVersion) {
           setState(
             () => _workflowError =
                 'Analysis status unavailable. You can still contact support.',
           );
+        }
       }
     } catch (_) {
-      if (mounted && version == _changeVersion)
+      if (mounted && version == _changeVersion) {
         setState(
           () => _workflowError = 'Could not refresh. Tap refresh to try again.',
         );
+      }
     } finally {
       if (mounted) setState(() => _refreshing = false);
     }

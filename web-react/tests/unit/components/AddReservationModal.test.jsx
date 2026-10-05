@@ -37,12 +37,12 @@ describe('AddReservationModal Integration', () => {
     vi.clearAllMocks();
     queryClient.clear();
     
-    useNotificationStore.mockImplementation((selector) => {
+    useNotificationStore.mockImplementation(() => {
       // Returns mockAddNotification when component accesses addNotification
       return mockAddNotification;
     });
     
-    useAuthStore.mockImplementation((selector) => ({ role: 'Admin' })); 
+    useAuthStore.mockImplementation(() => ({ role: 'Admin' }));
 
     // Setup default API responses for queries
     apiClient.get.mockImplementation((url) => {

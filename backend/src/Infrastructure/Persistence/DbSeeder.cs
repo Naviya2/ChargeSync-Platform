@@ -8,8 +8,8 @@ namespace Infrastructure.Persistence;
 
 /// <summary>
 /// Ensures the system is usable from an empty database by creating one initial
-/// Platform Administrator from configuration. Runs on every startup and is a
-/// no-op once an administrator exists.
+/// Platform Administrator and one Support Manager from configuration.
+/// Runs on every startup and is a no-op once the accounts exist.
 /// </summary>
 public sealed class DbSeeder
 {
@@ -32,6 +32,14 @@ public sealed class DbSeeder
 
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
+        await SeedAdminAsync(cancellationToken);
+        await SeedSupportManagerAsync(cancellationToken);
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────────────────
+
+    private async Task SeedAdminAsync(CancellationToken cancellationToken)
+    {
         if (string.IsNullOrWhiteSpace(_options.AdminEmail) || string.IsNullOrWhiteSpace(_options.AdminPassword))
         {
             _logger.LogInformation(
@@ -39,10 +47,6 @@ public sealed class DbSeeder
             return;
         }
 
-        // if (await _db.Users.AnyAsync(u => u.Role == UserRole.Admin, cancellationToken))
-        // {
-        //     return;
-        // }
         var admins = await _db.Users.Where(u => u.Role == UserRole.Admin).ToListAsync(cancellationToken);
         if (admins.Any())
         {
@@ -66,5 +70,34 @@ public sealed class DbSeeder
 
         await _db.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Seeded initial administrator account.");
+    }
+
+    // ── Support Manager ───────────────────────────────────────────────────────
+
+    private async Task SeedSupportManagerAsync(CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(_options.SupportManagerEmail) || string.IsNullOrWhiteSpace(_options.SupportManagerPassword))
+        {
+            _logger.LogInformation(
+                "Seed:SupportManagerEmail / Seed:SupportManagerPassword not configured — skipping support manager seed.");
+            return;
+        }
+
+        var email = _options.SupportManagerEmail.Trim().ToLowerInvariant();
+
+        if (await _db.Users.AnyAsync(u => u.Email == email, cancellationToken))
+        {
+            _logger.LogInformation("Support manager account already exists ({Email}) — skipping seed.", email);
+            return;
+        }
+
+        _db.Users.Add(User.Create(
+            _options.SupportManagerFullName,
+            email,
+            _passwordHasher.Hash(_options.SupportManagerPassword),
+            UserRole.SupportManager));
+
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Seeded initial support manager account ({Email}).", email);
     }
 }
