@@ -17,7 +17,16 @@ function GlobalReservationWatcher() {
   useEffect(() => {
     if (reservations.length > 0) {
       if (prevCountRef.current > 0 && reservations.length > prevCountRef.current) {
-        notify({ title: 'New Reservation', message: 'A driver just booked a new slot.', type: 'info' })
+        // We have new reservations, let's see if any are Pending
+        const newReservationsCount = reservations.length - prevCountRef.current;
+        const newResList = reservations.slice(0, newReservationsCount); // Assuming sorted newest first
+        
+        const hasPending = newResList.some(r => r.status === 'Pending');
+        if (hasPending) {
+          notify({ title: 'Approval Request', message: 'A driver is requesting approval for a session.', type: 'warning' })
+        } else {
+          notify({ title: 'New Reservation', message: 'A driver just booked a new slot.', type: 'info' })
+        }
       }
       prevCountRef.current = reservations.length
       

@@ -79,6 +79,7 @@ class CreateReservationRequest {
   final DateTime endTime;
   final double advanceDepositAmount;
   final double? expectedCancellationFees;
+  final bool requiresApproval;
 
   CreateReservationRequest({
     required this.chargerId,
@@ -87,6 +88,7 @@ class CreateReservationRequest {
     required this.endTime,
     required this.advanceDepositAmount,
     this.expectedCancellationFees,
+    this.requiresApproval = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -95,6 +97,7 @@ class CreateReservationRequest {
     'startTime': startTime.toIso8601String(),
     'endTime': endTime.toIso8601String(),
     'advanceDepositAmount': advanceDepositAmount,
+    'requiresApproval': requiresApproval,
     if (expectedCancellationFees != null)
       'expectedCancellationFees': expectedCancellationFees,
   };
@@ -111,8 +114,7 @@ class BookingCharges {
 
   factory BookingCharges.fromJson(Map<String, dynamic> json) => BookingCharges(
     walletBalance: (json['walletBalance'] as num).toDouble(),
-    pendingCancellationFees: (json['pendingCancellationFees'] as num)
-        .toDouble(),
+    pendingCancellationFees: (json['pendingCancellationFees'] as num).toDouble(),
   );
 }
 

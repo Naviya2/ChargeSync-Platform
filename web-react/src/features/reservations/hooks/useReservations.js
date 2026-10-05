@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { reservationsApi } from '../../../api/endpoints/reservations'
+import { useNotificationStore } from '../../../store/notificationStore'
 
 export const RESERVATION_KEYS = {
     all: ['reservations'],
@@ -61,6 +62,46 @@ export const useDeleteReservation = () => {
         mutationFn: (id) => reservationsApi.remove(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: RESERVATION_KEYS.all })
+        },
+    })
+}
+
+export const usePendingApprovalsQuery = (options = {}) => {
+    return useQuery({
+        queryKey: RESERVATION_KEYS.list({ status: 'Pending' }),
+        queryFn: () => reservationsApi.list({ status: 'Pending' }),
+        ...options,
+    })
+}
+
+export const useApproveReservation = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (id) => reservationsApi.approve(id),
+        onSuccess: (_, id) => {
+            queryClient.invalidateQueries({ queryKey: RESERVATION_KEYS.detail(id) })
+            queryClient.invalidateQueries({ queryKey: RESERVATION_KEYS.all })
+            useNotificationStore.getState().notify({
+                type: 'success',
+                title: 'Reservation Approved',
+                message: 'The reservation request has been successfully approved.'
+            })
+        },
+    })
+}
+
+export const useRejectReservation = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (id) => reservationsApi.reject(id),
+        onSuccess: (_, id) => {
+            queryClient.invalidateQueries({ queryKey: RESERVATION_KEYS.detail(id) })
+            queryClient.invalidateQueries({ queryKey: RESERVATION_KEYS.all })
+            useNotificationStore.getState().notify({
+                type: 'info',
+                title: 'Reservation Declined',
+                message: 'The reservation request has been declined.'
+            })
         },
     })
 }

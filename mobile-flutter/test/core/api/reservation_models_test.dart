@@ -56,6 +56,17 @@ void main() {
       expect(json['chargerId'], 'charger-1');
       expect(json['startTime'], '2026-10-01T10:00:00.000Z');
       expect(json['advanceDepositAmount'], 5.0);
+      expect(json['requiresApproval'], false);
+
+      final approvalReq = CreateReservationRequest(
+        chargerId: 'charger-2',
+        startTime: DateTime.utc(2026, 10, 1, 12),
+        endTime: DateTime.utc(2026, 10, 1, 13),
+        advanceDepositAmount: 10.0,
+        requiresApproval: true,
+      );
+
+      expect(approvalReq.toJson()['requiresApproval'], true);
     });
   });
 

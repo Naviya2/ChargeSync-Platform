@@ -22,7 +22,9 @@ public record ItineraryStep(
     [property: JsonPropertyName("estimated_charge_duration_mins")] int EstimatedChargeDurationMins,
     [property: JsonPropertyName("waitlist_override_required")] bool WaitlistOverrideRequired,
     [property: JsonPropertyName("cost_estimate")] decimal CostEstimate,
-    [property: JsonPropertyName("match_score")] int MatchScore
+    [property: JsonPropertyName("match_score")] int MatchScore,
+    [property: JsonPropertyName("maintenance_buffer_conflict")] bool MaintenanceBufferConflict = false,
+    [property: JsonPropertyName("conflict_reason")] string? ConflictReason = null
 );
 
 public record PlanningResponse(

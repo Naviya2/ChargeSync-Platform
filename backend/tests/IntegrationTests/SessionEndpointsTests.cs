@@ -26,6 +26,15 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
 
     public SessionEndpointsTests(ChargeSyncApiFactory factory) => _factory = factory;
 
+    private static (DateTimeOffset Start, DateTimeOffset End) GetValidTimeSlot()
+    {
+        var sriLankaOffset = TimeSpan.FromHours(5.5);
+        var tomorrowLocal = DateTimeOffset.UtcNow.ToOffset(sriLankaOffset).Date.AddDays(1);
+        var start = new DateTimeOffset(tomorrowLocal.Year, tomorrowLocal.Month, tomorrowLocal.Day, 10, 0, 0, sriLankaOffset);
+        var end = start.AddHours(1);
+        return (start, end);
+    }
+
     [Fact]
     public async Task WalkIn_CreatesOneInProgressSession_AndDuplicateStartIsRejected()
     {
@@ -33,11 +42,12 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         var owner = await RegisterOwnerAsync(client);
         var chargerId = await CreateChargerAsync(owner.User.Id);
 
+        var (startTime, endTime) = GetValidTimeSlot();
         var response = await client.PostAsJsonAsync("/api/reservations/walk-in", new WalkInRequest
         {
             ChargerId = chargerId,
-            StartTime = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(5.5)),
-            EndTime = DateTimeOffset.UtcNow.AddHours(1).ToOffset(TimeSpan.FromHours(5.5))
+            StartTime = startTime,
+            EndTime = endTime
         });
         response.EnsureSuccessStatusCode();
         var reservation = await response.Content.ReadFromJsonAsync<ReservationDto>(JsonOptions);
@@ -221,11 +231,12 @@ public sealed class SessionEndpointsTests : IClassFixture<ChargeSyncApiFactory>
         var ownerClient = _factory.CreateClient();
         var owner = await RegisterOwnerAsync(ownerClient);
         var chargerId = await CreateChargerAsync(owner.User.Id);
+        var (startTime, endTime) = GetValidTimeSlot();
         var walkIn = await ownerClient.PostAsJsonAsync("/api/reservations/walk-in", new WalkInRequest
         {
             ChargerId = chargerId,
-            StartTime = DateTimeOffset.UtcNow,
-            EndTime = DateTimeOffset.UtcNow.AddHours(1)
+            StartTime = startTime,
+            EndTime = endTime
         });
         walkIn.EnsureSuccessStatusCode();
         var reservation = await walkIn.Content.ReadFromJsonAsync<ReservationDto>(JsonOptions);

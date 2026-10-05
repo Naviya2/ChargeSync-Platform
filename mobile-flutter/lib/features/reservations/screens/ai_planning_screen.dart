@@ -399,6 +399,47 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                               ),
                             ],
                           ),
+                          if (itinerary.maintenanceBufferConflict) ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Operator Review Needed',
+                                          style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.orange.shade800,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Session ends near scheduled station maintenance or closing time. Approval required.',
+                                          style: GoogleFonts.inter(
+                                            color: Colors.orange.shade900,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
 
                           const SizedBox(height: 16),
                           SizedBox(
@@ -418,10 +459,36 @@ class _AiPlanningScreenState extends State<AiPlanningScreen> {
                                   );
 
                                   if (mounted) {
+                                    if (itinerary.maintenanceBufferConflict) {
+                                      final shouldProceed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                          title: const Text('Operator Approval Required'),
+                                          content: const Text(
+                                              'Because this session ends very close to a scheduled maintenance or closing window, it requires manual approval from the station operator.\n\nYou will not be charged the advance fee until the operator approves your request. Do you want to proceed?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(ctx, false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () => Navigator.pop(ctx, true),
+                                              child: const Text('Proceed'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      if (shouldProceed != true) return;
+                                    }
+
+                                    if (!mounted) return;
+
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (_) => CreateReservationScreen(
+                                          requiresApproval: itinerary.maintenanceBufferConflict,
+                                          preselectedArrivalTime: itinerary.estimatedArrivalTime,
                                           station: Station(
                                             id: realStation.id,
                                             name: realStation.name,

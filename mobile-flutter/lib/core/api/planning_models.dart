@@ -33,6 +33,8 @@ class ItineraryStep {
   final bool waitlistOverrideRequired;
   final double costEstimate;
   final int matchScore;
+  final bool maintenanceBufferConflict;
+  final String? conflictReason;
 
   ItineraryStep({
     required this.stationId,
@@ -43,6 +45,8 @@ class ItineraryStep {
     required this.waitlistOverrideRequired,
     required this.costEstimate,
     required this.matchScore,
+    this.maintenanceBufferConflict = false,
+    this.conflictReason,
   });
 
   factory ItineraryStep.fromJson(Map<String, dynamic> json) {
@@ -55,6 +59,8 @@ class ItineraryStep {
       waitlistOverrideRequired: json['waitlist_override_required'] as bool,
       costEstimate: (json['cost_estimate'] as num).toDouble(),
       matchScore: json['match_score'] as int,
+      maintenanceBufferConflict: json['maintenance_buffer_conflict'] as bool? ?? false,
+      conflictReason: json['conflict_reason'] as String?,
     );
   }
 }
