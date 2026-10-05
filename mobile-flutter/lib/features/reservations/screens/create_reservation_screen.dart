@@ -12,8 +12,10 @@ import '../../../core/api/vehicle_models.dart';
 
 class CreateReservationScreen extends StatefulWidget {
   final Station station;
+  final bool requiresApproval;
+  final DateTime? preselectedArrivalTime;
 
-  const CreateReservationScreen({super.key, required this.station});
+  const CreateReservationScreen({super.key, required this.station, this.requiresApproval = false, this.preselectedArrivalTime});
 
   @override
   State<CreateReservationScreen> createState() => _CreateReservationScreenState();
@@ -36,6 +38,9 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.preselectedArrivalTime != null) {
+      _selectedDate = widget.preselectedArrivalTime!;
+    }
     if (widget.station.chargers != null && widget.station.chargers!.isNotEmpty) {
       _selectedCharger = widget.station.chargers!.first;
     }
@@ -92,6 +97,16 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
       if (mounted) {
         setState(() {
           _availableSlots = slots;
+          
+          // Auto-select nearest slot if coming from AI
+          if (widget.preselectedArrivalTime != null && slots.isNotEmpty) {
+            _selectedSlot = slots.reduce((a, b) {
+              final diffA = a.startTime.difference(widget.preselectedArrivalTime!).abs();
+              final diffB = b.startTime.difference(widget.preselectedArrivalTime!).abs();
+              return diffA < diffB ? a : b;
+            });
+          }
+          
           _isLoadingSlots = false;
         });
       }
@@ -110,8 +125,15 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Confirm Reservation'),
-          content: const Text('An advance fee of 500 LKR will be deducted from your wallet. Do you want to proceed?'),
+          title: Text(widget.requiresApproval ? 'Station Approval Required' : 'Confirm Reservation'),
+          content: widget.requiresApproval
+              ? const Text(
+                  'This session ends very close to the station\'s maintenance or closing window, so it requires approval from the station owner.\n\n'
+                  'Your reservation request will be sent to the station owner. '
+                  'The 500 LKR advance fee will only be deducted from your wallet once the owner approves your request.\n\n'
+                  'Do you want to send the approval request?',
+                )
+              : const Text('An advance fee of 500 LKR will be deducted from your wallet. Do you want to proceed?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -119,7 +141,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('OK'),
+              child: Text(widget.requiresApproval ? 'Send Request' : 'OK'),
             ),
           ],
         );
@@ -137,6 +159,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
         startTime: _selectedSlot!.startTime,
         endTime: _selectedSlot!.endTime,
         advanceDepositAmount: 500.0,
+        requiresApproval: widget.requiresApproval,
       );
 
       await ReservationApiClient.instance.createReservation(request);
@@ -147,7 +170,9 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Success'),
-          content: const Text('Reservation placed successfully!'),
+          content: Text(widget.requiresApproval 
+              ? 'Reservation placed and is awaiting operator approval.\n\nThe 500 LKR advance fee will be deducted only after the station owner approves your request.' 
+              : 'Reservation placed successfully!'),
           actions: [
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
@@ -195,7 +220,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final maxAllowedDate = DateTime.now().add(const Duration(days: 1));
+    final maxAllowedDate = DateTime.now().add(const Duration(days: 7));
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -291,69 +316,110 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                   
                   const SizedBox(height: 24),
 
-                  // Date Selection (Constrained to today and tomorrow)
-                  Text('3. Select Date', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: _selectedDate.isAfter(maxAllowedDate) ? maxAllowedDate : _selectedDate,
-                        firstDate: DateTime.now(),
-                        lastDate: maxAllowedDate, // Only allow today and tomorrow
-                      );
-                      if (date != null) {
-                        setState(() => _selectedDate = date);
-                        _fetchAvailability();
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(DateFormat('yyyy-MM-dd').format(_selectedDate), style: GoogleFonts.inter(fontSize: 16)),
-                          const Icon(Icons.calendar_today, color: AppColors.primary),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Time Slot Selection
-                  Text('4. Select Available Time', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
-                  const SizedBox(height: 8),
-                  if (_isLoadingSlots)
-                    const Center(child: CircularProgressIndicator())
-                  else if (_availableSlots.isEmpty)
-                    const Text('No slots available for this date at this time. Come back later.')
-                  else
-                    DropdownButtonFormField<TimeSlotDto>(
-                      value: _selectedSlot,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: AppColors.surfaceContainer,
-                        hintText: 'Choose a Time Slot',
-                      ),
-                      items: _availableSlots.map((slot) {
-                        final timeString = '${DateFormat('HH:mm').format(slot.startTime.toLocal())} - ${DateFormat('HH:mm').format(slot.endTime.toLocal())}';
-                        return DropdownMenuItem(
-                          value: slot,
-                          child: Text(timeString),
+                  if (widget.preselectedArrivalTime == null) ...[
+                    // Date Selection (Constrained to 7 days in advance)
+                    Text('3. Select Date', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDate.isAfter(maxAllowedDate) ? maxAllowedDate : _selectedDate,
+                          firstDate: DateTime.now(),
+                          lastDate: maxAllowedDate, // Allow up to 7 days in advance
                         );
-                      }).toList(),
-                      onChanged: (slot) {
-                        if (slot != null) {
-                          setState(() => _selectedSlot = slot);
+                        if (date != null) {
+                          setState(() => _selectedDate = date);
+                          _fetchAvailability();
                         }
                       },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(DateFormat('yyyy-MM-dd').format(_selectedDate), style: GoogleFonts.inter(fontSize: 16)),
+                            const Icon(Icons.calendar_today, color: AppColors.primary),
+                          ],
+                        ),
+                      ),
                     ),
+
+                    const SizedBox(height: 24),
+
+                    // Time Slot Selection
+                    Text('4. Select Available Time', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                    const SizedBox(height: 8),
+                    if (_isLoadingSlots)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_availableSlots.isEmpty)
+                      const Text('No slots available for this date at this time. Come back later.')
+                    else
+                      DropdownButtonFormField<TimeSlotDto>(
+                        value: _selectedSlot,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: AppColors.surfaceContainer,
+                          hintText: 'Choose a Time Slot',
+                        ),
+                        items: _availableSlots.map((slot) {
+                          final timeString = '${DateFormat('HH:mm').format(slot.startTime.toLocal())} - ${DateFormat('HH:mm').format(slot.endTime.toLocal())}';
+                          return DropdownMenuItem(
+                            value: slot,
+                            child: Text(timeString),
+                          );
+                        }).toList(),
+                        onChanged: (slot) {
+                          if (slot != null) {
+                            setState(() => _selectedSlot = slot);
+                          }
+                        },
+                      ),
+                  ] else ...[
+                    // Preselected slot info
+                    Text('3. AI Selected Slot', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                    const SizedBox(height: 8),
+                    if (_isLoadingSlots)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_selectedSlot == null)
+                      Text('Could not find any suitable slots around your expected arrival time.', style: TextStyle(color: Colors.red))
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLow,
+                          border: Border.all(color: AppColors.primary),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.auto_awesome, color: AppColors.primary),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    DateFormat('MMM dd, yyyy').format(_selectedDate),
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${DateFormat('hh:mm a').format(_selectedSlot!.startTime.toLocal())} - ${DateFormat('hh:mm a').format(_selectedSlot!.endTime.toLocal())}',
+                                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
 
                   const SizedBox(height: 40),
 

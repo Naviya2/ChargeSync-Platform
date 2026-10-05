@@ -7,7 +7,10 @@ import {
   useReservationHistory,
   useCancelReservation,
   useUpdateReservation,
-  useDeleteReservation
+  useDeleteReservation,
+  usePendingApprovalsQuery,
+  useApproveReservation,
+  useRejectReservation
 } from '@/features/reservations/hooks/useReservations';
 import { reservationsApi } from '@/api/endpoints/reservations';
 
@@ -19,6 +22,8 @@ vi.mock('@/api/endpoints/reservations', () => ({
     cancel: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
+    approve: vi.fn(),
+    reject: vi.fn(),
   }
 }));
 
@@ -81,5 +86,28 @@ describe('useReservations hooks', () => {
     result.current.mutate('res-1');
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(reservationsApi.remove).toHaveBeenCalledWith('res-1');
+  });
+
+  it('usePendingApprovalsQuery calls api.list with Pending status', async () => {
+    reservationsApi.list.mockResolvedValueOnce({ items: [] });
+    const { result } = renderHook(() => usePendingApprovalsQuery(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(reservationsApi.list).toHaveBeenCalledWith({ status: 'Pending' });
+  });
+
+  it('useApproveReservation calls api.approve', async () => {
+    reservationsApi.approve.mockResolvedValueOnce({ id: 'res-1', status: 'Confirmed' });
+    const { result } = renderHook(() => useApproveReservation(), { wrapper: createWrapper() });
+    result.current.mutate('res-1');
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(reservationsApi.approve).toHaveBeenCalledWith('res-1');
+  });
+
+  it('useRejectReservation calls api.reject', async () => {
+    reservationsApi.reject.mockResolvedValueOnce({ id: 'res-1', status: 'Cancelled' });
+    const { result } = renderHook(() => useRejectReservation(), { wrapper: createWrapper() });
+    result.current.mutate('res-1');
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(reservationsApi.reject).toHaveBeenCalledWith('res-1');
   });
 });

@@ -115,4 +115,22 @@ public interface IReservationService
         DateTime date,
         int durationMinutes,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Approves a pending reservation that requires station owner review.
+    /// </summary>
+    Task<ReservationDto> ApproveAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Rejects a pending reservation that requires station owner review.
+    /// </summary>
+    Task RejectAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        CancellationToken cancellationToken = default);
 }

@@ -69,6 +69,7 @@ class CreateReservationRequest {
   final DateTime startTime;
   final DateTime endTime;
   final double advanceDepositAmount;
+  final bool requiresApproval;
 
   CreateReservationRequest({
     required this.chargerId,
@@ -76,6 +77,7 @@ class CreateReservationRequest {
     required this.startTime,
     required this.endTime,
     required this.advanceDepositAmount,
+    this.requiresApproval = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -84,6 +86,7 @@ class CreateReservationRequest {
         'startTime': startTime.toIso8601String(),
         'endTime': endTime.toIso8601String(),
         'advanceDepositAmount': advanceDepositAmount,
+        'requiresApproval': requiresApproval,
       };
 }
 

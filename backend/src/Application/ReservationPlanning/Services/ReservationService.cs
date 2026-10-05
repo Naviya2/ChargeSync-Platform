@@ -79,17 +79,24 @@ public sealed class ReservationService : IReservationService
             request.AdvanceDepositAmount,
             request.VehicleId);
 
-        // 5. Deduct the advance deposit from the driver's wallet.
-        driver.DeductBalance(request.AdvanceDepositAmount);
+        if (request.RequiresApproval)
+        {
+            _db.Reservations.Add(reservation);
+            RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.Pending, actorId: driverId);
+        }
+        else
+        {
+            // 5. Deduct the advance deposit from the driver's wallet.
+            driver.DeductBalance(request.AdvanceDepositAmount);
 
-        // 6. Generate a cryptographically unique QR token and confirm the reservation.
-        var qrToken = GenerateQrToken();
-        reservation.ConfirmWithQrCode(qrToken);
+            // 6. Generate a cryptographically unique QR token and confirm the reservation.
+            var qrToken = GenerateQrToken();
+            reservation.ConfirmWithQrCode(qrToken);
 
-        // 7. Persist both the reservation and the wallet update atomically.
-        _db.Reservations.Add(reservation);
-        RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.Pending, actorId: driverId);
-        RecordHistory(reservation, oldStatus: ReservationStatus.Pending, newStatus: ReservationStatus.Confirmed, actorId: driverId);
+            _db.Reservations.Add(reservation);
+            RecordHistory(reservation, oldStatus: null, newStatus: ReservationStatus.Pending, actorId: driverId);
+            RecordHistory(reservation, oldStatus: ReservationStatus.Pending, newStatus: ReservationStatus.Confirmed, actorId: driverId);
+        }
 
         await _db.SaveChangesAsync(cancellationToken);
         return ToDto(reservation);
@@ -351,7 +358,7 @@ public sealed class ReservationService : IReservationService
         var now = DateTimeOffset.UtcNow;
         if (now < reservation.StartTime || now > reservation.EndTime)
         {
-            throw new InvalidOperationException($"Check-in is only allowed during the scheduled reservation window: {reservation.StartTime.ToLocalTime():t} - {reservation.EndTime.ToLocalTime():t}.");
+            throw new InvalidOperationException($"Check-in is only allowed during the scheduled reservation window: {reservation.StartTime:t} - {reservation.EndTime:t}.");
         }
 
         var oldStatus = reservation.Status;
@@ -571,9 +578,14 @@ public sealed class ReservationService : IReservationService
 
             if (!isOverlap && !isMaintenanceOverlap)
             {
-                var timeOfDayStart = searchStart.TimeOfDay;
-                var timeOfDayEnd = searchEnd.TimeOfDay;
-                if (timeOfDayStart >= operatingHour.OpenTime && timeOfDayEnd <= operatingHour.CloseTime)
+                var absoluteOpenTime = startOfDay.Add(operatingHour.OpenTime);
+                var absoluteCloseTime = startOfDay.Add(operatingHour.CloseTime);
+                if (operatingHour.CloseTime < operatingHour.OpenTime)
+                {
+                    absoluteCloseTime = absoluteCloseTime.AddDays(1);
+                }
+
+                if (searchStart >= absoluteOpenTime && searchEnd <= absoluteCloseTime)
                 {
                     availableSlots.Add(new TimeSlotDto(searchStart, searchEnd));
                 }
@@ -630,13 +642,89 @@ public sealed class ReservationService : IReservationService
         if (operatingHour == null || !operatingHour.IsEnabled)
             throw new InvalidOperationException("The charging station is closed on this time.");
 
-        var timeOfDay = localStartTime.TimeOfDay;
-        var endTimeOfDay = localEndTime.TimeOfDay;
-        if (timeOfDay < operatingHour.OpenTime || endTimeOfDay > operatingHour.CloseTime)
+        var startOfDay = new DateTimeOffset(localStartTime.Date, timeZoneOffset);
+        var absoluteOpenTime = startOfDay.Add(operatingHour.OpenTime);
+        var absoluteCloseTime = startOfDay.Add(operatingHour.CloseTime);
+        if (operatingHour.CloseTime < operatingHour.OpenTime)
+        {
+            absoluteCloseTime = absoluteCloseTime.AddDays(1);
+        }
+
+        if (localStartTime < absoluteOpenTime || localEndTime > absoluteCloseTime)
             throw new InvalidOperationException($"The requested time falls outside the station's operating hours ({operatingHour.OpenTime:hh\\:mm} - {operatingHour.CloseTime:hh\\:mm}).");
 
         var isMaintenanceOverlap = charger.MaintenanceWindows?.Any(m => m.StartTime < endTime && m.EndTime > startTime) == true;
         if (isMaintenanceOverlap)
             throw new InvalidOperationException("The requested time slot falls during a scheduled maintenance window for this charger.");
+    }
+
+    public async Task<ReservationDto> ApproveAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var reservation = await _db.Reservations
+            .Include(r => r.Charger)
+                .ThenInclude(c => c.Station)
+            .Include(r => r.Driver)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new NotFoundException(nameof(Reservation), id);
+
+        if (requesterRole == UserRole.Driver.ToString())
+            throw new ForbiddenAccessException();
+
+        if (requesterRole == UserRole.StationOwner.ToString() && reservation.Charger?.Station?.OwnerId != requesterId)
+            throw new ForbiddenAccessException();
+
+        if (reservation.Status != ReservationStatus.Pending)
+            throw new InvalidOperationException($"Cannot approve a reservation with status {reservation.Status}.");
+
+        if (reservation.DriverId.HasValue)
+        {
+            var driver = reservation.Driver;
+            if (driver.WalletBalance < reservation.AdvanceDepositAmount)
+                throw new InvalidOperationException("Driver has insufficient wallet balance for advance deposit.");
+
+            driver.DeductBalance(reservation.AdvanceDepositAmount);
+        }
+
+        var qrToken = GenerateQrToken();
+        reservation.ConfirmWithQrCode(qrToken);
+
+        RecordHistory(reservation, ReservationStatus.Pending, ReservationStatus.Confirmed, requesterId);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return ToDto(reservation);
+    }
+
+    public async Task RejectAsync(
+        Guid requesterId,
+        string requesterRole,
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var reservation = await _db.Reservations
+            .Include(r => r.Charger)
+                .ThenInclude(c => c.Station)
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new NotFoundException(nameof(Reservation), id);
+
+        if (requesterRole == UserRole.Driver.ToString())
+            throw new ForbiddenAccessException();
+
+        if (requesterRole == UserRole.StationOwner.ToString() && reservation.Charger?.Station?.OwnerId != requesterId)
+            throw new ForbiddenAccessException();
+
+        if (reservation.Status != ReservationStatus.Pending)
+            throw new InvalidOperationException($"Cannot reject a reservation with status {reservation.Status}.");
+
+        var oldStatus = reservation.Status;
+        reservation.Cancel(); // Will set Status to Cancelled
+
+        // No need to refund since advance wasn't charged yet because it was in Pending state.
+        
+        RecordHistory(reservation, oldStatus, ReservationStatus.Cancelled, requesterId);
+        await _db.SaveChangesAsync(cancellationToken);
     }
 }

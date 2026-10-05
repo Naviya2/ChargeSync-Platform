@@ -120,3 +120,45 @@ def test_generate_plan_budget_preference():
     # The budget option should be ranked higher
     top_itinerary = response.ranked_itineraries[0]
     assert top_itinerary.cost_estimate < 2000.0
+
+def test_generate_plan_buffer_conflict_requires_approval():
+    now = datetime.now(timezone.utc)
+    resp = PlanningResponse(
+        plan_id=str(uuid.uuid4()),
+        requires_approval=False,
+        agent_reasoning="Normal plan",
+        ranked_itineraries=[
+            ItineraryStep(
+                station_id="station-123",
+                station_name="Test Station",
+                charger_id="charger-1",
+                estimated_arrival_time=now,
+                estimated_charge_duration_mins=30,
+                cost_estimate=1500.0,
+                match_score=95
+            )
+        ]
+    )
+    agent = PlanningCoordinatorAgent(llm=FakeLLM(resp))
+    
+    # Station has maintenance starting 40 mins from now (10 mins after charge finishes)
+    maint_time = (now + timedelta(minutes=40)).isoformat()
+    station = mock_station()
+    station.maintenance_window_start = maint_time
+    
+    request = PlanningRequest(
+        driver_id="driver-123",
+        deadline=now + timedelta(hours=2),
+        max_distance_km=20.0,
+        price_preference="Speed",
+        vehicle_id="vehicle-123",
+        vehicle=mock_vehicle(),
+        candidate_stations=[station]
+    )
+    
+    plan = agent.generate_plan(request)
+    assert plan.requires_approval is True
+    assert plan.ranked_itineraries[0].maintenance_buffer_conflict is True
+    assert plan.ranked_itineraries[0].conflict_reason is not None
+    assert "Finishes within 15m of maintenance window" in plan.ranked_itineraries[0].conflict_reason
+

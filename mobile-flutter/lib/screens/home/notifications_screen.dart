@@ -127,17 +127,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     leading: Icon(
                       res.status == 'CheckedIn' ? Icons.bolt_rounded :
                       res.status == 'Completed' ? Icons.check_circle_rounded :
+                      res.status == 'Pending' ? Icons.hourglass_empty_rounded :
                       isCancelled ? Icons.cancel : (isLate ? Icons.warning_amber_rounded : Icons.calendar_today),
-                      color: isLate || isCancelled ? AppColors.error : AppColors.primary,
+                      color: isLate || isCancelled ? AppColors.error : res.status == 'Pending' ? Colors.orange : AppColors.primary,
                     ),
                     title: Text(
                       res.status == 'CheckedIn' ? 'Session Started' :
                       res.status == 'Completed' ? 'Session Completed' :
-                      isCancelled ? 'Reservation Cancelled' : (isLate ? 'Missed Session Alert!' : 'Upcoming Reservation Reminder'),
+                      res.status == 'Pending' ? 'Reservation Pending Approval' :
+                      isCancelled ? 'Reservation Cancelled / Rejected' : (isLate ? 'Missed Session Alert!' : 'Upcoming Reservation Reminder'),
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.bold,
                         color: res.status == 'CheckedIn' || res.status == 'Completed' ? AppColors.primary :
-                               isLate || isCancelled ? AppColors.error : AppColors.onSurface,
+                               isLate || isCancelled ? AppColors.error : res.status == 'Pending' ? Colors.orange.shade800 : AppColors.onSurface,
                       ),
                     ),
                     subtitle: Text(
@@ -145,17 +147,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           ? 'Your charging session at ${res.stationName} has started. You can view live usage in your reservations.'
                           : res.status == 'Completed'
                           ? 'Your charging session at ${res.stationName} is completed. Thank you for using ChargeSync!'
+                          : res.status == 'Pending'
+                          ? (isStationOwner || AuthService.instance.currentUser?.role == 'Staff'
+                              ? 'A reservation request at ${DateFormat('HH:mm').format(res.startTime.toLocal())} requires your approval.'
+                              : 'Your reservation request at ${DateFormat('HH:mm').format(res.startTime.toLocal())} is awaiting operator approval.')
                           : isCancelled
                           ? (isStationOwner || AuthService.instance.currentUser?.role == 'Staff'
-                              ? 'Reservation at ${DateFormat('HH:mm').format(res.startTime.toLocal())} was cancelled.'
-                              : 'Your reservation at ${DateFormat('HH:mm').format(res.startTime.toLocal())} was cancelled.')
+                              ? 'Reservation at ${DateFormat('HH:mm').format(res.startTime.toLocal())} was cancelled or rejected.'
+                              : 'Your reservation at ${DateFormat('HH:mm').format(res.startTime.toLocal())} was cancelled or rejected.')
                           : (isLate
                               ? (isStationOwner || AuthService.instance.currentUser?.role == 'Staff'
                                   ? 'Driver is late for the session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}. It will be cancelled 30 mins after start time.'
                                   : 'You haven\'t started your session scheduled for ${DateFormat('HH:mm').format(res.startTime.toLocal())}. It will be automatically cancelled 30 minutes after the start time.')
                               : (isStationOwner || AuthService.instance.currentUser?.role == 'Staff'
-                                  ? 'A driver has a charging session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}.'
-                                  : 'You have a charging session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}.')),
+                                  ? 'A driver has an approved charging session at ${DateFormat('HH:mm').format(res.startTime.toLocal())}.'
+                                  : 'Your reservation for ${DateFormat('HH:mm').format(res.startTime.toLocal())} has been approved and confirmed.')),
                       style: GoogleFonts.inter(
                         color: AppColors.onSurfaceVariant,
                       ),

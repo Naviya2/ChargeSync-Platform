@@ -72,6 +72,12 @@ public sealed class AgentStationInput
 
     [JsonPropertyName("chargers")]
     public List<AgentChargerInput> Chargers { get; set; } = new();
+
+    [JsonPropertyName("closing_time")]
+    public string? ClosingTime { get; set; }
+
+    [JsonPropertyName("maintenance_window_start")]
+    public string? MaintenanceWindowStart { get; set; }
 }
 
 public sealed class AgentCompatibilityRequest

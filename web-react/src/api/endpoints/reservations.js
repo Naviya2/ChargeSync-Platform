@@ -11,6 +11,10 @@ export const reservationsApi = {
   staffCheckin: (payload) => unwrap(apiClient.post(`${base}/staff-checkin`, payload)),
   /** @param {string|number} id */
   getHistory: (id) => unwrap(apiClient.get(`${base}/${id}/history`)),
+  /** @param {string|number} id */
+  approve: (id) => unwrap(apiClient.post(`${base}/${id}/approve`)),
+  /** @param {string|number} id */
+  reject: (id) => unwrap(apiClient.post(`${base}/${id}/reject`)),
 }
 
 export default reservationsApi

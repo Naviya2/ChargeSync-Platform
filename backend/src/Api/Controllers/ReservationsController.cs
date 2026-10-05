@@ -91,6 +91,36 @@ public sealed class ReservationsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:guid}/approve")]
+    [Authorize(Policy = AuthorizationPolicies.StationOwner)]
+    public async Task<ActionResult<ReservationDto>> Approve(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var reservation = await _reservationService.ApproveAsync(RequesterId, RequesterRole, id, cancellationToken);
+            return Ok(reservation);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id:guid}/reject")]
+    [Authorize(Policy = AuthorizationPolicies.StationOwner)]
+    public async Task<IActionResult> Reject(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _reservationService.RejectAsync(RequesterId, RequesterRole, id, cancellationToken);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpPut("{id:guid}")]
     [Authorize(Policy = AuthorizationPolicies.StationOwner)]
     public async Task<ActionResult<ReservationDto>> Update(Guid id, [FromBody] UpdateReservationRequest request, CancellationToken cancellationToken)

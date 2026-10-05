@@ -183,7 +183,7 @@ class _UpcomingReservationCardState extends State<UpcomingReservationCard> {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  res.status,
+                  res.status == 'Pending' ? 'Pending Approval' : res.status,
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,

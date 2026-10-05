@@ -138,13 +138,13 @@ Allows station owners to manage physical infrastructure and monitor utilization[
 ---
 
 ### 3.3 Function 3 - Reservation & AI Charging Planning (Student 3)
-Coordinates AI-driven route and schedule recommendations, prevents double-booking, manages waitlists, generates advance reservation QR tokens, and provides staff-assisted check-ins and walk-in slot allocations[cite: 1].
+Coordinates AI-driven route and schedule recommendations, prevents double-booking, manages station owner approval workflows for operational edge-case time slots (near closing or maintenance windows), generates advance reservation QR tokens, and provides staff-assisted check-ins and walk-in slot allocations[cite: 1].
 
 #### CRUD Operations
-*   **Create**: Create a reservation with advance payment; generate AI plan; admit walk-in customer; join waitlist[cite: 1].
-*   **Read**: View reservations, generated QR code, waitlist position, status history[cite: 1].
-*   **Update**: Modify reservation time window (subject to slot availability)[cite: 1].
-*   **Delete**: Cancel reservation (triggers wallet refund policy and automated waitlist promotion)[cite: 1].
+*   **Create**: Create a reservation with advance payment; generate AI plan; admit walk-in customer; request edge-case booking with deferred advance fee awaiting operator approval[cite: 1].
+*   **Read**: View reservations, generated QR code, operator approval status (PendingApproval / Confirmed / Rejected), status history[cite: 1].
+*   **Update**: Modify reservation time window (subject to slot availability); Station Owner approves or rejects pending edge-case bookings[cite: 1].
+*   **Delete**: Cancel reservation (triggers wallet refund policy, or releases pending reservation without fee deduction if awaiting operator approval)[cite: 1].
 
 #### Functional Requirements
 *   **FR-3.1**: Driver shall create a reservation for an available charger slot by submitting an advance deposit via their virtual wallet.
@@ -152,19 +152,28 @@ Coordinates AI-driven route and schedule recommendations, prevents double-bookin
 *   **FR-3.3**: System shall prevent overlapping bookings using PostgreSQL GiST exclusion constraints and pessimistic row locking[cite: 1].
 *   **FR-3.4**: Station Staff shall scan the driver's presented QR code via the Flutter mobile app to validate identity and execute check-in.
 *   **FR-3.5**: Station Staff shall admit unregistered walk-in drivers by creating an on-demand reservation record with a null `DriverId`, locking the charger for immediate use.
-*   **FR-3.6**: System shall maintain a waitlist per charger and automatically promote the next queue entry upon reservation cancellation[cite: 1].
+*   **FR-3.6**: System shall evaluate scheduled completion times against station closing times and charger maintenance windows. When an AI recommendation or manual booking finishes within a threshold buffer (15 minutes) of closing time or scheduled maintenance start:
+    *   (a) The reservation interface shall present a prominent advisory note alerting the driver to the operational constraint.
+    *   (b) Upon driver submission, a confirmation modal shall detail the scenario and indicate that the booking requires manual Station Owner approval before confirmation.
+    *   (c) The advance deposit fee (LKR 500.00) shall **not** be deducted at booking time, remaining deferred until explicit operator approval.
+    *   (d) The reservation record shall be assigned a `PendingApproval` status, displayed in the driver's reservation list.
+    *   (e) The Station Owner shall receive an approval request in the station management portal/mobile dashboard to accept or reject the booking.
+    *   (f) Upon approval, the LKR 500.00 advance fee is deducted from the driver's wallet, the reservation transitions to `Confirmed`, and the signed QR token is generated. Upon rejection, the slot is released with zero fee penalty.
+    *   (g) The driver shall receive real-time push and in-app notification box updates regarding the approval or rejection decision.
 *   **FR-3.7**: System shall generate an AI-ranked charging plan given driver constraints (deadline, distance, price preference)[cite: 1].
 *   **FR-3.8**: System shall record a full status history for every reservation transition[cite: 1].
 *   **FR-3.9**: System shall display physical meter photo evidence (captured upon session completion) within reservation details to enable staff and platform administrators to visually audit meter readings.
 
 #### API Endpoints
-*   `POST /api/reservations` - Create advance reservation with wallet pre-authorization[cite: 1]
+*   `POST /api/reservations` - Create advance reservation with wallet pre-authorization (or flags `PendingApproval` for edge cases)[cite: 1]
+*   `PUT /api/reservations/{id}/approve` - Station Owner / Operator approves pending edge-case reservation, capturing deferred advance deposit and generating QR token
+*   `PUT /api/reservations/{id}/reject` - Station Owner / Operator rejects pending edge-case reservation, releasing reserved slot without deposit deduction
 *   `POST /api/reservations/walk-in` - Staff-initiated reservation and immediate lock for walk-ins
-*   `GET /api/reservations` - List, filter, and paginate reservations[cite: 1]
-*   `GET /api/reservations/{id}` - Retrieve reservation details, QR payload, and linked session details (including meter photo URL)[cite: 1]
+*   `GET /api/reservations` - List, filter, and paginate reservations (including approval status)[cite: 1]
+*   `GET /api/reservations/{id}` - Retrieve reservation details, approval status, QR payload, and linked session details (including meter photo URL)[cite: 1]
 *   `PUT /api/reservations/{id}/cancel` - Cancel reservation[cite: 1]
 *   `POST /api/reservations/staff-checkin` - Staff-scanned QR check-in endpoint
-*   `POST /api/charging-plan/generate` - Generate AI charging plan[cite: 1]
+*   `POST /api/charging-plan/generate` - Generate AI charging plan with closing/maintenance buffer conflict detection[cite: 1]
 *   `GET /api/reservations/{id}/history` - Retrieve reservation audit trail[cite: 1]
 
 ---
@@ -212,8 +221,8 @@ The PostgreSQL database is organized in Third Normal Form (3NF)[cite: 1].
 *   `Users` (1) to (N) `Vehicles`, `Stations` (as Owner), `Reservations`, `Subscriptions`, `SupportTickets`[cite: 1].
 *   `Vehicles` (N) to (1) `ConnectorTypes`; `Vehicles` (1) to (1) `VehicleChargingProfiles`[cite: 1].
 *   `Stations` (1) to (N) `Chargers`, `OperatingHours`[cite: 1].
-*   `Chargers` (1) to (N) `MaintenanceWindows`, `Reservations`, `WaitlistEntries`[cite: 1].
-*   `Reservations` (1) to (N) `ReservationStatusHistory`; `Reservations` (1) to (1) `ChargingSessions`[cite: 1].
+*   `Chargers` (1) to (N) `MaintenanceWindows`, `Reservations`[cite: 1].
+*   `Reservations` (1) to (0..1) `ReservationApprovals` for edge-case buffer reviews (near closing/maintenance); `Reservations` (1) to (N) `ReservationStatusHistory`; `Reservations` (1) to (1) `ChargingSessions`[cite: 1].
 *   `Reservations.DriverId` is nullable to facilitate unregistered walk-ins.
 *   `ChargingSessions` (1) to (1) `PaymentInvoices`[cite: 1]; `ChargingSessions` stores `MeterPhotoUrl` pointing to Cloudinary-stored physical meter photos.
 *   `Users` (1) to (1) `LoyaltyAccounts`; `LoyaltyAccounts` (1) to (N) `RewardRedemptions`[cite: 1].
@@ -329,8 +338,10 @@ The PostgreSQL database is organized in Third Normal Form (3NF)[cite: 1].
 | `StartTime` | TIMESTAMPTZ | NOT NULL | Scheduled slot start[cite: 1] |
 | `EndTime` | TIMESTAMPTZ | NOT NULL | Scheduled slot end[cite: 1] |
 | `ReservationQRCode`| VARCHAR(255)| NULL, UNIQUE | Signed QR token for driver presentation and staff scanning |
-| `AdvanceDepositAmount`| DECIMAL(8,2)| NOT NULL, DEFAULT 0.00 | Deposit deducted from wallet on booking |
-| `Status` | VARCHAR(20) | NOT NULL, DEFAULT 'Pending', CHECK IN ('Pending', 'Confirmed', 'CheckedIn', 'Cancelled', 'Completed') | Current lifecycle status |
+| `AdvanceDepositAmount`| DECIMAL(8,2)| NOT NULL, DEFAULT 0.00 | Deposit deducted from wallet upon confirmation (deferred if approval required) |
+| `ApprovalRequired`| BOOLEAN | NOT NULL, DEFAULT FALSE | Flags edge-case buffer slot awaiting operator approval |
+| `ApprovalReason` | VARCHAR(255) | NULL | Reason for review (e.g., finishes within 15m of closing or maintenance) |
+| `Status` | VARCHAR(20) | NOT NULL, DEFAULT 'Pending', CHECK IN ('Pending', 'PendingApproval', 'Confirmed', 'CheckedIn', 'Cancelled', 'Completed', 'Rejected') | Current lifecycle and approval status |
 | `CreatedAt` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Creation timestamp[cite: 1] |
 | `UpdatedAt` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Modification timestamp[cite: 1] |
 
@@ -347,17 +358,18 @@ The PostgreSQL database is organized in Third Normal Form (3NF)[cite: 1].
 | `ChangedByUserId`| UUID | NULL, FK -> Users(Id) | User or staff identity initiating transition[cite: 1] |
 | `ChangedAt` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Transition timestamp[cite: 1] |
 
-#### WaitlistEntries (Function 3)[cite: 1]
+#### ReservationApprovals (Function 3)
 | Column | Data Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
-| `Id` | UUID | PK | Waitlist entry identifier[cite: 1] |
-| `ChargerId` | UUID | NOT NULL, FK -> Chargers(Id) | Desired charger unit[cite: 1] |
-| `DriverId` | UUID | NOT NULL, FK -> Users(Id) | Queued driver[cite: 1] |
-| `RequestedStartTime` | TIMESTAMPTZ | NOT NULL | Requested start time[cite: 1] |
-| `Priority` | INT | NOT NULL, DEFAULT 0 | Priority ranking[cite: 1] |
-| `Status` | VARCHAR(20) | NOT NULL, DEFAULT 'Waiting', CHECK IN ('Waiting', 'Promoted', 'Expired') | Waitlist state[cite: 1] |
-| `CreatedAt` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Creation timestamp[cite: 1] |
-| `UpdatedAt` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Modification timestamp[cite: 1] |
+| `Id` | UUID | PK, DEFAULT `gen_random_uuid()` | Approval request identifier |
+| `ReservationId` | UUID | NOT NULL, UNIQUE, FK -> Reservations(Id) | Linked edge-case reservation |
+| `StationOwnerId` | UUID | NULL, FK -> Users(Id) | Reviewing station owner / operator |
+| `TriggerReason` | VARCHAR(150) | NOT NULL | Proximity reason (e.g., Finishes within 15m of closing time or maintenance window) |
+| `BufferMinutes` | INT | NOT NULL, DEFAULT 15 | Buffer threshold applied (in minutes) |
+| `Status` | VARCHAR(20) | NOT NULL, DEFAULT 'PendingApproval', CHECK IN ('PendingApproval', 'Approved', 'Rejected') | Operator review status |
+| `DecisionNotes` | TEXT | NULL | Feedback or operator justification |
+| `RequestedAt` | TIMESTAMPTZ | NOT NULL, DEFAULT now() | Creation timestamp |
+| `DecidedAt` | TIMESTAMPTZ | NULL | Decision timestamp |
 
 #### ChargingPlans (Function 3)[cite: 1]
 | Column | Data Type | Constraints | Description |
@@ -501,7 +513,7 @@ RESTful JSON over HTTPS secured via JWT bearer authentication[cite: 1]. Endpoint
 
 ### 5.4 Third-Party Interfaces
 *   **Google Maps API**: Distance calculation and station discovery[cite: 1].
-*   **Firebase Cloud Messaging (FCM)**: Push notifications to mobile users regarding booking confirmations, slot reminders, and waitlist promotions[cite: 1].
+*   **Firebase Cloud Messaging (FCM)**: Push notifications and in-app alert box delivery to mobile users regarding booking confirmations, slot reminders, and station owner approval/rejection outcomes for edge-case reservations[cite: 1].
 *   **Cloudinary API**: Secure media upload and CDN delivery for station imagery and checkout meter display photos.
 
 ---
@@ -518,6 +530,15 @@ The system employs a client-server architecture[cite: 1]. Flutter (Driver/Staff)
 2.  **ASP.NET Core**: Verifies slot availability, deducts advance deposit from driver's `WalletBalance`, inserts `Reservations` record with exclusion constraints, and generates signed `ReservationQRCode`[cite: 1].
 3.  **On-Site Arrival**: Driver presents the QR code via mobile app.
 4.  **Station Staff**: Scans QR code via Flutter app; system validates reservation, starts `ChargingSessions` record, and updates status to `CheckedIn`[cite: 1].
+
+#### Operational Buffer & Operator Approval Reservation Flow
+1.  **AI Plan / Slot Selection**: Driver selects an AI-suggested or manual slot that concludes within the operational buffer threshold (15 minutes) of station closing time or a scheduled charger maintenance window.
+2.  **Advisory Note & Confirmation Modal**: The reservation screen renders an advisory banner explaining the operational proximity. When the driver taps "Create Reservation", a confirmation dialog details the boundary condition and clearly explains that the LKR 500.00 advance fee will **not** be deducted until the station owner approves the booking.
+3.  **Reservation Submission**: System inserts a `Reservations` record with `Status = 'PendingApproval'`, `AdvanceDepositAmount = 0.00` (deferred), and creates a `ReservationApprovals` tracking entry.
+4.  **Operator Decision**: The Station Owner reviews the pending request within their web portal or mobile management dashboard, choosing either to Approve or Reject the booking.
+5.  **Outcome & Notification**:
+    *   *Upon Approval*: The system deducts the LKR 500.00 advance deposit from the driver's virtual wallet, marks the reservation as `Confirmed`, generates the signed `ReservationQRCode`, and pushes an approval notification to the driver's notification box.
+    *   *Upon Rejection*: The reservation status transitions to `Rejected`, the reserved slot is immediately released without deducting any advance fee, and a rejection notification is dispatched to the driver's notification box.
 
 #### Unregistered Walk-In Flow
 1.  **Driver**: Arrives on-site without an account or reservation.
@@ -554,7 +575,7 @@ The system employs a client-server architecture[cite: 1]. Flutter (Driver/Staff)
 ### 7.4 Quality Assurance and Continuous Integration
 *   **CI/CD Automation**: GitHub Actions pipelines configured for push and pull request triggers against both `main` and `dev` branches across `backend`, `web-react`, and `mobile-flutter`.
 *   **Automated Test Suites**:
-    *   *Backend*: 158+ unit tests implemented with xUnit and Moq covering `ReservationService`, slot exclusion validation, waitlist transitions, and charging session lifecycles.
+    *   *Backend*: 158+ unit tests implemented with xUnit and Moq covering `ReservationService`, slot exclusion validation, operator approval workflows for boundary slots, deferred advance deposit lifecycles, and charging session lifecycles.
     *   *Agentic AI*: 24 pytest unit and integration tests verifying `PlanningCoordinatorAgent`, compatibility scoring algorithms, and `SupportAgent` decision matrices.
     *   *Mobile (Flutter)*: Unit and widget tests for `PlanningApiClient`, `SmartRecommendationCard`, and `AiPlanningScreen` utilizing mockable HTTP clients and safe GPS service wrappers.
     *   *Web (React)*: Vitest and React Testing Library tests verifying `ReservationDetailsModal`, vehicle management CRUD forms, and administrative route guards.
@@ -581,7 +602,7 @@ The system employs a client-server architecture[cite: 1]. Flutter (Driver/Staff)
 The following conditions halt agentic execution into a `PendingApproval` state requiring manual review in the React portal[cite: 1]:
 *   **Refunds**: Any automated support triage recommending a wallet refund > $15.00[cite: 1].
 *   **High-Value Loyalty Redemptions**: Point redemptions exceeding 5,000 points or $50.00 value[cite: 1].
-*   **Waitlist Overrides**: AI planning itineraries attempting to prioritize a driver over an existing waitlisted booking[cite: 1].
+*   **Operational Boundary / Maintenance Window Proximity**: Bookings or AI itinerary suggestions where session completion falls within the operational buffer threshold (e.g., 15 minutes) of station closing time or scheduled charger maintenance start time, halting auto-confirmation for Station Owner approval and deferring wallet deposits.
 *   **Meter Discrepancy Audits**: Physical staff overrides departing from calculated values by more than 15%.
 
 ---
@@ -595,3 +616,4 @@ The following conditions halt agentic execution into a `PendingApproval` state r
 *   **ADR-04 (Revised): Hybrid Session Telemetry**: Replaces pure mathematical calculation with a dual-layer strategy. Baseline energy is mathematically computed from charger output and duration[cite: 1]; staff provides manual overrides from physical charger screens to reflect battery tapering without requiring live IoT telemetry.
 *   **ADR-05 (Revised): Internal Ledger & POS Cash Management**: Eliminates external payment gateway dependencies[cite: 1]. Advance bookings utilize an internal virtual wallet ledger, while on-site walk-ins and post-charge balances support physical cash collection recorded directly by staff.
 *   **ADR-06: Cloudinary for Meter Photo Evidence Storage**: To substantiate physical meter overrides without burdening the PostgreSQL database with binary BLOB storage, the mobile client uploads physical meter display photos directly to Cloudinary using signed parameters. The returned secure HTTPS URL is persisted in `ChargingSessions.MeterPhotoUrl` and served through Cloudinary CDN to the React web portal and mobile audit screens.
+*   **ADR-07: Station Owner Approval & Deferred Billing for Operational Buffer Slots**: To prevent stranding drivers or abruptly interrupting charging sessions, bookings completing within 15 minutes of station closing time or charger maintenance windows bypass immediate advance fee capture. The booking is held in a `PendingApproval` state, alerting the driver and notifying the station owner for manual approval before funds are deducted and QR check-in tokens issued.
