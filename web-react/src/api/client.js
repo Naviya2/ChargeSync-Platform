@@ -7,7 +7,11 @@ import {
 } from '../store/authStore'
 import { ROUTES } from '../lib/constants'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+const rawBase = import.meta.env.VITE_API_BASE_URL ?? '/api'
+// Normalize origin URL to include '/api' if omitted in environment variables (e.g. Vercel)
+const BASE_URL = (rawBase.startsWith('http') && !rawBase.endsWith('/api') && !rawBase.includes('/api/'))
+  ? `${rawBase.replace(/\/+$/, '')}/api`
+  : rawBase
 
 /**
  * Shared Axios instance for the ChargeSync API.
