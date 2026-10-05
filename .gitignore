@@ -75,3 +75,7 @@ e2e/*.local.json
 e2e/artifacts/
 e2e/node_modules/
 e2e/.browsers/
+
+# Performance test tools and generated measurements
+performance/.tools/
+performance/artifacts/
