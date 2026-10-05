@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ChargeSync Database Test Report</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #131b2e;
+      --border: #222f49;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.15);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      margin: 0;
+      padding: 40px 24px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 960px;
+      width: 100%;
+    }
+    .header {
+      background: linear-gradient(135deg, #131b2e, #0c1220);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 36px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+    .header h1 {
+      margin: 0 0 8px 0;
+      font-size: 26px;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+    .header p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .badge-pass {
+      background-color: var(--success-bg);
+      color: var(--success);
+      border: 1px solid var(--success);
+      padding: 8px 20px;
+      border-radius: 9999px;
+      font-weight: 800;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .metric-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      text-align: center;
+    }
+    .metric-val {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .metric-val.green { color: var(--success); }
+    .metric-lbl {
+      color: var(--text-muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+    th, td {
+      padding: 16px 22px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background-color: #0d1424;
+      color: var(--text-muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+    }
+    tr:last-child td { border-bottom: none; }
+    .status-tag {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      background: var(--success-bg);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+    .detail-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 26px;
+      margin-bottom: 18px;
+    }
+    .detail-card h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: var(--accent);
+    }
+    pre {
+      background-color: #060911;
+      border: 1px solid #1a2336;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      color: #38bdf8;
+      margin: 0;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>⚡ ChargeSync Database Test Report</h1>
+        <p>Database: <strong>ChargeSync-Test</strong> (PostgreSQL 18 on localhost:5432) &nbsp;|&nbsp; 2026-10-05 03:38:18</p>
+      </div>
+      <div>
+        <span class="badge-pass">ALL TESTS PASSED (100%)</span>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-val">6</div>
+        <div class="metric-lbl">Total Suites</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val green">6</div>
+        <div class="metric-lbl">Passed</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val">0</div>
+        <div class="metric-lbl">Failed</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val">477 ms</div>
+        <div class="metric-lbl">Execution Time</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Test Suite</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1</strong></td>
+          <td><code>01_schema_and_seed.sql</code></td>
+          <td>Environment cleanup and seed entities initialization</td>
+          <td><span class="status-tag">PASSED</span></td>
+          <td>158 ms</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td><code>02_unique_constraints.sql</code></td>
+          <td>Unique constraint and primary key collision validation</td>
+          <td><span class="status-tag">PASSED</span></td>
+          <td>60 ms</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td><code>03_foreign_keys.sql</code></td>
+          <td>Foreign key referential integrity and DeleteBehavior rules</td>
+          <td><span class="status-tag">PASSED</span></td>
+          <td>59 ms</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td><code>04_workflow_integrity.sql</code></td>
+          <td>Domain check constraints and end-to-end lifecycle integrity</td>
+          <td><span class="status-tag">PASSED</span></td>
+          <td>61 ms</td>
+        </tr>
+        <tr>
+          <td><strong>5</strong></td>
+          <td><code>05_wallet_and_invoicing.sql</code></td>
+          <td>Wallet top-up rules, currency validation and idempotency</td>
+          <td><span class="status-tag">PASSED</span></td>
+          <td>56 ms</td>
+        </tr>
+        <tr>
+          <td><strong>6</strong></td>
+          <td><code>06_indexes_and_performance.sql</code></td>
+          <td>Catalog index presence and query performance (EXPLAIN plan)</td>
+          <td><span class="status-tag">PASSED</span></td>
+          <td>80 ms</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 style="font-size: 20px; margin: 34px 0 18px 0; color: #e2e8f0;">Detailed Assertion Logs</h2>
+    <div class="detail-card">
+      <h3>📁 01_schema_and_seed.sql</h3>
+      <pre>TRUNCATE TABLE
+INSERT 0 3
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/01_schema_and_seed.sql:58: NOTICE:  CASE 1.1 PASSED: Baseline environment cleaned and seed entities populated successfully.</pre>
+    </div>
+    <div class="detail-card">
+      <h3>📁 02_unique_constraints.sql</h3>
+      <pre>DO
+DO
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/02_unique_constraints.sql:19: NOTICE:  CASE 2.1 PASSED: Unique constraint &quot;IX_Users_Email&quot; rejected duplicate email as expected.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/02_unique_constraints.sql:31: NOTICE:  CASE 2.2 PASSED: Primary Key constraint &quot;PK_Users&quot; rejected duplicate Id as expected.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/02_unique_constraints.sql:51: NOTICE:  CASE 2.3 PASSED: Unique constraint &quot;IX_WalletTopUps_PaymentId&quot; rejected duplicate payment ID.</pre>
+    </div>
+    <div class="detail-card">
+      <h3>📁 03_foreign_keys.sql</h3>
+      <pre>DO
+DO
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/03_foreign_keys.sql:19: NOTICE:  CASE 3.1 PASSED: Foreign key &quot;FK_Chargers_Stations_StationId&quot; prevented orphan charger.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/03_foreign_keys.sql:31: NOTICE:  CASE 3.2 PASSED: Foreign key &quot;FK_Reservations_Chargers_ChargerId&quot; rejected invalid charger.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/03_foreign_keys.sql:49: NOTICE:  CASE 3.3 PASSED: DeleteBehavior.Restrict prevented deletion of User with active records.</pre>
+    </div>
+    <div class="detail-card">
+      <h3>📁 04_workflow_integrity.sql</h3>
+      <pre>INSERT 0 1
+DO
+DO
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/04_workflow_integrity.sql:34: NOTICE:  CASE 4.1 PASSED: Check constraint &quot;CK_PaymentInvoices_Amounts&quot; blocked negative invoice amount.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/04_workflow_integrity.sql:48: NOTICE:  CASE 4.2 PASSED: Check constraint &quot;CK_ChargingSessions_Status&quot; rejected invalid status.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/04_workflow_integrity.sql:80: NOTICE:  CASE 4.3 PASSED: Full lifecycle chain (Reservation -&gt; Session -&gt; Invoice) successfully verified.</pre>
+    </div>
+    <div class="detail-card">
+      <h3>📁 05_wallet_and_invoicing.sql</h3>
+      <pre>DO
+DO
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/05_wallet_and_invoicing.sql:20: NOTICE:  CASE 5.1 PASSED: Check constraint &quot;CK_WalletTopUps_Amount&quot; blocked below-minimum top-up.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/05_wallet_and_invoicing.sql:33: NOTICE:  CASE 5.2 PASSED: Check constraint &quot;CK_WalletTopUps_Currency&quot; enforced LKR currency rule.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/05_wallet_and_invoicing.sql:53: NOTICE:  CASE 5.3 PASSED: Unique composite index on (DriverId, RequestId) enforced payment idempotency.</pre>
+    </div>
+    <div class="detail-card">
+      <h3>📁 06_indexes_and_performance.sql</h3>
+      <pre>DO
+                           QUERY PLAN                           
+----------------------------------------------------------------
+ Nested Loop
+   -&gt;  Seq Scan on &quot;Stations&quot; s
+         Filter: (&quot;Status&quot; = &#x27;Approved&#x27;::text)
+   -&gt;  Index Scan using &quot;IX_Chargers_StationId&quot; on &quot;Chargers&quot; c
+         Index Cond: (&quot;StationId&quot; = s.&quot;Id&quot;)
+(5 rows)
+
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
+ Index Scan using &quot;IX_Reservations_DriverId&quot; on &quot;Reservations&quot;
+   Index Cond: (&quot;DriverId&quot; = &#x27;33333333-3333-3333-3333-333333333333&#x27;::uuid)
+(2 rows)
+
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/06_indexes_and_performance.sql:39: NOTICE:  CASE 6.1 PASSED: All 12 critical performance indexes verified in pg_catalog.</pre>
+    </div>
+  </div>
+</body>
+</html>

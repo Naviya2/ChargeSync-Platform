@@ -1,0 +1,105 @@
+# ⚡ ChargeSync Platform - Database Test Report
+
+- **Target Database:** `ChargeSync-Test` (PostgreSQL 18 on `localhost:5432`)
+- **Test Execution Date:** 2026-10-05 03:38:18
+- **Overall Result:** **6 / 6 Suites Passed** (100% Success Rate)
+- **Total Time:** 477 ms
+
+## 📋 Execution Matrix
+
+| # | Test Suite | Objective | Status | Duration |
+|---|---|---|---|---|
+| 1 | `01_schema_and_seed.sql` | Environment cleanup and seed entities initialization | ✅ **PASSED** | 158 ms |
+| 2 | `02_unique_constraints.sql` | Unique constraint and primary key collision validation | ✅ **PASSED** | 60 ms |
+| 3 | `03_foreign_keys.sql` | Foreign key referential integrity and DeleteBehavior rules | ✅ **PASSED** | 59 ms |
+| 4 | `04_workflow_integrity.sql` | Domain check constraints and end-to-end lifecycle integrity | ✅ **PASSED** | 61 ms |
+| 5 | `05_wallet_and_invoicing.sql` | Wallet top-up rules, currency validation and idempotency | ✅ **PASSED** | 56 ms |
+| 6 | `06_indexes_and_performance.sql` | Catalog index presence and query performance (EXPLAIN plan) | ✅ **PASSED** | 80 ms |
+
+## 🔍 Suite Execution Logs
+
+### 📁 `01_schema_and_seed.sql`
+
+```text
+TRUNCATE TABLE
+INSERT 0 3
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/01_schema_and_seed.sql:58: NOTICE:  CASE 1.1 PASSED: Baseline environment cleaned and seed entities populated successfully.
+```
+
+### 📁 `02_unique_constraints.sql`
+
+```text
+DO
+DO
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/02_unique_constraints.sql:19: NOTICE:  CASE 2.1 PASSED: Unique constraint "IX_Users_Email" rejected duplicate email as expected.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/02_unique_constraints.sql:31: NOTICE:  CASE 2.2 PASSED: Primary Key constraint "PK_Users" rejected duplicate Id as expected.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/02_unique_constraints.sql:51: NOTICE:  CASE 2.3 PASSED: Unique constraint "IX_WalletTopUps_PaymentId" rejected duplicate payment ID.
+```
+
+### 📁 `03_foreign_keys.sql`
+
+```text
+DO
+DO
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/03_foreign_keys.sql:19: NOTICE:  CASE 3.1 PASSED: Foreign key "FK_Chargers_Stations_StationId" prevented orphan charger.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/03_foreign_keys.sql:31: NOTICE:  CASE 3.2 PASSED: Foreign key "FK_Reservations_Chargers_ChargerId" rejected invalid charger.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/03_foreign_keys.sql:49: NOTICE:  CASE 3.3 PASSED: DeleteBehavior.Restrict prevented deletion of User with active records.
+```
+
+### 📁 `04_workflow_integrity.sql`
+
+```text
+INSERT 0 1
+DO
+DO
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/04_workflow_integrity.sql:34: NOTICE:  CASE 4.1 PASSED: Check constraint "CK_PaymentInvoices_Amounts" blocked negative invoice amount.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/04_workflow_integrity.sql:48: NOTICE:  CASE 4.2 PASSED: Check constraint "CK_ChargingSessions_Status" rejected invalid status.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/04_workflow_integrity.sql:80: NOTICE:  CASE 4.3 PASSED: Full lifecycle chain (Reservation -> Session -> Invoice) successfully verified.
+```
+
+### 📁 `05_wallet_and_invoicing.sql`
+
+```text
+DO
+DO
+DO
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/05_wallet_and_invoicing.sql:20: NOTICE:  CASE 5.1 PASSED: Check constraint "CK_WalletTopUps_Amount" blocked below-minimum top-up.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/05_wallet_and_invoicing.sql:33: NOTICE:  CASE 5.2 PASSED: Check constraint "CK_WalletTopUps_Currency" enforced LKR currency rule.
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/05_wallet_and_invoicing.sql:53: NOTICE:  CASE 5.3 PASSED: Unique composite index on (DriverId, RequestId) enforced payment idempotency.
+```
+
+### 📁 `06_indexes_and_performance.sql`
+
+```text
+DO
+                           QUERY PLAN                           
+----------------------------------------------------------------
+ Nested Loop
+   ->  Seq Scan on "Stations" s
+         Filter: ("Status" = 'Approved'::text)
+   ->  Index Scan using "IX_Chargers_StationId" on "Chargers" c
+         Index Cond: ("StationId" = s."Id")
+(5 rows)
+
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
+ Index Scan using "IX_Reservations_DriverId" on "Reservations"
+   Index Cond: ("DriverId" = '33333333-3333-3333-3333-333333333333'::uuid)
+(2 rows)
+
+
+psql:D:/Github Projects/ChargeSync-Platform/database/tests/06_indexes_and_performance.sql:39: NOTICE:  CASE 6.1 PASSED: All 12 critical performance indexes verified in pg_catalog.
+```
+

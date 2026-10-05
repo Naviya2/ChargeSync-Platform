@@ -26,7 +26,7 @@ def mock_vehicle():
         max_charge_rate_kw=100.0
     )
 
-def mock_station():
+def mock_station(tariff=150.0):
     return StationInput(
         station_id="station-123",
         name="Test Station",
@@ -40,7 +40,7 @@ def mock_station():
                 power_kw=50.0,
                 connector="CCS2",
                 status="AVAILABLE",
-                tariff=150.0
+                tariff=tariff
             )
         ]
     )
@@ -113,7 +113,7 @@ def test_generate_plan_budget_preference():
         price_preference="Budget",
         vehicle_id="vehicle-123",
         vehicle=mock_vehicle(),
-        candidate_stations=[mock_station()]
+        candidate_stations=[mock_station(tariff=30.0)]
     )
     
     response = agent.generate_plan(request)
