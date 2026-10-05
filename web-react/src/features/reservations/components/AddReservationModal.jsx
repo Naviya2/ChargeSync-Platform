@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '../../../api/client'
 import { useNotificationStore } from '../../../store/notificationStore'
@@ -52,13 +52,13 @@ export default function AddReservationModal({ onClose }) {
   const selectedVehicle = vehicles.find(v => v.id === vehicleId)
 
   // Calculate dynamic duration like mobile app
-  const durationMinutes = useMemo(() => {
+  const durationMinutes = (() => {
     if (!selectedVehicle || !selectedCharger) return 60; // Default
     const effectivePowerKw = Math.min(selectedCharger.powerKw, selectedVehicle.maxChargeRateKw);
     if (effectivePowerKw <= 0) return 60;
     const hours = selectedVehicle.batteryCapacityKwh / effectivePowerKw;
     return Math.round(hours * 60);
-  }, [selectedVehicle, selectedCharger]);
+  })();
 
   // Fetch Available Slots
   const { data: availableSlots = [], isFetching: isSlotsLoading } = useQuery({

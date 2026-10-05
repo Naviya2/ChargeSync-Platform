@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { format } from 'date-fns'
 import { useReservationsList } from '../hooks/useReservations'
 import PageHeader from '../../../components/shared/PageHeader'
 import { Card, Spinner } from '../../../components/ui'
 import ReservationDetailsModal from '../components/ReservationDetailsModal'
 import AddReservationModal from '../components/AddReservationModal'
-import { useNotificationStore } from '../../../store/notificationStore'
 import PendingApprovalsCard from '../../stations/components/PendingApprovalsCard'
 
 // Consistent status badge colors (light & dark mode aware via CSS overrides)
@@ -22,9 +21,6 @@ export default function ReservationsPage() {
   const [search, setSearch] = useState('')
   const [sortOrder, setSortOrder] = useState('time_desc')
   const [showPendingOnly, setShowPendingOnly] = useState(false)
-  const notify = useNotificationStore((s) => s.notify)
-  const prevCountRef = useRef(0)
-  const prevStatusRef = useRef({})
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
   const { data, isLoading, isError } = useReservationsList({}, { refetchInterval: 10000 })
@@ -52,9 +48,6 @@ export default function ReservationsPage() {
     });
   }, [filtered, sortOrder]);
 
-  useEffect(() => {
-    // Notifications are now handled globally in AppLayout.jsx via GlobalReservationWatcher
-  }, [])
 
   return (
     <div className="space-y-6">

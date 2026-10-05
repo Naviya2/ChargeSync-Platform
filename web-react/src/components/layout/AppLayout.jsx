@@ -12,9 +12,9 @@ function GlobalReservationWatcher() {
   const prevStatusRef = useRef({})
 
   const { data } = useReservationsList({}, { refetchInterval: 10000 })
-  const reservations = data?.items || []
 
   useEffect(() => {
+    const reservations = data?.items || []
     if (reservations.length > 0) {
       if (prevCountRef.current > 0 && reservations.length > prevCountRef.current) {
         // We have new reservations, let's see if any are Pending
@@ -43,7 +43,7 @@ function GlobalReservationWatcher() {
         prevStatuses[res.id] = res.status;
       });
     }
-  }, [reservations, notify])
+  }, [data?.items, notify])
 
   return null
 }

@@ -2,7 +2,7 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ReservationDetailsModal from '@/features/reservations/components/ReservationDetailsModal';
-import { useUpdateReservation, useCancelReservation, useDeleteReservation, useApproveReservation, useRejectReservation } from '@/features/reservations/hooks/useReservations';
+import { useUpdateReservation, useCancelReservation, useDeleteReservation } from '@/features/reservations/hooks/useReservations';
 import { useAuthStore } from '@/store/authStore';
 
 const queryClient = new QueryClient({
@@ -168,7 +168,7 @@ describe('ReservationDetailsModal', () => {
 
   it('warns a driver about the late fee and shows the advance separately', async () => {
     useAuthStore.setState({ user: { id: 'drv-456', role: 'Driver' } });
-    currentReservationData = { ...defaultReservation, advanceDepositAmount: 500 };
+    currentReservationData = { ...defaultReservation, status: 'Confirmed', advanceDepositAmount: 500 };
     render(
       <QueryClientProvider client={queryClient}>
         <ReservationDetailsModal reservationId={defaultReservation.id} onClose={vi.fn()} />
@@ -181,10 +181,25 @@ describe('ReservationDetailsModal', () => {
     expect(screen.getByText('Advance Deposit Paid')).toBeInTheDocument();
   });
 
+  it('offers approval and rejection for pending requests instead of cancellation', () => {
+    useAuthStore.setState({ user: { id: 'owner-1', role: 'StationOwner' } });
+    currentReservationData = defaultReservation;
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ReservationDetailsModal reservationId={defaultReservation.id} onClose={vi.fn()} />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByRole('button', { name: /approve request/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /reject request/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /cancel booking/i })).not.toBeInTheDocument();
+  });
+
   it('shows staff cancellation and both fee records without claiming a new fee', () => {
     useAuthStore.setState({ user: { id: 'owner-1', role: 'StationOwner' } });
     currentReservationData = {
       ...defaultReservation,
+      status: 'Confirmed',
       lateCancellationFee: 500,
       cancellationFeesPaid: 1000,
     };

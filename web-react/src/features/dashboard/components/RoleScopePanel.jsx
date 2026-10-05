@@ -1,5 +1,5 @@
 import { useAuthStore } from '../../../store/authStore'
-import { ROLES, ROLE_LABELS } from '../../../lib/constants'
+import { ROLES } from '../../../lib/constants'
 import { cn } from '../../../lib/cn'
 
 export default function RoleScopePanel() {

@@ -1,4 +1,3 @@
-import React from 'react'
 import { usePendingApprovalsQuery, useApproveReservation, useRejectReservation } from '../../reservations/hooks/useReservations'
 import { format } from 'date-fns'
 

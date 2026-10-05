@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useUpdateOperatingHours } from '../../hooks/useStations'
 import useDialogStore from '../../../../store/dialogStore'
 
@@ -53,24 +53,27 @@ function DayRow({ row, onChange }) {
   )
 }
 
-export default function OperatingHoursTab({ stationId, hours = [] }) {
-  const [schedule, setSchedule] = useState([])
-  const updateHoursMutation = useUpdateOperatingHours()
+function createSchedule(hours) {
+  return DAYS.map(day => {
+    const dayInt = DAY_TO_INT[day]
+    const existing = hours.find(h => h.dayOfWeek === dayInt || h.dayOfWeek === day || h.day === day)
+    return {
+      day,
+      enabled: existing ? existing.isEnabled !== false && existing.enabled !== false : true,
+      open: (existing?.openTime || existing?.open || '06:00:00').substring(0, 5),
+      close: (existing?.closeTime || existing?.close || '22:00:00').substring(0, 5),
+    }
+  })
+}
 
-  useEffect(() => {
-    // Initialize schedule from API data or defaults
-    const initialSchedule = DAYS.map(day => {
-      const dayInt = DAY_TO_INT[day]
-      const existing = hours.find(h => h.dayOfWeek === dayInt || h.dayOfWeek === day || h.day === day)
-      return {
-        day,
-        enabled: existing ? existing.isEnabled !== false && existing.enabled !== false : true,
-        open: (existing?.openTime || existing?.open || '06:00:00').substring(0, 5),
-        close: (existing?.closeTime || existing?.close || '22:00:00').substring(0, 5),
-      }
-    })
-    setSchedule(initialSchedule)
-  }, [hours])
+export default function OperatingHoursTab({ stationId, hours = [] }) {
+  // Reset the draft when saved hours change, while retaining edits across identical refetches.
+  return <OperatingHoursEditor key={JSON.stringify([stationId, hours])} stationId={stationId} hours={hours} />
+}
+
+function OperatingHoursEditor({ stationId, hours }) {
+  const [schedule, setSchedule] = useState(() => createSchedule(hours))
+  const updateHoursMutation = useUpdateOperatingHours()
 
   const handleChange = (day, field, value) => {
     setSchedule(prev => prev.map(row => 
