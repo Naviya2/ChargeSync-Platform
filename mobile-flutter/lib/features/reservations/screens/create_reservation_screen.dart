@@ -168,14 +168,18 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      final charges = await ReservationApiClient.instance.getBookingCharges();
-      if (!mounted) return;
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (_) => ReservationChargeDialog(charges: charges),
-      );
+      double? expectedCancellationFees;
+      if (!widget.requiresApproval) {
+        final charges = await ReservationApiClient.instance.getBookingCharges();
+        if (!mounted) return;
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (_) => ReservationChargeDialog(charges: charges),
+        );
 
-      if (!mounted || confirm != true) return;
+        if (!mounted || confirm != true) return;
+        expectedCancellationFees = charges.pendingCancellationFees;
+      }
 
       final request = CreateReservationRequest(
         chargerId: _selectedCharger!.id,
@@ -183,7 +187,7 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
         startTime: _selectedSlot!.startTime,
         endTime: _selectedSlot!.endTime,
         advanceDepositAmount: ReservationChargeDialog.advanceAmount,
-        expectedCancellationFees: charges.pendingCancellationFees,
+        expectedCancellationFees: expectedCancellationFees,
         requiresApproval: widget.requiresApproval,
       );
 
@@ -194,9 +198,9 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Success'),
+          title: Text(widget.requiresApproval ? 'Request Sent' : 'Success'),
           content: Text(widget.requiresApproval 
-              ? 'Reservation placed and is awaiting operator approval.\n\nThe 500 LKR advance fee will be deducted only after the station owner approves your request.' 
+              ? 'Your reservation request has been sent and is awaiting station owner approval.\n\nThe 500 LKR advance fee will be deducted only after the station owner approves your request.' 
               : 'Reservation placed successfully!'),
           actions: [
             ElevatedButton(
@@ -506,7 +510,9 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                       child: _isSubmitting
                           ? const CircularProgressIndicator(color: Colors.white)
                           : Text(
-                              'Confirm Reservation',
+                              widget.requiresApproval
+                                  ? 'Send Approval Request'
+                                  : 'Confirm Reservation',
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

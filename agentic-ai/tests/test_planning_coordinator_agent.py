@@ -27,7 +27,7 @@ def mock_vehicle():
         max_charge_rate_kw=100.0
     )
 
-def mock_station():
+def mock_station(tariff=150.0):
     return StationInput(
         station_id="station-123",
         name="Test Station",
@@ -41,7 +41,7 @@ def mock_station():
                 power_kw=50.0,
                 connector="CCS2",
                 status="AVAILABLE",
-                tariff=150.0
+                tariff=tariff
             )
         ]
     )

@@ -47,12 +47,15 @@ public sealed class ReservationService : IReservationService
 
         // 2. Verify sufficient wallet balance (domain guard also validates this).
         if (request.AdvanceDepositAmount < 0) throw new ArgumentException("Advance deposit cannot be negative.");
-        if ((request.ExpectedCancellationFees ?? 0m) != driver.PendingCancellationFees)
-            throw new PaymentConflictException("Cancellation fees changed. Review the booking charges and confirm again.");
-        var totalCharge = request.AdvanceDepositAmount + driver.PendingCancellationFees;
-        if (driver.WalletBalance < totalCharge)
-            throw new InvalidOperationException(
-                $"Insufficient wallet balance. Available: LKR {driver.WalletBalance:0.00}, required: LKR {totalCharge:0.00} (advance plus cancellation fees).");
+        if (!request.RequiresApproval)
+        {
+            if ((request.ExpectedCancellationFees ?? 0m) != driver.PendingCancellationFees)
+                throw new PaymentConflictException("Cancellation fees changed. Review the booking charges and confirm again.");
+            var totalCharge = request.AdvanceDepositAmount + driver.PendingCancellationFees;
+            if (driver.WalletBalance < totalCharge)
+                throw new InvalidOperationException(
+                    $"Insufficient wallet balance. Available: LKR {driver.WalletBalance:0.00}, required: LKR {totalCharge:0.00} (advance plus cancellation fees).");
+        }
 
         // 3. Verify the charger exists.
         var chargerExists = await _db.Chargers
