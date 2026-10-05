@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from models.station_analysis_models import (
     StationAnalysisRequest,
     StationDataInput,
@@ -60,7 +60,7 @@ def test_flag_generation(agent):
     assert "PARTIAL_OUTAGE" not in flags_good
 
 def test_full_analysis_flow(agent):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     request = StationAnalysisRequest(
         station_id="ST-123",
         time_window=TimeWindow(
