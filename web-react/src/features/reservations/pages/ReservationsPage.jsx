@@ -1,228 +1,74 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
-import { format } from 'date-fns'
+import { useMemo, useState } from 'react'
+import { format, isValid } from 'date-fns'
+import { CalendarDays, Search, X, Plus, RefreshCw, ChevronLeft, ChevronRight, ArrowUpRight, AlertCircle, Clock3 } from 'lucide-react'
 import { useReservationsList } from '../hooks/useReservations'
+import { useAuthStore } from '../../../store/authStore'
 import PageHeader from '../../../components/shared/PageHeader'
-import { Card, Spinner } from '../../../components/ui'
+import { Button, Card, Spinner } from '../../../components/ui'
 import ReservationDetailsModal from '../components/ReservationDetailsModal'
 import AddReservationModal from '../components/AddReservationModal'
-import { useNotificationStore } from '../../../store/notificationStore'
 import PendingApprovalsCard from '../../stations/components/PendingApprovalsCard'
+import './reservations.css'
 
-// Consistent status badge colors (light & dark mode aware via CSS overrides)
-const STATUS_STYLES = {
-  Pending:   { bg: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-400' },
-  Confirmed: { bg: 'bg-blue-100 text-blue-800',     dot: 'bg-blue-500'   },
-  CheckedIn: { bg: 'bg-indigo-100 text-indigo-800', dot: 'bg-indigo-500' },
-  Completed: { bg: 'bg-green-100 text-green-800',   dot: 'bg-green-500'  },
-  Cancelled: { bg: 'bg-red-100 text-red-800',       dot: 'bg-red-400'    },
+const statuses = ['All', 'Pending', 'Confirmed', 'CheckedIn', 'Completed', 'Cancelled']
+const readable = status => status === 'CheckedIn' ? 'Checked in' : status
+const money = value => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR', maximumFractionDigits: 2 }).format(Number(value) || 0)
+const dateText = (value, pattern) => {
+  const date = new Date(value)
+  return isValid(date) ? format(date, pattern) : 'Unavailable'
 }
+const customer = reservation => reservation.driverId ? reservation.driverName || 'Registered driver' : reservation.walkInCustomerName || 'Walk-in customer'
+const initials = name => name.split(' ').filter(Boolean).slice(0, 2).map(word => word[0]).join('').toUpperCase()
 
 export default function ReservationsPage() {
+  const role = useAuthStore(state => state.user?.role)
+  const canManage = ['Admin', 'StationOwner'].includes(role)
   const [selectedId, setSelectedId] = useState(null)
   const [search, setSearch] = useState('')
   const [sortOrder, setSortOrder] = useState('time_desc')
-  const [showPendingOnly, setShowPendingOnly] = useState(false)
-  const notify = useNotificationStore((s) => s.notify)
-  const prevCountRef = useRef(0)
-  const prevStatusRef = useRef({})
+  const [status, setStatus] = useState('All')
+  const [page, setPage] = useState(1)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-
-  const { data, isLoading, isError } = useReservationsList({}, { refetchInterval: 10000 })
-  const reservations = data?.items || []
-
-  const filtered = reservations.filter((r) => {
-    if (showPendingOnly && r.status !== 'Pending') return false
-    
-    const q = search.toLowerCase()
-    return (
-      !q ||
-      (r.driverName || '').toLowerCase().includes(q) ||
-      (r.stationName || '').toLowerCase().includes(q) ||
-      r.id?.toLowerCase().includes(q)
-    )
-  })
-
+  const query = useReservationsList({ page, pageSize: 20 }, { refetchInterval: 10000 })
+  const { data, isLoading, isError } = query
+  const reservations = useMemo(() => data?.items ?? [], [data])
+  const total = data?.totalCount ?? reservations.length
+  const totalPages = data?.totalPages ?? Math.max(1, Math.ceil(total / 20))
   const sortedAndFiltered = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      if (sortOrder === 'time_desc') return new Date(b.startTime) - new Date(a.startTime);
-      if (sortOrder === 'time_asc') return new Date(a.startTime) - new Date(b.startTime);
-      if (sortOrder === 'status') return (a.status || '').localeCompare(b.status || '');
-      if (sortOrder === 'customer') return (a.driverName || '').localeCompare(b.driverName || '');
-      return 0;
-    });
-  }, [filtered, sortOrder]);
+    const q = search.trim().toLowerCase()
+    return reservations.filter(reservation => (status === 'All' || reservation.status === status) &&
+      `${customer(reservation)} ${reservation.stationName || ''} ${reservation.chargerName || ''} ${reservation.vehicleName || ''} ${reservation.id}`.toLowerCase().includes(q))
+      .sort((a, b) => {
+        if (sortOrder === 'time_asc') return new Date(a.startTime) - new Date(b.startTime)
+        if (sortOrder === 'status') return (a.status || '').localeCompare(b.status || '')
+        if (sortOrder === 'customer') return customer(a).localeCompare(customer(b))
+        return new Date(b.startTime) - new Date(a.startTime)
+      })
+  }, [reservations, status, search, sortOrder])
+  const hasFilters = search.trim() || status !== 'All'
 
-  useEffect(() => {
-    // Notifications are now handled globally in AppLayout.jsx via GlobalReservationWatcher
-  }, [])
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Reservations"
-        description="Manage upcoming and past charging slot reservations."
-      />
-      
-      <PendingApprovalsCard />
-
-      {/* Search and Sort bar */}
-      <div className="flex w-full flex-col sm:flex-row items-center gap-4">
-        <div className="relative w-full sm:max-w-md">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-gray-400">
-            search
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by customer, station, or ID..."
-            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <span className="material-symbols-outlined text-base">close</span>
-            </button>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-space-xs rounded-xl border border-gray-200 bg-white px-space-sm py-2 shadow-sm w-full sm:w-auto">
-          <span className="material-symbols-outlined text-base text-gray-400 pl-1">sort</span>
-          <select
-            value={sortOrder}
-            onChange={e => setSortOrder(e.target.value)}
-            className="appearance-none cursor-pointer bg-transparent text-sm text-gray-700 focus:outline-none w-full pr-6"
-          >
-            <option value="time_desc">Newest First</option>
-            <option value="time_asc">Oldest First</option>
-            <option value="status">Status</option>
-            <option value="customer">Customer Name</option>
-          </select>
-        </div>
-
-        <button
-          onClick={() => setShowPendingOnly(!showPendingOnly)}
-          className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition shadow-sm w-full sm:w-auto ${
-            showPendingOnly 
-              ? 'border-amber-300 bg-amber-50 text-amber-700' 
-              : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-          }`}
-        >
-          <span className="material-symbols-outlined text-base">pending_actions</span>
-          Pending Approvals
-        </button>
-        
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="ml-auto inline-flex items-center gap-2 rounded-lg bg-primary px-space-md py-1.5 font-label-md text-label-md text-on-primary shadow-sm hover:bg-primary/90 transition-colors"
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          Add Reservation
-        </button>
-      </div>
-
-      <Card className="overflow-hidden p-0">
-        {isLoading ? (
-          <div className="flex flex-col items-center gap-2 py-16">
-            <Spinner size={28} />
-            <p className="text-sm text-gray-400">Loading reservations…</p>
-          </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center gap-2 py-16 text-center">
-            <span className="material-symbols-outlined text-4xl text-red-400">error_outline</span>
-            <p className="text-red-500 font-medium">Failed to load reservations.</p>
-          </div>
-        ) : sortedAndFiltered.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-16 text-center">
-            <span className="material-symbols-outlined text-4xl text-gray-300">event_busy</span>
-            <p className="text-gray-400 text-sm">{search ? 'No matching reservations found.' : 'No reservations yet.'}</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500">Customer</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500">Station / Charger</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500">Time Window</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                  <th className="px-6 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {sortedAndFiltered.map((res) => {
-                  const statusStyle = STATUS_STYLES[res.status] || { bg: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' }
-                  return (
-                    <tr key={res.id} className="bg-white hover:bg-gray-50 transition-colors">
-                      {/* Customer */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600 shrink-0 text-xs font-bold">
-                            {(res.driverName || 'W').charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-medium text-gray-900">
-                            {res.driverId ? (res.driverName || 'Registered Driver') : 'Walk-In'}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Station */}
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{res.stationName || 'Unknown Station'}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          {res.chargerName || `Charger: ${res.chargerId?.substring(0, 8)}…`}
-                        </div>
-                      </td>
-
-                      {/* Time */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-gray-900 font-medium">{format(new Date(res.startTime), 'MMM d, yyyy')}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          {format(new Date(res.startTime), 'HH:mm')} – {format(new Date(res.endTime), 'HH:mm')}
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusStyle.bg}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${statusStyle.dot}`} />
-                          {res.status}
-                        </span>
-                      </td>
-
-                      {/* Action */}
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => setSelectedId(res.id)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 focus:outline-none"
-                        >
-                          <span className="material-symbols-outlined text-sm">open_in_new</span>
-                          View Details
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-
-      {selectedId && (
-        <ReservationDetailsModal
-          reservationId={selectedId}
-          onClose={() => setSelectedId(null)}
-        />
-      )}
-
-      {isAddModalOpen && (
-        <AddReservationModal
-          onClose={() => setIsAddModalOpen(false)}
-        />
-      )}
+  return <div className="rv-workspace">
+    <PageHeader title="Reservations" description="View charging bookings, review requests, and manage reservation details." actions={<>
+      <Button variant="outline" onClick={() => query.refetch?.()} disabled={query.isFetching}><RefreshCw size={15} className={query.isFetching ? 'rv-spin' : ''} /> Refresh</Button>
+      {canManage && <Button onClick={() => setIsAddModalOpen(true)}><Plus size={16} /> Add Reservation</Button>}
+    </>} />
+    {canManage && <PendingApprovalsCard />}
+    <div className="rv-toolbar"><div className="rv-tabs" role="group" aria-label="Reservation status filters">{statuses.map(value => <button key={value} type="button" aria-pressed={status === value} onClick={() => setStatus(value)}>{value === 'All' ? 'All bookings' : readable(value)}</button>)}</div>
+      <div className="rv-tools"><label className="rv-search"><Search size={16} /><input aria-label="Search reservations" placeholder="Search this page by customer, station, or ID" value={search} onChange={event => setSearch(event.target.value)} />{search && <button aria-label="Clear reservation search" onClick={() => setSearch('')}><X size={14} /></button>}</label><select aria-label="Sort reservations" value={sortOrder} onChange={event => setSortOrder(event.target.value)}><option value="time_desc">Latest booking date</option><option value="time_asc">Earliest booking date</option><option value="status">Status</option><option value="customer">Customer name</option></select></div>
     </div>
-  )
+    <Card className="rv-bookings p-0">
+      <div className="rv-table-heading"><div><h2>Booking records <span>{isLoading || (isError && !data) ? '—' : total.toLocaleString()}</span></h2><p>Search, status filters, and sorting apply to the current page.</p></div><span className="rv-local-time"><Clock3 size={13} /> Local time</span></div>
+      {isLoading ? <div role="status" className="rv-empty"><Spinner size={28} /><p>Loading reservations…</p></div> : isError ? <div role="alert" className="rv-empty"><AlertCircle size={28} /><h3>Failed to load reservations.</h3><p>Try refreshing to retrieve the latest bookings.</p><Button variant="outline" onClick={() => query.refetch?.()}>Try again</Button></div> : !sortedAndFiltered.length ? <div className="rv-empty"><CalendarDays size={30} /><h3>{hasFilters ? 'No matching reservations found.' : 'No reservations yet.'}</h3><p>{hasFilters ? 'Try another search or select a different status.' : 'New charging bookings will appear here.'}</p>{hasFilters && <Button variant="outline" onClick={() => { setSearch(''); setStatus('All') }}>Clear filters</Button>}</div> : <div className="rv-table-scroll"><table className="rv-table"><caption className="sr-only">Charging reservation records</caption><thead><tr><th scope="col">Customer</th><th scope="col">Station / charger</th><th scope="col">Schedule</th><th scope="col">Advance deposit</th><th scope="col">Status</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead><tbody>{sortedAndFiltered.map(reservation => <tr key={reservation.id}>
+        <td><div className="rv-customer"><span className="rv-avatar">{initials(customer(reservation))}</span><div><strong>{customer(reservation)}</strong><span>{reservation.driverId ? reservation.vehicleName || 'Registered driver' : 'Walk-in booking'}</span></div></div><span className="rv-booking-id">#{reservation.id.slice(0, 8)}</span></td>
+        <td><strong>{reservation.stationName || 'Unknown station'}</strong><span className="rv-cell-secondary">{reservation.chargerName || (reservation.chargerId ? `Charger ${reservation.chargerId.slice(0, 8)}` : 'Charger unavailable')}</span></td>
+        <td className="rv-schedule"><strong>{dateText(reservation.startTime, 'dd MMM yyyy')}</strong><span className="rv-cell-secondary">{dateText(reservation.startTime, 'HH:mm')} – {dateText(reservation.endTime, 'HH:mm')}{dateText(reservation.startTime, 'yyyy-MM-dd') !== dateText(reservation.endTime, 'yyyy-MM-dd') && ` (${dateText(reservation.endTime, 'dd MMM')})`}</span></td>
+        <td className="rv-amount"><strong>{reservation.advanceDepositAmount == null ? '—' : money(reservation.advanceDepositAmount)}</strong>{Number(reservation.cancellationFeesPaid) > 0 && <span className="rv-cell-secondary">{money(reservation.cancellationFeesPaid)} prior fees paid</span>}{Number(reservation.lateCancellationFee) > 0 && <span className="rv-fee-note">{money(reservation.lateCancellationFee)} cancellation fee</span>}</td>
+        <td><span className={`rv-status rv-status-${reservation.status?.toLowerCase()}`}><span />{readable(reservation.status)}</span></td>
+        <td><button className="rv-view" onClick={() => setSelectedId(reservation.id)}><span>View Details</span><ArrowUpRight size={14} /></button></td>
+      </tr>)}</tbody></table></div>}
+      {!isLoading && !isError && <div className="rv-table-footer"><span>{sortedAndFiltered.length} shown on page {page} · {total} total bookings</span><div><Button variant="ghost" size="sm" aria-label="Previous reservations page" disabled={page <= 1 || query.isFetching} onClick={() => setPage(value => value - 1)}><ChevronLeft size={15} /></Button><span>Page {page} of {Math.max(1, totalPages)}</span><Button variant="ghost" size="sm" aria-label="Next reservations page" disabled={page >= totalPages || query.isFetching} onClick={() => setPage(value => value + 1)}><ChevronRight size={15} /></Button></div></div>}
+    </Card>
+    {selectedId && <ReservationDetailsModal reservationId={selectedId} readOnly={role === 'SupportManager'} onClose={() => setSelectedId(null)} />}
+    {isAddModalOpen && <AddReservationModal onClose={() => setIsAddModalOpen(false)} />}
+  </div>
 }

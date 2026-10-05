@@ -13,7 +13,8 @@ class ReservationApiClient {
   final _storage = const FlutterSecureStorage();
   final _client = http.Client();
 
-  Future<String?> _getAccessToken() => _storage.read(key: ApiConfig.kAccessToken);
+  Future<String?> _getAccessToken() =>
+      _storage.read(key: ApiConfig.kAccessToken);
 
   Map<String, String> _headers(String? token) {
     return {
@@ -34,7 +35,11 @@ class ReservationApiClient {
       String errorMessage = 'HTTP ${response.statusCode}: ${response.body}';
       try {
         final jsonError = jsonDecode(response.body);
-        errorMessage = jsonError['detail'] ?? jsonError['message'] ?? jsonError['title'] ?? errorMessage;
+        errorMessage =
+            jsonError['detail'] ??
+            jsonError['message'] ??
+            jsonError['title'] ??
+            errorMessage;
       } catch (_) {}
       throw Exception(errorMessage);
     }
@@ -56,7 +61,11 @@ class ReservationApiClient {
       String errorMessage = 'HTTP ${response.statusCode}: ${response.body}';
       try {
         final jsonError = jsonDecode(response.body);
-        errorMessage = jsonError['detail'] ?? jsonError['message'] ?? jsonError['title'] ?? errorMessage;
+        errorMessage =
+            jsonError['detail'] ??
+            jsonError['message'] ??
+            jsonError['title'] ??
+            errorMessage;
       } catch (_) {}
       throw Exception(errorMessage);
     }
@@ -71,7 +80,11 @@ class ReservationApiClient {
       String errorMessage = 'HTTP ${response.statusCode}: ${response.body}';
       try {
         final jsonError = jsonDecode(response.body);
-        errorMessage = jsonError['detail'] ?? jsonError['message'] ?? jsonError['title'] ?? errorMessage;
+        errorMessage =
+            jsonError['detail'] ??
+            jsonError['message'] ??
+            jsonError['title'] ??
+            errorMessage;
       } catch (_) {}
       throw Exception(errorMessage);
     }
@@ -79,12 +92,21 @@ class ReservationApiClient {
 
   // ── Endpoints ─────────────────────────────────────────────────────────────
 
-  Future<ReservationDto> createReservation(CreateReservationRequest request) async {
+  Future<BookingCharges> getBookingCharges() async =>
+      BookingCharges.fromJson(await _get('/api/reservations/booking-charges'));
+
+  Future<ReservationDto> createReservation(
+    CreateReservationRequest request,
+  ) async {
     final result = await _post('/api/reservations', request.toJson());
     return ReservationDto.fromJson(result);
   }
 
-  Future<ReservationDto> createWalkIn(String chargerId, DateTime startTime, DateTime endTime) async {
+  Future<ReservationDto> createWalkIn(
+    String chargerId,
+    DateTime startTime,
+    DateTime endTime,
+  ) async {
     final result = await _post('/api/reservations/walk-in', {
       'chargerId': chargerId,
       'startTime': startTime.toUtc().toIso8601String(),
@@ -101,8 +123,13 @@ class ReservationApiClient {
   }
 
   Future<PagedResult<ReservationDto>> getMyReservations() async {
-    final result = await _get('/api/reservations'); // Backend filters by current user
-    return PagedResult.fromJson(result, (json) => ReservationDto.fromJson(json));
+    final result = await _get(
+      '/api/reservations',
+    ); // Backend filters by current user
+    return PagedResult.fromJson(
+      result,
+      (json) => ReservationDto.fromJson(json),
+    );
   }
 
   Future<void> cancelReservation(String id) async {
@@ -123,10 +150,18 @@ class ReservationApiClient {
     return WaitlistEntryDto.fromJson(result);
   }
 
-  Future<List<TimeSlotDto>> getAvailability(String chargerId, DateTime date, int durationMinutes) async {
+  Future<List<TimeSlotDto>> getAvailability(
+    String chargerId,
+    DateTime date,
+    int durationMinutes,
+  ) async {
     final formattedDate = date.toIso8601String().split('T')[0];
-    final result = await _get('/api/reservations/availability?chargerId=$chargerId&date=$formattedDate&durationMinutes=$durationMinutes');
-    final list = result is List ? result : (result['value'] ?? result); // Handle raw list or wrapped result
+    final result = await _get(
+      '/api/reservations/availability?chargerId=$chargerId&date=$formattedDate&durationMinutes=$durationMinutes',
+    );
+    final list = result is List
+        ? result
+        : (result['value'] ?? result); // Handle raw list or wrapped result
     if (list is List) {
       return list.map((e) => TimeSlotDto.fromJson(e)).toList();
     }
@@ -137,7 +172,9 @@ class ReservationApiClient {
     final result = await _get('/api/waitlist/mine');
     // The endpoint returns a list, not a PagedResult for waitlist mine? Let's check backend WaitlistController.
     // Yes, GetMine returns Task<ActionResult<IReadOnlyList<WaitlistEntryDto>>>
-    throw UnimplementedError('We will handle lists in another helper if needed.');
+    throw UnimplementedError(
+      'We will handle lists in another helper if needed.',
+    );
   }
 
   Future<List<WaitlistEntryDto>> getMyWaitlistList() async {

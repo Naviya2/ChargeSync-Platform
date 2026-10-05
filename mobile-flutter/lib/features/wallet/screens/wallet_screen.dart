@@ -185,6 +185,17 @@ class _WalletScreenState extends State<WalletScreen>
                           const Text(
                             'Use your wallet for charging and memberships.',
                           ),
+                          if ((_wallet?['pendingCancellationFees'] as num? ??
+                                  0) >
+                              0) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'Outstanding cancellation fees: ${_money(_wallet?['pendingCancellationFees'])}',
+                            ),
+                            const Text(
+                              'Collected once with your next driver booking, in addition to its advance.',
+                            ),
+                          ],
                         ],
                       ),
                     ),

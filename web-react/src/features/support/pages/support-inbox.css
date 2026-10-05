@@ -1,0 +1,147 @@
+.si-workspace {
+  --si-text: theme('colors.on-surface');
+  --si-muted: theme('colors.on-surface-variant');
+  --si-line: theme('colors.surface-container');
+  --si-soft: theme('colors.surface-container-low');
+  --si-accent: theme('colors.primary');
+  @apply w-full text-on-surface;
+}
+.si-workspace :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid var(--si-accent); outline-offset: 3px; }
+.si-back { @apply mr-2 inline-flex items-center gap-2 text-body-sm; color: var(--si-muted); }
+.si-toolbar { @apply mb-space-xl flex flex-wrap items-center justify-between gap-4; }
+.si-tabs { @apply flex flex-wrap items-center gap-1; }
+.si-tabs > button { @apply inline-flex items-center gap-2 rounded-lg px-3 py-2 text-body-sm font-medium transition; color: var(--si-muted); }
+.si-tabs > button[aria-pressed=true] { @apply bg-primary/10; color: var(--si-accent); }
+.si-tabs > button > span { @apply rounded px-1.5 py-0.5 text-label-sm tabular-nums; background: var(--si-line); color: var(--si-muted); }
+.si-tools { @apply flex flex-wrap items-center gap-2; }
+.si-search { @apply flex items-center gap-2 rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 shadow-sm; color: var(--si-muted); }
+.si-search input { @apply min-w-0 bg-transparent text-body-sm; color: var(--si-text); }
+.si-tools select { @apply rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 text-body-sm shadow-sm; color: var(--si-text); }
+.si-grid { @apply grid grid-cols-1 items-start gap-space-lg; }
+.si-queue, .si-conversation, .si-detail-card, .si-analysis { @apply overflow-hidden border border-slate-200/70; }
+.si-queue-heading { @apply flex items-center justify-between border-b p-4; border-color: var(--si-line); }
+.si-queue-heading h2 { @apply text-headline-sm font-semibold; }
+.si-queue-heading h2 span { @apply ml-1 text-label-md font-normal tabular-nums; color: var(--si-muted); }
+.si-queue-heading > span { @apply text-label-sm; color: var(--si-muted); }
+.si-queue-list { @apply max-h-[720px] overflow-y-auto; }
+.si-ticket { @apply relative block w-full border-b px-4 py-5 text-left transition; border-color: var(--si-line); }
+.si-ticket:hover { background: var(--si-soft); }
+.si-ticket:disabled { @apply cursor-wait; }
+.si-ticket[aria-pressed=true] { @apply bg-primary/5; }
+.si-ticket[aria-pressed=true]::before { content: ''; @apply absolute bottom-3 left-0 top-3 w-0.5 rounded-r bg-primary; }
+.si-ticket-top, .si-ticket-bottom { @apply flex items-center justify-between gap-2; }
+.si-ticket-number { @apply font-mono text-label-sm; color: var(--si-muted); }
+.si-priority { @apply inline-flex items-center rounded px-1.5 py-0.5 text-label-sm font-medium; background: var(--si-soft); color: var(--si-muted); }
+.si-priority-high { @apply bg-amber-50 text-amber-700; }
+.si-priority-urgent { @apply bg-red-50 text-red-700; }
+.si-ticket h3 { @apply mb-1 mt-3 line-clamp-2 text-body-md font-semibold leading-5; }
+.si-preview { @apply line-clamp-2 text-body-sm leading-5; color: var(--si-muted); }
+.si-ticket-bottom { @apply mt-4 text-label-sm; color: var(--si-muted); }
+.si-person { @apply inline-flex min-w-0 items-center gap-2 truncate; }
+.si-small-avatar { @apply inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[9px] font-semibold text-slate-600; }
+.si-ticket-tags { @apply mt-3 flex items-center gap-2 text-label-sm; color: var(--si-muted); }
+.si-ticket-tags > span:last-child { @apply truncate; }
+.si-status { @apply inline-flex shrink-0 items-center gap-1.5 text-label-sm font-medium; color: var(--si-muted); }
+.si-status > span { @apply h-1.5 w-1.5 rounded-full bg-slate-400; }
+.si-status-open { @apply text-blue-700; }
+.si-status-open > span { @apply bg-blue-500; }
+.si-status-inprogress { @apply text-amber-700; }
+.si-status-inprogress > span { @apply bg-amber-500; }
+.si-status-resolved { @apply text-emerald-700; }
+.si-status-resolved > span { @apply bg-emerald-500; }
+.si-queue-footer { @apply border-t px-4 py-3 text-label-sm; border-color: var(--si-line); color: var(--si-muted); }
+.si-conversation { @apply flex min-w-0 flex-col; }
+.si-conversation-heading { @apply border-b p-5; border-color: var(--si-line); }
+.si-conversation-meta { @apply flex flex-wrap items-center gap-3 text-label-sm; color: var(--si-muted); }
+.si-conversation-heading h2 { @apply mb-2 mt-3 break-words text-headline-md font-semibold; }
+.si-conversation-heading p { @apply flex flex-wrap items-center gap-1.5 text-label-md; color: var(--si-muted); }
+.si-thread { @apply flex max-h-[620px] min-h-[350px] flex-1 flex-col gap-6 overflow-y-auto p-5; }
+.si-original { @apply rounded-lg border p-3; border-color: var(--si-line); background: var(--si-soft); }
+.si-original summary { @apply flex cursor-pointer list-none items-center justify-between text-label-md font-medium; color: var(--si-muted); }
+.si-original[open] summary svg { transform: rotate(90deg); }
+.si-original p { @apply mt-3 whitespace-pre-wrap break-words text-body-sm leading-6; }
+.si-thread-empty { @apply py-8 text-center text-body-sm; color: var(--si-muted); }
+.si-message-meta { @apply mb-2 flex flex-wrap items-center gap-2 text-label-sm; color: var(--si-muted); }
+.si-message-meta strong { @apply text-label-md font-semibold; color: var(--si-text); }
+.si-message-meta time { @apply ml-auto text-[10px]; }
+.si-message-body { @apply rounded-xl rounded-tl-sm border p-4 text-body-sm leading-6 whitespace-pre-wrap break-words; border-color: var(--si-line); overflow-wrap: anywhere; }
+.si-message-staff .si-message-body { @apply rounded-tl-xl rounded-tr-sm border-primary/10 bg-primary/5; }
+.si-message-staff .si-small-avatar { @apply bg-primary/10; color: var(--si-accent); }
+.si-system-message { @apply flex flex-wrap justify-center gap-2 text-center text-label-sm; color: var(--si-muted); }
+.si-system-message time { @apply opacity-70; }
+.si-composer { @apply border-t p-4; border-color: var(--si-line); }
+.si-composer > label { @apply mb-2 block text-label-md font-semibold; }
+.si-composer textarea { @apply block w-full resize-y rounded-lg border bg-transparent p-3 text-body-sm leading-6; border-color: var(--si-line); min-height: 110px; }
+.si-composer-footer { @apply mt-3 flex flex-wrap items-center justify-between gap-2; }
+.si-composer-footer > span { @apply text-label-sm; color: var(--si-muted); }
+.si-composer-footer > span > span { @apply opacity-70; }
+.si-readonly { @apply flex items-center justify-center gap-2 border-t px-4 py-5 text-body-sm; border-color: var(--si-line); background: var(--si-soft); color: var(--si-muted); }
+.si-details { @apply grid min-w-0 grid-cols-1 gap-space-lg; }
+.si-detail-card { @apply p-4; }
+.si-detail-card h3 { @apply mb-4 flex items-center gap-2 text-body-md font-semibold; }
+.si-detail-card label { @apply mb-1.5 block text-label-md; color: var(--si-muted); }
+.si-detail-card select { @apply w-full rounded-lg border bg-transparent px-3 py-2 text-body-sm; border-color: var(--si-line); }
+.si-detail-card dl { @apply my-4 space-y-3 text-label-md; }
+.si-detail-card dl > div { @apply flex flex-wrap justify-between gap-2; }
+.si-detail-card dt { color: var(--si-muted); }
+.si-detail-card dd { @apply max-w-full break-words font-medium; }
+.si-notice { @apply mt-2 text-label-sm leading-5 text-amber-700; }
+.si-driver { @apply flex min-w-0 items-center gap-3; }
+.si-driver-avatar { @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-label-md font-semibold; color: var(--si-accent); }
+.si-driver > div { @apply min-w-0; }
+.si-driver strong { @apply text-body-sm font-medium; }
+.si-driver p { @apply mt-1 break-all text-label-sm; color: var(--si-muted); }
+.si-record-ids { @apply mt-4 border-t pt-3 text-label-sm; border-color: var(--si-line); color: var(--si-muted); }
+.si-record-ids summary { @apply cursor-pointer; }
+.si-record-ids p { @apply mt-2 break-all font-mono leading-5; }
+.si-refund-amount { @apply block text-metric-num-md font-semibold tabular-nums; }
+.si-refund-status { @apply mt-1 text-label-md; color: var(--si-muted); }
+.si-refund-actions { @apply mt-4 grid grid-cols-2 gap-2; }
+.si-refund-actions button { @apply px-2 text-label-md; }
+.si-analysis > summary { @apply flex cursor-pointer list-none items-center justify-between p-4 text-body-sm font-semibold; }
+.si-analysis[open] > summary { @apply border-b; border-color: var(--si-line); }
+.si-analysis[open] > summary svg { transform: rotate(90deg); }
+.si-analysis > section { @apply rounded-none px-4; }
+.si-analysis section { @apply text-body-sm; }
+.si-analysis section h3 { @apply text-body-sm; }
+.si-analysis section button { @apply rounded-lg text-label-md; }
+.si-analysis section textarea { @apply rounded-lg border text-body-sm; border-color: var(--si-line); }
+.si-empty { @apply flex flex-col items-center justify-center px-5 py-16 text-center; color: var(--si-muted); }
+.si-empty h3, .si-empty h2 { @apply mb-2 mt-4 text-headline-sm font-semibold; color: var(--si-text); }
+.si-empty p { @apply max-w-sm text-body-sm leading-6; }
+.si-empty button { @apply mt-4 text-label-md font-semibold; color: var(--si-accent); }
+.si-error { @apply mb-space-lg flex items-center gap-2 rounded-lg bg-error-container p-3 text-body-sm text-on-error-container; }
+.si-error button { @apply ml-auto font-semibold underline; }
+.si-loading { @apply grid grid-cols-1 gap-space-lg md:grid-cols-3; }
+.si-loading > div { @apply h-96 animate-pulse rounded-xl bg-surface-container; }
+.si-loading p { @apply col-span-full text-body-sm; color: var(--si-muted); }
+.si-spin { animation: si-spin 1s linear infinite; }
+@keyframes si-spin { to { transform: rotate(360deg); } }
+@media (min-width: 1000px) {
+  .si-grid { grid-template-columns: minmax(240px, 1fr) minmax(0, 1.8fr); }
+  .si-details { @apply col-span-2 grid-cols-2; }
+}
+@media (min-width: 1440px) {
+  .si-grid { grid-template-columns: minmax(250px, 1fr) minmax(0, 1.8fr) minmax(230px, .9fr); }
+  .si-details { @apply col-span-1 grid-cols-1; }
+}
+@media (max-width: 999px) { .si-queue-list { max-height: 380px; } }
+@media (max-width: 480px) {
+  .si-tools, .si-search { @apply w-full; }
+  .si-search input { @apply w-full; }
+  .si-tools select { @apply w-full; }
+  .si-back { @apply hidden; }
+  .si-tabs > button { @apply px-2 text-label-md; }
+  .si-thread { @apply px-4; }
+}
+.dark .si-workspace { --si-text: #e8eaf0; --si-muted: #9aa0b0; --si-line: #44474f; --si-soft: #3b3e45; --si-accent: theme('colors.inverse-primary'); }
+.dark .si-workspace :is(.si-queue, .si-conversation, .si-detail-card, .si-analysis) { border-color: var(--si-line); }
+.dark .si-workspace :is(.si-tools select, .si-detail-card select) { background: #35383e; }
+.dark .si-workspace .si-ticket[aria-pressed=true], .dark .si-workspace .si-message-staff .si-message-body { background: #6bd8cb0d; }
+.dark .si-workspace .si-small-avatar { background: #44474f; color: #d0d3dc; }
+.dark .si-workspace .si-priority-high { @apply bg-amber-900/30 text-amber-200; }
+.dark .si-workspace .si-priority-urgent { @apply bg-red-900/30 text-red-200; }
+.dark .si-workspace .si-status-open { @apply text-blue-300; }
+.dark .si-workspace .si-status-inprogress, .dark .si-workspace .si-notice { @apply text-amber-200; }
+.dark .si-workspace .si-status-resolved { @apply text-emerald-300; }
+@media (prefers-reduced-motion: reduce) { .si-workspace * { animation: none !important; transition: none !important; } }

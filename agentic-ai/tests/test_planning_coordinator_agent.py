@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import uuid
+import pytest
 from models.planning_models import PlanningRequest, PlanningResponse, ItineraryStep
 from models.compatibility_models import VehicleInput, StationInput, ChargerInput
 from agents.planning_coordinator_agent import PlanningCoordinatorAgent
@@ -26,7 +27,7 @@ def mock_vehicle():
         max_charge_rate_kw=100.0
     )
 
-def mock_station():
+def mock_station(tariff=150.0):
     return StationInput(
         station_id="station-123",
         name="Test Station",
@@ -40,7 +41,7 @@ def mock_station():
                 power_kw=50.0,
                 connector="CCS2",
                 status="AVAILABLE",
-                tariff=150.0
+                tariff=tariff
             )
         ]
     )
@@ -103,23 +104,41 @@ def test_generate_plan_does_not_require_approval_when_not_urgent():
     assert response.requires_approval is False
     assert len(response.ranked_itineraries) > 0
 
-def test_generate_plan_budget_preference():
+@pytest.mark.parametrize(
+    "tariff,vehicle_max_kw,expected_minutes,expected_cost",
+    [
+        (150.0, 100.0, 60, 7500.0),
+        (30.0, 100.0, 60, 1500.0),
+        (150.0, 25.0, 120, 7500.0),
+    ],
+)
+def test_generate_plan_recalculates_cost_from_vehicle_and_tariff(
+    tariff, vehicle_max_kw, expected_minutes, expected_cost
+):
+    # Intentionally incorrect AI estimates must not override real charging data.
     agent = PlanningCoordinatorAgent(llm=FakeLLM(mock_response(cost=1000.0)))
     deadline = datetime.now(timezone.utc) + timedelta(hours=3)
+    vehicle = mock_vehicle()
+    vehicle.max_charge_rate_kw = vehicle_max_kw
+    station = mock_station()
+    station.chargers[0].tariff = tariff
     request = PlanningRequest(
         driver_id="driver-123",
         deadline=deadline,
         max_distance_km=20.0,
         price_preference="Budget",
         vehicle_id="vehicle-123",
-        vehicle=mock_vehicle(),
-        candidate_stations=[mock_station()]
+        vehicle=vehicle,
+        candidate_stations=[station]
     )
     
     response = agent.generate_plan(request)
-    # The budget option should be ranked higher
+    assert len(response.ranked_itineraries) == 1
     top_itinerary = response.ranked_itineraries[0]
-    assert top_itinerary.cost_estimate < 2000.0
+    assert top_itinerary.station_id == station.station_id
+    assert top_itinerary.charger_id == station.chargers[0].charger_id
+    assert top_itinerary.estimated_charge_duration_mins == expected_minutes
+    assert top_itinerary.cost_estimate == pytest.approx(expected_cost)
 
 def test_generate_plan_buffer_conflict_requires_approval():
     now = datetime.now(timezone.utc)

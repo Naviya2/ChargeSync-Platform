@@ -19,6 +19,9 @@ public sealed class ReservationDto
     public string? ReservationQRCode { get; set; }
 
     public decimal AdvanceDepositAmount { get; set; }
+    public decimal LateCancellationFee { get; set; }
+    public decimal CancellationFeesPaid { get; set; }
+    public DateTimeOffset? CancelledAt { get; set; }
     public ReservationStatus Status { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
@@ -38,6 +41,8 @@ public sealed class ReservationDto
     public double? WalkInBatteryCapacity { get; set; }
     public string? SessionMeterPhotoUrl { get; set; }
 }
+
+public sealed record BookingChargesDto(decimal WalletBalance, decimal PendingCancellationFees);
 
 /// <summary>Lightweight item used in paginated list responses.</summary>
 public sealed class ReservationSummaryDto

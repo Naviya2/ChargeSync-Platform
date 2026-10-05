@@ -14,7 +14,8 @@ public sealed class WalletService(IAppDbContext db, IWalletGateway gateway)
         var user = await Driver(driverId, ct);
         var rows = await db.WalletTopUps.AsNoTracking().Where(t => t.DriverId == driverId)
             .OrderByDescending(t => t.CreatedAt).Take(50).ToListAsync(ct);
-        return new { balance = user.WalletBalance, currency = "LKR", gatewayAvailable = gateway.Available,
+        return new { balance = user.WalletBalance, pendingCancellationFees = user.PendingCancellationFees,
+            currency = "LKR", gatewayAvailable = gateway.Available,
             sandbox = gateway.Sandbox, minimum = 100, maximum = 50000, topUps = rows.Select(ToDto) };
     }
 

@@ -117,7 +117,7 @@ export default function MapLocationPicker({
       } else {
         setErrorMsg('Location not found.')
       }
-    } catch (_err) {
+    } catch {
       setErrorMsg('Search failed. Try again.')
     } finally {
       setIsSearching(false)
@@ -143,7 +143,7 @@ export default function MapLocationPicker({
           setFlyToTrigger({ lat, lng: lon, timestamp: Date.now() })
           setIsSearching(false)
         },
-        (_error) => {
+        () => {
           setErrorMsg('Failed to get current location.')
           setIsSearching(false)
         },

@@ -9,6 +9,7 @@ namespace Application.ReservationPlanning;
 /// </summary>
 public interface IReservationService
 {
+    Task<BookingChargesDto> GetBookingChargesAsync(Guid driverId, CancellationToken cancellationToken = default);
     /// <summary>
     /// Creates an advance reservation for a registered driver.
     /// Deducts the advance deposit from the driver's wallet balance.
@@ -62,7 +63,7 @@ public interface IReservationService
     /// <summary>
     /// Cancels a reservation.
     /// Refunds the advance deposit to the driver's wallet.
-    /// Automatically promotes the highest-priority waiting waitlist entry.
+    /// Driver cancellations within two hours incur a fee collected on their next booking.
     /// </summary>
     Task CancelAsync(
         Guid requesterId,

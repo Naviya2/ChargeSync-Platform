@@ -9,6 +9,7 @@ import '../../../core/api/reservation_api_client.dart';
 import '../../../core/api/reservation_models.dart';
 import '../../../core/api/vehicle_api_client.dart';
 import '../../../core/api/vehicle_models.dart';
+import '../widgets/reservation_charge_dialog.dart';
 
 class CreateReservationScreen extends StatefulWidget {
   final Station station;
@@ -18,13 +19,14 @@ class CreateReservationScreen extends StatefulWidget {
   const CreateReservationScreen({super.key, required this.station, this.requiresApproval = false, this.preselectedArrivalTime});
 
   @override
-  State<CreateReservationScreen> createState() => _CreateReservationScreenState();
+  State<CreateReservationScreen> createState() =>
+      _CreateReservationScreenState();
 }
 
 class _CreateReservationScreenState extends State<CreateReservationScreen> {
   Charger? _selectedCharger;
   DateTime _selectedDate = DateTime.now();
-  
+
   List<Vehicle> _myVehicles = [];
   Vehicle? _selectedVehicle;
 
@@ -41,7 +43,8 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
     if (widget.preselectedArrivalTime != null) {
       _selectedDate = widget.preselectedArrivalTime!;
     }
-    if (widget.station.chargers != null && widget.station.chargers!.isNotEmpty) {
+    if (widget.station.chargers != null &&
+        widget.station.chargers!.isNotEmpty) {
       _selectedCharger = widget.station.chargers!.first;
     }
     _loadVehicles();
@@ -63,17 +66,24 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingVehicles = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load vehicles: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load vehicles: $e')));
       }
     }
   }
 
   int get _calculatedDurationMinutes {
-    if (_selectedVehicle == null || _selectedCharger == null) return 60; // Default
-    
+    if (_selectedVehicle == null || _selectedCharger == null) {
+      return 60; // Default
+    }
+
     // Time = Capacity / Power (hours)
     // Power is min of what charger can supply and what vehicle can accept
-    final effectivePowerKw = min(_selectedCharger!.powerKw, _selectedVehicle!.maxChargeRateKw);
+    final effectivePowerKw = min(
+      _selectedCharger!.powerKw,
+      _selectedVehicle!.maxChargeRateKw,
+    );
     if (effectivePowerKw <= 0) return 60;
 
     final hours = _selectedVehicle!.batteryCapacityKwh / effectivePowerKw;
@@ -113,65 +123,84 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoadingSlots = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load availability: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load availability: $e')),
+        );
       }
     }
   }
 
   Future<void> _makeReservation() async {
-    if (_selectedCharger == null || _selectedSlot == null || _selectedVehicle == null) return;
+    if (_isSubmitting ||
+        _selectedCharger == null ||
+        _selectedSlot == null ||
+        _selectedVehicle == null) {
+      return;
+    }
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(widget.requiresApproval ? 'Station Approval Required' : 'Confirm Reservation'),
-          content: widget.requiresApproval
-              ? const Text(
-                  'This session ends very close to the station\'s maintenance or closing window, so it requires approval from the station owner.\n\n'
-                  'Your reservation request will be sent to the station owner. '
-                  'The 500 LKR advance fee will only be deducted from your wallet once the owner approves your request.\n\n'
-                  'Do you want to send the approval request?',
-                )
-              : const Text('An advance fee of 500 LKR will be deducted from your wallet. Do you want to proceed?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+    if (widget.requiresApproval) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Station Approval Required'),
+            content: const Text(
+              'This session ends very close to the station\'s maintenance or closing window, so it requires approval from the station owner.\n\n'
+              'Your reservation request will be sent to the station owner. '
+              'The 500 LKR advance fee will only be deducted from your wallet once the owner approves your request.\n\n'
+              'Do you want to send the approval request?',
             ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(widget.requiresApproval ? 'Send Request' : 'OK'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirm != true) return;
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Send Request'),
+              ),
+            ],
+          );
+        },
+      );
+      if (confirm != true) return;
+    }
 
     setState(() => _isSubmitting = true);
-
     try {
+      double? expectedCancellationFees;
+      if (!widget.requiresApproval) {
+        final charges = await ReservationApiClient.instance.getBookingCharges();
+        if (!mounted) return;
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (_) => ReservationChargeDialog(charges: charges),
+        );
+
+        if (!mounted || confirm != true) return;
+        expectedCancellationFees = charges.pendingCancellationFees;
+      }
+
       final request = CreateReservationRequest(
         chargerId: _selectedCharger!.id,
         vehicleId: _selectedVehicle!.id,
         startTime: _selectedSlot!.startTime,
         endTime: _selectedSlot!.endTime,
-        advanceDepositAmount: 500.0,
+        advanceDepositAmount: ReservationChargeDialog.advanceAmount,
+        expectedCancellationFees: expectedCancellationFees,
         requiresApproval: widget.requiresApproval,
       );
 
       await ReservationApiClient.instance.createReservation(request);
 
       if (!mounted) return;
-      
+
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Success'),
+          title: Text(widget.requiresApproval ? 'Request Sent' : 'Success'),
           content: Text(widget.requiresApproval 
-              ? 'Reservation placed and is awaiting operator approval.\n\nThe 500 LKR advance fee will be deducted only after the station owner approves your request.' 
+              ? 'Your reservation request has been sent and is awaiting station owner approval.\n\nThe 500 LKR advance fee will be deducted only after the station owner approves your request.' 
               : 'Reservation placed successfully!'),
           actions: [
             ElevatedButton(
@@ -186,15 +215,20 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
       Navigator.pop(context); // Go back to map
     } catch (e) {
       if (!mounted) return;
-      
+
       String errorMessage = e.toString();
       if (errorMessage.contains('incomplete reservation')) {
-        errorMessage = 'You already have an incomplete reservation for this vehicle today. Please complete or cancel it first.';
+        errorMessage =
+            'You already have an incomplete reservation for this vehicle today. Please complete or cancel it first.';
       } else if (errorMessage.contains('Insufficient wallet balance')) {
-        errorMessage = 'Balance is not sufficient to make the advance payment, go to wallet and topup your wallet please.';
+        errorMessage =
+            'Your wallet cannot cover the advance plus outstanding cancellation fees. Add money to your wallet and try again.';
       } else {
         // Strip out the "ApiException" prefix if it exists to make it cleaner
-        errorMessage = errorMessage.replaceAll(RegExp(r'ApiException.*:\s*'), '');
+        errorMessage = errorMessage.replaceAll(
+          RegExp(r'ApiException.*:\s*'),
+          '',
+        );
       }
 
       // Show failure message directly in a popup as well for better visibility
@@ -245,32 +279,51 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                 children: [
                   Text(
                     widget.station.name,
-                    style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.onSurface),
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     widget.station.address,
-                    style: GoogleFonts.inter(fontSize: 14, color: AppColors.onSurfaceVariant),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 24),
 
                   // Charger Selection
-                  Text('1. Select Charger', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                  Text(
+                    '1. Select Charger',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  if (widget.station.chargers == null || widget.station.chargers!.isEmpty)
+                  if (widget.station.chargers == null ||
+                      widget.station.chargers!.isEmpty)
                     const Text('No chargers available')
                   else
                     DropdownButtonFormField<Charger>(
                       initialValue: _selectedCharger,
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         filled: true,
                         fillColor: AppColors.surfaceContainer,
                       ),
                       items: widget.station.chargers!.map((charger) {
                         return DropdownMenuItem(
                           value: charger,
-                          child: Text('${charger.identifier} (${charger.powerKw} kW)'),
+                          child: Text(
+                            '${charger.identifier} (${charger.powerKw} kW)',
+                          ),
                         );
                       }).toList(),
                       onChanged: (c) {
@@ -281,22 +334,35 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                   const SizedBox(height: 24),
 
                   // Vehicle Selection
-                  Text('2. Select Vehicle', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.onSurface)),
+                  Text(
+                    '2. Select Vehicle',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (_myVehicles.isEmpty)
-                    const Text('No vehicles registered. Please add a vehicle first.')
+                    const Text(
+                      'No vehicles registered. Please add a vehicle first.',
+                    )
                   else
                     DropdownButtonFormField<Vehicle>(
                       initialValue: _selectedVehicle,
                       decoration: InputDecoration(
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         filled: true,
                         fillColor: AppColors.surfaceContainer,
                       ),
                       items: _myVehicles.map((vehicle) {
                         return DropdownMenuItem(
                           value: vehicle,
-                          child: Text('${vehicle.make} ${vehicle.model} (${vehicle.batteryCapacityKwh} kWh)'),
+                          child: Text(
+                            '${vehicle.make} ${vehicle.model} (${vehicle.batteryCapacityKwh} kWh)',
+                          ),
                         );
                       }).toList(),
                       onChanged: (v) {
@@ -304,16 +370,19 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                         _fetchAvailability();
                       },
                     ),
-                  
+
                   if (_selectedVehicle != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
                         'Estimated Charge Time: $_calculatedDurationMinutes mins',
-                        style: GoogleFonts.inter(color: AppColors.primary, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.inter(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  
+
                   const SizedBox(height: 24),
 
                   if (widget.preselectedArrivalTime == null) ...[
@@ -431,12 +500,24 @@ class _CreateReservationScreenState extends State<CreateReservationScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: AppColors.onPrimary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      onPressed: (_isSubmitting || _selectedSlot == null) ? null : _makeReservation,
+                      onPressed: (_isSubmitting || _selectedSlot == null)
+                          ? null
+                          : _makeReservation,
                       child: _isSubmitting
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : Text('Confirm Reservation', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold)),
+                          : Text(
+                              widget.requiresApproval
+                                  ? 'Send Approval Request'
+                                  : 'Confirm Reservation',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],

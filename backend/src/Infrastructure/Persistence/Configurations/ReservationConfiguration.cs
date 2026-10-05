@@ -43,6 +43,7 @@ public class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
             .IsRequired(false);
 
         builder.Property(r => r.StartTime)
+            .IsConcurrencyToken()
             .IsRequired();
 
         builder.Property(r => r.EndTime)
@@ -62,10 +63,14 @@ public class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
             .HasDefaultValue(0m);
 
         builder.Property(r => r.Status)
+            .IsConcurrencyToken()
             .IsRequired()
             .HasMaxLength(20)
             .HasConversion<string>()
             .HasDefaultValue(ReservationStatus.Pending);
+
+        builder.Property(r => r.LateCancellationFee).HasPrecision(10, 2).HasDefaultValue(0m);
+        builder.Property(r => r.CancellationFeesPaid).HasPrecision(10, 2).HasDefaultValue(0m);
 
         // Navigation: optional driver (null for walk-ins)
         builder.HasOne(r => r.Driver)

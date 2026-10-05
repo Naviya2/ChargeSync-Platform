@@ -20,11 +20,11 @@ class AuthApiClient {
   Future<String?> getRefreshToken() => _storage.read(key: ApiConfig.kRefreshToken);
 
   Future<void> _saveTokens(AuthResult result) async {
-    await Future.wait([
-      _storage.write(key: ApiConfig.kAccessToken,  value: result.accessToken),
-      _storage.write(key: ApiConfig.kRefreshToken, value: result.refreshToken),
-      _storage.write(key: ApiConfig.kUserJson,     value: result.user.toJsonString()),
-    ]);
+    // The web plugin creates its encryption key on the first write. Parallel
+    // first writes can create different keys and leave tokens unreadable.
+    await _storage.write(key: ApiConfig.kAccessToken, value: result.accessToken);
+    await _storage.write(key: ApiConfig.kRefreshToken, value: result.refreshToken);
+    await _storage.write(key: ApiConfig.kUserJson, value: result.user.toJsonString());
   }
 
   Future<void> clearTokens() async {

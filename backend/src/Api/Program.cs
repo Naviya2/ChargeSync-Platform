@@ -12,6 +12,13 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Dynamically bind to cloud-assigned PORT (e.g. Render, Railway) if set
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
 builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
@@ -40,7 +47,9 @@ if (string.IsNullOrWhiteSpace(jwtSettings.Key))
 var groqApiKey = builder.Configuration["Groq:ApiKey"];
 if (string.IsNullOrWhiteSpace(groqApiKey))
 {
-    throw new InvalidOperationException("GROQ_API_KEY is not configured.");
+    // Groq key is optional at startup; AI planning endpoints will fail gracefully at request time.
+    // To configure: dotnet user-secrets set "Groq:ApiKey" "<your-key>" --project src/Api
+    Console.WriteLine("WARNING: Groq:ApiKey is not configured. AI planning features will be unavailable.");
 }
 
 builder.Services
@@ -119,10 +128,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }))
+    .AllowAnonymous();
 
 app.MapControllers();
 
