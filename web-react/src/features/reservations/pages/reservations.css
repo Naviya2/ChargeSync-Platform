@@ -1,0 +1,92 @@
+.rv-workspace {
+  --rv-text: theme('colors.on-surface');
+  --rv-muted: theme('colors.on-surface-variant');
+  --rv-line: theme('colors.surface-container');
+  --rv-soft: theme('colors.surface-container-low');
+  --rv-accent: theme('colors.primary');
+  @apply w-full text-on-surface;
+}
+.rv-workspace :is(button, input, select, summary):focus-visible { outline: 2px solid var(--rv-accent); outline-offset: 3px; }
+.rv-toolbar { @apply mb-space-xl flex flex-wrap items-center justify-between gap-4; }
+.rv-tabs { @apply flex flex-wrap items-center gap-1; }
+.rv-tabs button { @apply rounded-lg px-3 py-2 text-body-sm font-medium transition; color: var(--rv-muted); }
+.rv-tabs button[aria-pressed=true] { @apply bg-primary/10; color: var(--rv-accent); }
+.rv-tools { @apply flex flex-wrap items-center gap-2; }
+.rv-search { @apply flex items-center gap-2 rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 shadow-sm; color: var(--rv-muted); }
+.rv-search input { @apply min-w-0 bg-transparent text-body-sm; color: var(--rv-text); width: 290px; }
+.rv-search button { @apply rounded p-1; }
+.rv-tools select { @apply rounded-lg border border-outline-variant/40 bg-surface-container-lowest px-3 py-2 text-body-sm shadow-sm; color: var(--rv-text); }
+.rv-bookings { @apply overflow-hidden; }
+.rv-table-heading { @apply flex items-center justify-between gap-4 border-b p-5; border-color: var(--rv-line); }
+.rv-table-heading h2 { @apply text-headline-sm font-semibold; }
+.rv-table-heading h2 span { @apply ml-2 rounded bg-primary/10 px-2 py-0.5 text-label-md tabular-nums; color: var(--rv-accent); }
+.rv-table-heading p { @apply mt-1 text-label-md; color: var(--rv-muted); }
+.rv-local-time { @apply inline-flex shrink-0 items-center gap-1.5 text-label-sm; color: var(--rv-muted); }
+.rv-table-scroll { @apply overflow-x-auto; }
+.rv-table { @apply w-full text-left text-body-sm; min-width: 860px; }
+.rv-table th { @apply border-b px-5 py-3 text-label-sm font-semibold uppercase tracking-wider; background: var(--rv-soft); color: var(--rv-muted); border-color: var(--rv-line); }
+.rv-table td { @apply border-b px-5 py-5 align-middle; border-color: var(--rv-line); }
+.rv-table tbody tr:last-child td { @apply border-b-0; }
+.rv-table tbody tr { @apply transition-colors; }
+.rv-table tbody tr:hover { background: var(--rv-soft); }
+.rv-table td strong { @apply block text-body-sm font-medium; }
+.rv-customer { @apply flex min-w-32 items-center gap-3; }
+.rv-customer > div > span, .rv-cell-secondary { @apply mt-1 block text-label-md; color: var(--rv-muted); }
+.rv-avatar { @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-label-sm font-semibold; color: var(--rv-accent); }
+.rv-booking-id { @apply ml-12 mt-1 block font-mono text-[10px]; color: var(--rv-muted); }
+.rv-schedule, .rv-amount { @apply whitespace-nowrap tabular-nums; }
+.rv-status { @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-label-sm font-medium text-slate-600; }
+.rv-status > span { @apply h-1.5 w-1.5 rounded-full bg-slate-400; }
+.rv-status-pending { @apply bg-amber-50 text-amber-700; }
+.rv-status-pending > span { @apply bg-amber-500; }
+.rv-status-confirmed { @apply bg-blue-50 text-blue-700; }
+.rv-status-confirmed > span { @apply bg-blue-500; }
+.rv-status-checkedin { @apply bg-indigo-50 text-indigo-700; }
+.rv-status-checkedin > span { @apply bg-indigo-500; }
+.rv-status-completed { @apply bg-emerald-50 text-emerald-700; }
+.rv-status-completed > span { @apply bg-emerald-500; }
+.rv-status-cancelled { @apply bg-red-50 text-red-700; }
+.rv-status-cancelled > span { @apply bg-red-500; }
+.rv-fee-note { @apply mt-1 block text-label-sm text-amber-700; }
+.rv-view { @apply inline-flex items-center gap-2 whitespace-nowrap rounded-lg border px-3 py-2 text-label-md font-medium transition; border-color: var(--rv-line); color: var(--rv-muted); }
+.rv-view:hover { @apply border-primary/40; color: var(--rv-accent); }
+.rv-table-footer { @apply flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3 text-label-md; border-color: var(--rv-line); color: var(--rv-muted); }
+.rv-table-footer > div { @apply inline-flex items-center gap-3; }
+.rv-empty { @apply flex flex-col items-center gap-3 px-5 py-16 text-center; color: var(--rv-muted); }
+.rv-empty h3 { @apply text-headline-sm font-semibold; color: var(--rv-text); }
+.rv-empty p { @apply text-body-sm; }
+.rv-approvals { @apply mb-space-xl overflow-hidden border border-outline-variant/30; }
+.rv-approvals summary { @apply flex cursor-pointer list-none items-center gap-3 p-4; }
+.rv-approval-icon { @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700; }
+.rv-approvals summary > div { @apply flex-1; }
+.rv-approvals h2 { @apply text-body-md font-semibold; }
+.rv-approvals h2 span { @apply ml-1 rounded bg-amber-50 px-1.5 py-0.5 text-label-sm text-amber-700; }
+.rv-approvals summary p { @apply mt-1 text-label-md; color: var(--rv-muted); }
+.rv-approvals[open] summary > svg { transform: rotate(180deg); }
+.rv-approval-list { @apply max-h-96 overflow-y-auto border-t; border-color: var(--rv-line); }
+.rv-approval-row { @apply flex flex-wrap items-center justify-between gap-4 border-b p-4; border-color: var(--rv-line); }
+.rv-approval-row:last-child { @apply border-b-0; }
+.rv-approval-row strong { @apply text-body-sm font-medium; }
+.rv-approval-row strong span, .rv-approval-row p, .rv-approval-row > div > span { @apply text-label-md font-normal; color: var(--rv-muted); }
+.rv-approval-row p { @apply my-1; }
+.rv-approval-actions { @apply flex gap-2; }
+.rv-approval-error { @apply m-3 rounded-lg bg-error-container p-3 text-body-sm text-on-error-container; }
+.rv-approval-more { @apply p-4 text-label-md; color: var(--rv-muted); }
+.rv-spin { animation: rv-spin 1s linear infinite; }
+@keyframes rv-spin { to { transform: rotate(360deg); } }
+@media(max-width: 600px) {
+  .rv-tools, .rv-search, .rv-search input { @apply w-full; }
+  .rv-tools select { @apply w-full; }
+  .rv-tabs button { @apply px-2 text-label-md; }
+  .rv-local-time { @apply hidden; }
+}
+.dark .rv-workspace { --rv-text: #e8eaf0; --rv-muted: #9aa0b0; --rv-line: #44474f; --rv-soft: #3b3e45; --rv-accent: theme('colors.inverse-primary'); }
+.dark .rv-workspace .rv-tools select { background: #35383e; }
+.dark .rv-workspace .rv-approvals { border-color: var(--rv-line); }
+.dark .rv-workspace :is(.rv-status-pending, .rv-approval-icon, .rv-approvals h2 span) { @apply bg-amber-900/30 text-amber-200; }
+.dark .rv-workspace .rv-status-confirmed { @apply bg-blue-900/30 text-blue-200; }
+.dark .rv-workspace .rv-status-checkedin { @apply bg-indigo-900/30 text-indigo-200; }
+.dark .rv-workspace .rv-status-completed { @apply bg-emerald-900/30 text-emerald-200; }
+.dark .rv-workspace .rv-status-cancelled { @apply bg-red-900/30 text-red-200; }
+.dark .rv-workspace .rv-fee-note { @apply text-amber-200; }
+@media(prefers-reduced-motion: reduce) { .rv-workspace * { animation: none !important; transition: none !important; } }

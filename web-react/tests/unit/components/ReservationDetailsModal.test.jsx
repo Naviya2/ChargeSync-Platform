@@ -238,4 +238,16 @@ describe('ReservationDetailsModal', () => {
     expect(mockDelete).toHaveBeenCalledWith('res-123', expect.any(Object));
     expect(mockOnClose).toHaveBeenCalled();
   });
+
+  it('lets a support viewer inspect a booking without mutation controls', () => {
+    currentReservationData = { ...defaultReservation, status: 'Confirmed' };
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ReservationDetailsModal reservationId={defaultReservation.id} readOnly onClose={vi.fn()} />
+      </QueryClientProvider>
+    );
+    expect(screen.getByText('Reservation Details')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /delete|edit time|cancel booking|approve request|reject request/i })).not.toBeInTheDocument();
+  });
 });

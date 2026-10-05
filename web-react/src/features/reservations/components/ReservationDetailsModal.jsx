@@ -87,7 +87,7 @@ function InlineConfirmBanner({ action, onConfirm, onCancel, isPending, isDriver 
   )
 }
 
-export default function ReservationDetailsModal({ reservationId, onClose }) {
+export default function ReservationDetailsModal({ reservationId, onClose, readOnly = false }) {
   const isDriver = useAuthStore((state) => state.user?.role === 'Driver')
   const { data: reservation, isLoading } = useReservationDetail(reservationId)
   const { data: history, isLoading: isHistoryLoading } = useReservationHistory(reservationId)
@@ -372,18 +372,18 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
         {/* Footer */}
         <div className="border-t bg-gray-50 px-6 py-4 flex justify-between gap-3 rounded-b-2xl shrink-0">
           <div className="flex gap-2">
-            <Button
+            {!readOnly && <Button
               variant="danger"
               onClick={() => setConfirmAction('delete')}
               disabled={isDeleting || !reservation || !!confirmAction}
             >
               <span className="material-symbols-outlined text-sm">delete</span>
               {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
+            </Button>}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>Close</Button>
-            
+            {!readOnly && <>
             {reservation?.status === 'Pending' ? (
               <>
                 <Button 
@@ -429,6 +429,7 @@ export default function ReservationDetailsModal({ reservationId, onClose }) {
                 {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
               </Button>
             ) : null}
+            </>}
           </div>
         </div>
       </div>
