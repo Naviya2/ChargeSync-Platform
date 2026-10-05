@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import supportApi from '../../../api/endpoints/support'
 import { useAuthStore } from '../../../store/authStore'
 import useDialogStore from '../../../store/dialogStore'
+import { useSearchParams } from 'react-router-dom'
 
 const statuses = ['Open', 'InProgress', 'Resolved', 'Closed']
 const readable = (value) => value?.replace(/([a-z])([A-Z])/g, '$1 $2') ?? ''
@@ -12,9 +13,10 @@ const when = (value) => new Date(value).toLocaleString()
 const tone = { Urgent: 'bg-error-container text-on-error-container', High: 'bg-orange-900/30 text-orange-200', Medium: 'bg-surface-container-high', Low: 'bg-surface-container' }
 
 export default function SupportInboxPage() {
+  const [searchParams] = useSearchParams()
   const client = useQueryClient()
   const user = useAuthStore((state) => state.user)
-  const [selectedId, setSelectedId] = useState(null)
+  const [selectedId, setSelectedId] = useState(searchParams.get('ticket'))
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [reply, setReply] = useState('')
