@@ -6,7 +6,7 @@ import { useMyStations, useStations } from '../../features/stations/hooks/useSta
 import { ROUTES } from '../../lib/constants'
 import useDialogStore from '../../store/dialogStore'
 
-export default function Topbar() {
+export default function Topbar({ onMenuClick }) {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const clearSession = useAuthStore((s) => s.clearSession)
@@ -111,7 +111,12 @@ export default function Topbar() {
         <div className="flex h-topbar-height w-full items-center justify-between gap-space-lg px-gutter-desktop">
           
           <div className="flex flex-1 items-center gap-4">
-            {/* Left space empty */}
+            <button
+              onClick={onMenuClick}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 lg:hidden"
+            >
+              <span className="material-symbols-outlined">menu</span>
+            </button>
           </div>
 
           {/* Right controls */}

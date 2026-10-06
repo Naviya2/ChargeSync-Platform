@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import NotificationHost from '../shared/NotificationHost'
@@ -48,11 +48,13 @@ function GlobalReservationWatcher() {
   return null
 }
 export default function AppLayout() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-surface-container-low font-sans text-on-surface">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="flex min-h-screen flex-col lg:pl-sidebar-width">
-        <Topbar />
+        <Topbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
         <main className="flex-1 p-gutter-mobile lg:p-gutter-desktop">
           <div className="mx-auto max-w-7xl">
             <Outlet />

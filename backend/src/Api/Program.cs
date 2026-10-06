@@ -122,11 +122,9 @@ app.UseExceptionHandler();
 
 app.UseCors("FlutterDev");  // must be before Auth middleware
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Always enable Swagger for easier testing/debugging in all environments
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
