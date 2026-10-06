@@ -1,0 +1,7 @@
+{
+  "disposableDatabase": false,
+  "supabaseProjectRef": "REPLACE_WITH_NEW_TEST_PROJECT_REF",
+  "postgresConnection": "Host=REPLACE_WITH_SESSION_POOLER_HOST;Port=5432;Database=postgres;Username=postgres.REPLACE_WITH_NEW_TEST_PROJECT_REF;Password=REPLACE_WITH_TEST_DATABASE_PASSWORD;SSL Mode=Require;Timeout=20",
+  "agentServiceUrl": "http://127.0.0.1:8000",
+  "agentServiceApiKey": "REPLACE_WITH_AGENT_SERVICE_API_KEY"
+}
