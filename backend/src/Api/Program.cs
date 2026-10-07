@@ -32,6 +32,12 @@ builder.Services.AddHostedService<Api.SupportWorkflowWorker>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAgentClient(builder.Configuration);
 
+var agentServiceKey = builder.Configuration["AGENT_SERVICE_API_KEY"] ?? builder.Configuration["AgenticAi:ApiKey"];
+if (string.IsNullOrWhiteSpace(agentServiceKey))
+{
+    Console.WriteLine("WARNING: AgenticAi:ApiKey / AGENT_SERVICE_API_KEY is not configured. Support analysis and workflows require the same internal service key as Python's AGENT_SERVICE_API_KEY.");
+}
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<Application.Common.Interfaces.ICurrentUser, Api.Authentication.CurrentUser>();
 

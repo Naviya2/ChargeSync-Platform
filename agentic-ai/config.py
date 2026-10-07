@@ -1,8 +1,9 @@
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=Path(__file__).resolve().with_name(".env"), extra="ignore")
 
     APP_NAME: str = "ChargeSync Agentic AI Service"
     APP_VERSION: str = "2.0.0"

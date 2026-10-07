@@ -27,7 +27,7 @@ You have no tools or database access. Return only the requested structured field
 
 class SupportAgent:
     def __init__(self, model=None):
-        self.model = model if model is not None else support_model()
+        self.model = model
         graph = StateGraph(AnalysisState)
         graph.add_node("interpret_ticket", self.interpret)
         graph.add_node("validate_draft", self.validate)
@@ -37,7 +37,8 @@ class SupportAgent:
         self.graph = graph.compile()
 
     def interpret(self, state: AnalysisState) -> dict[str, SupportSuggestion]:
-        result = self.model.invoke([
+        model = self.model if self.model is not None else support_model()
+        result = model.invoke([
             SystemMessage(content=SYSTEM),
             HumanMessage(content=json.dumps(state.request.model_dump())),
         ])
