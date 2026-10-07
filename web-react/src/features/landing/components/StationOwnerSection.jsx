@@ -56,7 +56,7 @@ export default function StationOwnerSection() {
       <div className="mx-auto max-w-7xl px-space-lg lg:px-space-xl">
         <div className="grid grid-cols-1 items-start gap-space-2xl lg:grid-cols-12">
           {/* Left: copy, bullets, CTA */}
-          <div className="flex flex-col items-start gap-space-lg lg:col-span-6">
+          <div data-reveal className="flex flex-col items-start gap-space-lg lg:col-span-6">
             <span className="font-label-sm text-label-sm font-bold uppercase tracking-widest text-primary">
               For Station Operators &amp; Hosts
             </span>
@@ -84,6 +84,7 @@ export default function StationOwnerSection() {
             </div>
 
             <Link
+              data-landing-button
               to={ROUTES.LOGIN}
               className="mt-space-sm inline-flex items-center gap-space-xs rounded-xl bg-gradient-to-r from-primary to-tertiary px-space-xl py-space-md font-headline-sm text-headline-sm font-semibold text-on-primary shadow-md shadow-primary/20 transition-all hover:brightness-105"
             >
@@ -93,7 +94,7 @@ export default function StationOwnerSection() {
           </div>
 
           {/* Right: registration timeline */}
-          <div className="rounded-2xl bg-surface-container-lowest p-space-xl shadow-sm lg:col-span-6 lg:p-space-2xl">
+          <div data-reveal className="rounded-2xl bg-surface-container-lowest p-space-xl shadow-sm lg:col-span-6 lg:p-space-2xl">
             <h3 className="mb-space-lg font-headline-md text-headline-md font-bold text-on-surface">
               How to Register in Minutes
             </h3>
@@ -116,9 +117,9 @@ export default function StationOwnerSection() {
         </div>
 
         {/* Host benefit cards */}
-        <div className="mt-space-2xl grid grid-cols-1 gap-space-lg md:grid-cols-3">
+        <div data-reveal-group className="mt-space-2xl grid grid-cols-1 gap-space-lg md:grid-cols-3">
           {BENEFITS.map((b) => (
-            <div key={b.title} className="rounded-xl bg-surface-container-lowest p-space-xl shadow-sm">
+            <div data-reveal key={b.title} className="rounded-xl bg-surface-container-lowest p-space-xl shadow-sm">
               <div className="mb-space-md flex h-10 w-10 items-center justify-center rounded-lg bg-surface-container-high text-primary">
                 <span className="material-symbols-outlined text-[24px]">{b.icon}</span>
               </div>

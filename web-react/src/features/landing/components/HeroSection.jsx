@@ -5,7 +5,7 @@ const FILLED = { fontVariationSettings: "'FILL' 1" }
 
 export default function HeroSection() {
   return (
-    <section className="relative w-full overflow-hidden bg-inverse-surface py-space-3xl text-inverse-on-surface lg:py-24">
+    <section data-hero className="relative w-full overflow-hidden bg-inverse-surface py-space-3xl text-inverse-on-surface lg:py-24">
       {/* Ambient radial glows */}
       <div className="pointer-events-none absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-primary/20 blur-3xl" />
       <div className="pointer-events-none absolute -right-24 top-1/2 h-[30rem] w-[30rem] rounded-full bg-tertiary/15 blur-3xl" />
@@ -13,7 +13,7 @@ export default function HeroSection() {
       <div className="relative mx-auto max-w-7xl px-space-lg lg:px-space-xl">
         <div className="grid grid-cols-1 items-center gap-space-2xl lg:grid-cols-12">
           {/* Left: copy & CTAs */}
-          <div className="flex flex-col items-start gap-space-lg lg:col-span-7">
+          <div data-hero-copy className="flex flex-col items-start gap-space-lg lg:col-span-7">
             <div className="inline-flex items-center gap-space-xs rounded-full bg-white/10 px-space-md py-space-2xs shadow-[0_0_16px_rgba(14,165,160,0.3)]">
               <span className="text-[13px] font-semibold tracking-wide text-primary-fixed">
                 ✦ ChargeSync 2.0 with Agentic Grid Intelligence
@@ -31,6 +31,7 @@ export default function HeroSection() {
 
             <div className="flex w-full flex-wrap items-center gap-space-md pt-space-xs sm:w-auto">
               <Link
+                data-landing-button
                 to={ROUTES.LOGIN}
                 className="inline-flex items-center justify-center gap-space-xs rounded-xl bg-gradient-to-r from-primary to-tertiary px-space-xl py-space-md font-headline-sm text-headline-sm font-semibold text-on-primary shadow-lg shadow-primary/25 transition-all hover:brightness-110"
               >
@@ -38,6 +39,7 @@ export default function HeroSection() {
                 <span className="material-symbols-outlined text-[20px]">bolt</span>
               </Link>
               <a
+                data-landing-button
                 href="#station-owners"
                 className="inline-flex items-center justify-center rounded-xl bg-white/10 px-space-xl py-space-md font-headline-sm text-headline-sm font-medium text-white transition-colors hover:bg-white/20"
               >
@@ -60,8 +62,8 @@ export default function HeroSection() {
           </div>
 
           {/* Right: device mockup */}
-          <div className="relative flex items-center justify-center lg:col-span-5">
-            <div className="relative w-[340px] rounded-[2.5rem] bg-slate-900 p-4 shadow-2xl shadow-black/80 sm:w-[380px]">
+          <div data-hero-device className="relative flex min-w-0 items-center justify-center pb-6 pt-6 lg:col-span-5">
+            <div className="relative w-full max-w-[340px] rounded-[2.5rem] bg-slate-900 p-4 shadow-2xl shadow-black/80 sm:max-w-[380px]">
               <div className="relative flex flex-col gap-space-md overflow-hidden rounded-[2rem] bg-slate-950 p-space-md text-white">
                 <div className="flex items-center justify-between px-space-xs pt-space-xs">
                   <div className="flex items-center gap-space-xs">
@@ -128,29 +130,33 @@ export default function HeroSection() {
                 </div>
               </div>
 
-              <div className="absolute -left-8 -top-6 max-w-[240px] rounded-xl bg-slate-900/90 p-space-md shadow-2xl backdrop-blur-md sm:-left-12">
-                <div className="flex items-center gap-space-xs font-label-sm text-label-sm text-emerald-400">
-                  <span className="material-symbols-outlined text-[16px]" style={FILLED}>
-                    check_circle
-                  </span>
-                  <span>Verified Match: 98%</span>
+              <div data-hero-chip className="absolute left-0 top-0 max-w-[240px] sm:-left-12 sm:-top-6">
+                <div data-hero-float className="rounded-xl bg-slate-900/90 p-space-md shadow-2xl backdrop-blur-md">
+                  <div className="flex items-center gap-space-xs font-label-sm text-label-sm text-emerald-400">
+                    <span className="material-symbols-outlined text-[16px]" style={FILLED}>
+                      check_circle
+                    </span>
+                    <span>Verified Match: 98%</span>
+                  </div>
+                  <p className="mt-1 font-body-sm text-[12px] font-medium leading-snug text-slate-300">
+                    Tesla Model Y ↔ CCS2/NACS Ultra Compatible
+                  </p>
                 </div>
-                <p className="mt-1 font-body-sm text-[12px] font-medium leading-snug text-slate-300">
-                  Tesla Model Y ↔ CCS2/NACS Ultra Compatible
-                </p>
               </div>
 
-              <div className="absolute -bottom-6 -right-6 max-w-[220px] rounded-xl bg-slate-900/95 p-space-md shadow-2xl backdrop-blur-md sm:-right-8">
-                <div className="flex items-center gap-space-2xs font-label-sm text-[11px] text-primary-fixed">
-                  <span className="material-symbols-outlined text-[14px]">alt_route</span>
-                  <span className="uppercase tracking-wider">Smart Route</span>
-                </div>
-                <p className="mt-0.5 font-headline-sm text-[13px] font-semibold text-slate-200">
-                  SF → Silicon Valley
-                </p>
-                <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>1 stop locked</span>
-                  <span className="font-medium text-emerald-400">22 min charge</span>
+              <div data-hero-chip className="absolute -bottom-6 right-0 max-w-[220px] sm:-right-8">
+                <div data-hero-float className="rounded-xl bg-slate-900/95 p-space-md shadow-2xl backdrop-blur-md">
+                  <div className="flex items-center gap-space-2xs font-label-sm text-[11px] text-primary-fixed">
+                    <span className="material-symbols-outlined text-[14px]">alt_route</span>
+                    <span className="uppercase tracking-wider">Smart Route</span>
+                  </div>
+                  <p className="mt-0.5 font-headline-sm text-[13px] font-semibold text-slate-200">
+                    SF → Silicon Valley
+                  </p>
+                  <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>1 stop locked</span>
+                    <span className="font-medium text-emerald-400">22 min charge</span>
+                  </div>
                 </div>
               </div>
             </div>

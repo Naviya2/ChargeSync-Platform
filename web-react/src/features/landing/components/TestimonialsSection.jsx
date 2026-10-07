@@ -31,7 +31,7 @@ export default function TestimonialsSection() {
   return (
     <section id="testimonials" className="w-full bg-surface-container-lowest py-space-3xl lg:py-24">
       <div className="mx-auto max-w-7xl px-space-lg lg:px-space-xl">
-        <div className="mx-auto mb-space-3xl max-w-2xl text-center">
+        <div data-reveal className="mx-auto mb-space-3xl max-w-2xl text-center">
           <span className="font-label-sm text-label-sm font-bold uppercase tracking-widest text-primary">
             Community Feedback
           </span>
@@ -40,9 +40,10 @@ export default function TestimonialsSection() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-space-lg md:grid-cols-3">
+        <div data-reveal-group className="grid grid-cols-1 gap-space-lg md:grid-cols-3">
           {ITEMS.map((t) => (
             <div
+              data-reveal
               key={t.name}
               className="flex flex-col justify-between rounded-2xl bg-surface-container-low p-space-xl shadow-sm"
             >
