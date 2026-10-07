@@ -1,10 +1,13 @@
 from langchain_ollama import ChatOllama
-from config import settings
+from config import Settings
 from models.support_models import SupportSuggestion
 
 
 def support_model():
     """One provider boundary. Credentials and provider settings stay server-side."""
+    # Uvicorn's default reload watcher does not watch .env. Read configuration
+    # for each analysis so provider/model changes apply to the next request.
+    settings = Settings()
     provider = settings.LLM_PROVIDER.strip().lower()
     if provider == "groq":
         from langchain_groq import ChatGroq

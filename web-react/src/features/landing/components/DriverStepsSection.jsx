@@ -33,7 +33,7 @@ export default function DriverStepsSection() {
   return (
     <section id="how-it-works" className="w-full bg-surface-container-lowest py-space-3xl lg:py-24">
       <div className="mx-auto max-w-7xl px-space-lg lg:px-space-xl">
-        <div className="mx-auto mb-space-3xl max-w-3xl text-center">
+        <div data-reveal className="mx-auto mb-space-3xl max-w-3xl text-center">
           <span className="font-label-sm text-label-sm font-bold uppercase tracking-widest text-primary">
             How It Works For Drivers
           </span>
@@ -45,9 +45,10 @@ export default function DriverStepsSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-space-lg md:grid-cols-2 lg:grid-cols-4">
+        <div data-reveal-group className="grid grid-cols-1 gap-space-lg md:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step) => (
             <div
+              data-reveal
               key={step.n}
               className="flex flex-col justify-between rounded-2xl bg-surface-container-low p-space-xl shadow-sm transition-shadow hover:shadow-md"
             >

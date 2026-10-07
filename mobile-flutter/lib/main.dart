@@ -7,6 +7,8 @@ import 'screens/home/home_screen.dart';
 import 'screens/auth/sign_in_screen.dart';
 import 'features/reservations/screens/staff_dashboard_screen.dart';
 
+import 'screens/splash/splash_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
@@ -49,7 +51,7 @@ class ChargeSyncApp extends StatelessWidget {
       theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
-      home: home,
+      home: SplashScreen(nextScreen: home),
     );
   }
 }

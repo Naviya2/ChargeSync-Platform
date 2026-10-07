@@ -40,6 +40,15 @@ def test_invalid_model_output_is_rejected():
             SupportRequest(subject="Help", description="Missing invoice"))
 
 
+def test_default_agent_loads_current_model_for_each_analysis(monkeypatch):
+    models = iter([FakeModel(suggestion()), FakeModel({**suggestion(), "priority": "Low"})])
+    monkeypatch.setattr("agents.support_agent.support_model", lambda: next(models))
+    agent = SupportAgent()
+    request = SupportRequest(subject="Help", description="Missing invoice")
+    assert agent.analyze(request).priority == "High"
+    assert agent.analyze(request).priority == "Low"
+
+
 def test_api_model_failure_returns_service_unavailable(monkeypatch):
     from fastapi.testclient import TestClient
     import main

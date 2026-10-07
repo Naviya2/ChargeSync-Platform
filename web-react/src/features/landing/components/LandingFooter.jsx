@@ -1,4 +1,4 @@
-import BrandMark from './BrandMark'
+import BrandLogo from '../../../components/shared/BrandLogo'
 
 const COLUMNS = [
   {
@@ -32,7 +32,7 @@ export default function LandingFooter() {
       <div className="mx-auto max-w-7xl px-space-lg lg:px-space-xl">
         <div className="flex flex-col items-start justify-between gap-space-xl pb-space-2xl lg:flex-row lg:items-center">
           <div className="max-w-md">
-            <BrandMark dark className="mb-space-xs" />
+            <BrandLogo className="mb-space-md" />
             <p className="mt-space-xs font-body-sm text-body-sm text-surface-variant">
               Powering Tomorrow. Autonomous, interoperable EV reservation intelligence connecting
               drivers, hosts, and regional energy grids seamlessly.

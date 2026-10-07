@@ -53,7 +53,9 @@ export default function SupportWorkflow({ ticket, onUseDraft }) {
         <div><dt className="inline font-semibold">Approval required: </dt><dd className="inline">{run.approvalRequired ? 'Yes' : 'No'}</dd></div>
         {run.decision && <div><dt className="inline font-semibold">Staff decision: </dt><dd className="inline">{run.decision}</dd></div>}
       </dl>
-      {run.status === 'Running' && <p>Processing the ticket and linked records. Status refreshes automatically.</p>}
+      {run.status === 'Running' && <p>{run.error
+        ? 'The last analysis attempt failed. Retrying automatically; status refreshes every five seconds.'
+        : 'Processing the ticket and linked records. Status refreshes automatically.'}</p>}
       {run.status === 'Completed' && !run.decision && <p>Analysis complete. Any requested refund still needs staff review.</p>}
       {run.action === 'Refund' && <p>Requested refund: LKR {Number(run.amount).toFixed(2)}</p>}
       {run.error && <p role="alert">{run.error}</p>}
@@ -82,7 +84,7 @@ export default function SupportWorkflow({ ticket, onUseDraft }) {
         <ol className="list-decimal space-y-2 pl-4">{run.analysis.completedSteps.map((step, index) => <li key={index}><p>{step.agent} · {step.step}{step.tool && ` · ${step.tool.replaceAll('_', ' ')}`}</p><p>{step.outcome}</p><p className="text-xs text-on-surface-variant">{when(step.startedAt)} → {when(step.completedAt)}</p></li>)}</ol>
         {!!run.analysis.toolResults?.length && <><h4 className="mt-2 font-medium">Tool findings</h4><ul className="space-y-1">{run.analysis.toolResults.map((result, index) => <li key={index}>{result.tool.replaceAll('_', ' ')}: {result.outcome}</li>)}</ul></>}
       </details>}
-      {!!run.audit?.length && <details><summary>Execution history</summary><ul className="mt-2 space-y-1">{run.audit.map((entry, index) => <li key={index}>{new Date(entry.at).toLocaleString()} · {entry.event}: {entry.detail}</li>)}</ul></details>}
+      {!!run.audit?.length && <details><summary>Execution history</summary><ul className="mt-2 space-y-1">{run.audit.map((entry, index) => <li key={index}>{new Date(entry.at).toLocaleString()} · Revision {entry.revision} · {readable(entry.event)}: {entry.detail}</li>)}</ul></details>}
     </div>}
   </section>
 }

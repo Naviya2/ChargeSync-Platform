@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme/app_colors.dart';
 import 'widgets/vehicle_card.dart';
 import 'widgets/find_charger_card.dart';
@@ -34,6 +35,16 @@ class _HomeScreenState extends State<HomeScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+    
+    _requestPermissions();
+  }
+
+  Future<void> _requestPermissions() async {
+    // Request multiple permissions at once
+    await [
+      Permission.camera,
+      Permission.location,
+    ].request();
   }
 
   @override
@@ -186,13 +197,12 @@ class _HomeScreenState extends State<HomeScreen>
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryContainer,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          Icons.bolt_rounded,
-                          size: 20,
-                          color: AppColors.onPrimaryContainer,
+                        clipBehavior: Clip.hardEdge,
+                        child: Image.asset(
+                          'assets/images/app_icon.png',
+                          fit: BoxFit.cover,
                         ),
                       ),
                       const SizedBox(width: 10),

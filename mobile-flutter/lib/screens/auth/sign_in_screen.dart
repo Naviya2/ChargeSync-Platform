@@ -387,7 +387,6 @@ class _SignInScreenState extends State<SignInScreen>
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainer,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
@@ -397,10 +396,10 @@ class _SignInScreenState extends State<SignInScreen>
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.bolt_rounded,
-                size: 32,
-                color: AppColors.primary,
+              clipBehavior: Clip.hardEdge,
+              child: Image.asset(
+                'assets/images/app_icon.png',
+                fit: BoxFit.cover,
               ),
             ),
           ],

@@ -35,6 +35,7 @@ class _StationMapScreenState extends State<StationMapScreen> {
   String _distance = '';
   String _duration = '';
   bool _isLoading = true;
+  bool _isMapReady = false;
 
   @override
   void initState() {
@@ -49,23 +50,30 @@ class _StationMapScreenState extends State<StationMapScreen> {
   }
 
   Future<void> _initMap() async {
+    _loadStations();
     await _getLocation();
-    await _loadStations();
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _getLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enable GPS to see nearby stations and calculate routes'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
       return;
     }
 
-    permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
@@ -77,31 +85,104 @@ class _StationMapScreenState extends State<StationMapScreen> {
       return;
     }
 
+    // Step 1: Immediately use last known position if available for instant map centering
     try {
-      Position position = await Geolocator.getCurrentPosition();
+      Position? lastPos = await Geolocator.getLastKnownPosition();
+      if (lastPos != null && mounted) {
+        setState(() {
+          _currentLocation = LatLng(lastPos.latitude, lastPos.longitude);
+        });
+        if (_isMapReady) {
+          _mapController.move(_currentLocation!, 13.5);
+        }
+      }
+    } catch (_) {}
+
+    // Step 2: Query high accuracy GPS with timeout
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 6),
+        ),
+      );
+      
+      if (!mounted) return;
+      
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
-      _mapController.move(_currentLocation!, 13.0);
+      
+      if (_isMapReady) {
+        _mapController.move(_currentLocation!, 13.5);
+      }
     } catch (e) {
-      // Handle location error gracefully
+      // Step 3: Fast fallback to medium accuracy (network/Wi-Fi)
+      try {
+        Position fallbackPos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 4),
+          ),
+        );
+        if (mounted) {
+          setState(() {
+            _currentLocation = LatLng(fallbackPos.latitude, fallbackPos.longitude);
+          });
+          if (_isMapReady) {
+            _mapController.move(_currentLocation!, 13.5);
+          }
+        }
+      } catch (_) {}
     }
   }
 
   Future<void> _loadStations() async {
     try {
-      // Fetch all stations instead of just my stations so drivers can see them
       final stations = await StationService.instance.getAllStations();
-      setState(() {
-        _stations = stations;
-      });
+      if (mounted) {
+        setState(() {
+          _stations = stations;
+        });
+      }
     } catch (e) {
       // Ignore if unauth
     }
   }
 
+  void _onStationTapped(Station station) {
+    setState(() {
+      _selectedStation = station;
+    });
+
+    // Center map on selected station
+    _mapController.move(
+      LatLng(station.latitude, station.longitude),
+      _mapController.camera.zoom < 14.0 ? 14.5 : _mapController.camera.zoom,
+    );
+
+    // If location is available, calculate route
+    if (_currentLocation != null) {
+      _getRouteTo(station);
+    } else {
+      setState(() {
+        _routePoints = [];
+        _distance = 'Location required';
+        _duration = '';
+      });
+    }
+  }
+
   Future<void> _getRouteTo(Station station) async {
-    if (_currentLocation == null) return;
+    if (_currentLocation == null) {
+      setState(() {
+        _selectedStation = station;
+        _routePoints = [];
+        _distance = 'Location required';
+        _duration = '';
+      });
+      return;
+    }
 
     setState(() {
       _selectedStation = station;
@@ -189,8 +270,9 @@ class _StationMapScreenState extends State<StationMapScreen> {
 
       if (_activeFilters.contains('available')) {
         if (s.chargers == null ||
-            !s.chargers!.any((c) => c.status == 'Available'))
+            !s.chargers!.any((c) => c.status == 'Available')) {
           return false;
+        }
       }
 
       if (_activeFilters.contains('compatible')) {
@@ -226,6 +308,12 @@ class _StationMapScreenState extends State<StationMapScreen> {
             options: MapOptions(
               initialCenter: _currentLocation ?? const LatLng(6.9271, 79.8612),
               initialZoom: 13.0,
+              onMapReady: () {
+                _isMapReady = true;
+                if (_currentLocation != null) {
+                  _mapController.move(_currentLocation!, 13.5);
+                }
+              },
             ),
             children: [
               TileLayer(
@@ -246,30 +334,69 @@ class _StationMapScreenState extends State<StationMapScreen> {
                   if (_currentLocation != null)
                     Marker(
                       point: _currentLocation!,
-                      width: 40,
-                      height: 40,
-                      child: const Icon(
-                        Icons.my_location,
-                        color: AppColors.primary,
-                        size: 30,
-                      ),
-                    ),
-                  ..._filteredStations.map(
-                    (s) => Marker(
-                      point: LatLng(s.latitude, s.longitude),
-                      width: 40,
-                      height: 40,
-                      child: GestureDetector(
-                        onTap: () => _getRouteTo(s),
-                        child: Icon(
-                          Icons.location_on,
-                          color: _selectedStation?.id == s.id
-                              ? AppColors.primary
-                              : AppColors.error,
-                          size: _selectedStation?.id == s.id ? 40 : 30,
+                      width: 48,
+                      height: 48,
+                      alignment: Alignment.center,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary.withValues(alpha: 0.25),
+                        ),
+                        padding: const EdgeInsets.all(6),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primary,
+                          ),
+                          child: const Icon(
+                            Icons.my_location,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
+                  ..._filteredStations.map(
+                    (s) {
+                      final isSelected = _selectedStation?.id == s.id;
+                      return Marker(
+                        point: LatLng(s.latitude, s.longitude),
+                        width: 50,
+                        height: 50,
+                        alignment: Alignment.center,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _onStationTapped(s),
+                          child: Center(
+                            child: Container(
+                              width: isSelected ? 46 : 38,
+                              height: isSelected ? 46 : 38,
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.primary : AppColors.surface,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected ? Colors.white : AppColors.primary,
+                                  width: isSelected ? 2.5 : 2.0,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (isSelected ? AppColors.primary : Colors.black)
+                                        .withValues(alpha: 0.35),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.ev_station_rounded,
+                                color: isSelected ? AppColors.onPrimary : AppColors.primary,
+                                size: isSelected ? 24 : 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -336,32 +463,65 @@ class _StationMapScreenState extends State<StationMapScreen> {
             ),
           ),
 
-          // Floating back button
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            left: 12,
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer.withValues(alpha: 0.92),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: AppColors.onSurface,
-                  size: 20,
+          // Loading indicator below app bar
+          if (_isLoading)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 130,
+              left: 0,
+              right: 0,
+              child: const LinearProgressIndicator(
+                backgroundColor: Colors.transparent,
+                color: AppColors.primary,
+                minHeight: 3,
+              ),
+            ),
+
+          // Floating back button (only shown when route can be popped)
+          if (Navigator.of(context).canPop())
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              left: 12,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainer.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.onSurface,
+                    size: 20,
+                  ),
                 ),
               ),
+            ),
+
+          // My Location FAB (above bottom navigation bar and station details card)
+          Positioned(
+            bottom: _selectedStation != null ? 430 : 96,
+            right: 16,
+            child: FloatingActionButton(
+              heroTag: 'my_location_fab',
+              backgroundColor: AppColors.surface,
+              foregroundColor: AppColors.primary,
+              elevation: 4,
+              onPressed: () {
+                if (_currentLocation != null && _isMapReady) {
+                  _mapController.move(_currentLocation!, 15.0);
+                }
+                _getLocation();
+              },
+              child: const Icon(Icons.my_location),
             ),
           ),
 
           // Station Details Bottom Card
           if (_selectedStation != null)
             Positioned(
-              bottom: 80,
+              bottom: 96,
               left: 16,
               right: 16,
               child: Container(
@@ -398,6 +558,9 @@ class _StationMapScreenState extends State<StationMapScreen> {
                           onTap: () {
                             setState(() {
                               _selectedStation = null;
+                              _routePoints = [];
+                              _distance = '';
+                              _duration = '';
                             });
                           },
                           child: const Padding(
