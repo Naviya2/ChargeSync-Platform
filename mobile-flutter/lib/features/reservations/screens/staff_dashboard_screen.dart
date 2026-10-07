@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/api/auth_service.dart';
 import '../../../core/api/reservation_api_client.dart';
@@ -13,6 +12,7 @@ import 'walk_in_booking_screen.dart';
 import '../../payments/screens/session_checkout_screen.dart';
 import '../../stations/screens/station_management_screen.dart';
 import '../../../screens/auth/sign_in_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 // ── Simple notification model ─────────────────────────────────────────────────
 class _StaffNotification {
@@ -64,7 +64,15 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
+    _requestPermissions();
     _startPolling();
+  }
+
+  Future<void> _requestPermissions() async {
+    await [
+      Permission.camera,
+      Permission.location,
+    ].request();
   }
 
   void _addNotification({
@@ -217,7 +225,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
                 reservations: _currentReservations,
                 onTabSelected: (idx) => setState(() => _currentTab = idx),
               ),
-              const QrScannerScreen(),
+              _currentTab == 1 ? const QrScannerScreen() : const SizedBox(),
               const StationManagementScreen(),
               const WalkInBookingScreen(),
               SessionCheckoutScreen(active: _currentTab == 4),
