@@ -1,3 +1,4 @@
+import BrandLogo from '../../../components/shared/BrandLogo'
 import { CheckCircle2, Clock, Lock, ShieldCheck, Zap } from 'lucide-react'
 
 const COPY = {
@@ -30,39 +31,7 @@ export default function AuthBrandPanel({ variant = 'signin' }) {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#262C38_1px,transparent_1px)] opacity-25 [background-size:28px_28px]" />
 
       {/* Logo */}
-      <div className="relative z-10 flex items-center gap-3">
-        <div className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-ink-400 bg-ink-700 shadow-lg shadow-black/40">
-          <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-brand-500/20 to-brand-to/10" />
-          <svg className="relative z-10 h-6 w-6" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="9" stroke="#262C38" strokeWidth="1.8" strokeDasharray="45 15" />
-            <circle
-              cx="12"
-              cy="12"
-              r="9"
-              stroke="url(#cs-bolt-grad)"
-              strokeWidth="1.8"
-              strokeDasharray="32 32"
-              strokeLinecap="round"
-            />
-            <path d="M12.5 5.5L8.5 12.5H12L11 18.5L16 11.5H12.5L12.5 5.5Z" fill="url(#cs-bolt-grad)" />
-            <defs>
-              <linearGradient id="cs-bolt-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#0EA5A0" />
-                <stop offset="100%" stopColor="#22C55E" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <div>
-          <span className="flex items-center text-2xl font-extrabold tracking-tight text-white">
-            <span className="text-blue-500">Charge</span>
-            <span>Sync</span>
-          </span>
-          <p className="text-[9.5px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-            Powering Tomorrow
-          </p>
-        </div>
-      </div>
+      <BrandLogo size="large" className="relative z-10" />
 
       {/* Hero illustration */}
       <div className="relative z-10 my-auto flex flex-col items-center py-10">

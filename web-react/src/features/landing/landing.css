@@ -1,0 +1,24 @@
+.landing-page section[id] {
+  scroll-margin-top: 6rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-page [data-landing-button] {
+    transition: transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+  }
+
+  .landing-page [data-landing-button]:hover {
+    transform: translateY(-2px);
+  }
+
+  .landing-page [data-landing-button]:active {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-page .animate-pulse,
+  .landing-page .animate-ping {
+    animation: none;
+  }
+}

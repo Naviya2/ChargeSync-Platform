@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { ROUTES, NAV_SECTIONS, ROLE_LABELS } from '../../lib/constants'
 import { useAuthStore } from '../../store/authStore'
 import { cn } from '../../lib/cn'
+import BrandLogo from '../shared/BrandLogo'
 
 const BADGE_TONE = {
   secondary: 'bg-secondary text-on-secondary',
@@ -67,17 +68,7 @@ export default function Sidebar({ isOpen, onClose }) {
         <div className="flex flex-col">
           {/* Brand */}
           <div className="flex items-center justify-between p-space-lg">
-            <div className="flex items-center gap-space-sm">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-tertiary text-on-primary">
-                <span className="material-symbols-outlined text-[20px]">bolt</span>
-              </span>
-              <div className="flex flex-col">
-                <span className="font-headline-sm text-headline-sm tracking-tight text-inverse-on-surface">
-                  ChargeSync
-                </span>
-                <span className="font-label-sm text-label-sm text-outline-variant">Powering Tomorrow</span>
-              </div>
-            </div>
+            <BrandLogo size="compact" />
 
             {/* Close button for mobile */}
             <button

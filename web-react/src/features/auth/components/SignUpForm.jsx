@@ -1,3 +1,4 @@
+import BrandLogo from '../../../components/shared/BrandLogo'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -12,7 +13,6 @@ import {
   Smartphone,
   Store,
   User,
-  Zap,
 } from 'lucide-react'
 import { ROUTES } from '../../../lib/constants'
 import Button from '../../../components/ui/Button'
@@ -115,10 +115,8 @@ export default function SignUpForm({ onSubmit, isSubmitting = false, errorMessag
     <div className="flex w-full flex-col justify-between overflow-y-auto bg-slate-50 p-8 sm:p-12 md:w-1/2 lg:w-[48%] lg:p-16">
       {/* Top utility row */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-gradient text-white md:hidden">
-            <Zap className="h-4 w-4" />
-          </span>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <BrandLogo tone="light" size="compact" className="md:hidden" />
           <span className="rounded-md bg-slate-200/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-700">
             Station Owner Sign-up
           </span>

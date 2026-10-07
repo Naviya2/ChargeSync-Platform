@@ -27,7 +27,7 @@ export default function AiFeaturesSection() {
     >
       <div className="pointer-events-none absolute right-1/3 top-0 h-80 w-80 rounded-full bg-primary/15 blur-3xl" />
       <div className="relative mx-auto max-w-7xl px-space-lg lg:px-space-xl">
-        <div className="mx-auto mb-space-3xl max-w-3xl text-center">
+        <div data-reveal className="mx-auto mb-space-3xl max-w-3xl text-center">
           <span className="font-label-sm text-label-sm font-bold uppercase tracking-widest text-primary-fixed">
             Autonomous Grid Intelligence
           </span>
@@ -40,9 +40,10 @@ export default function AiFeaturesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-space-lg lg:grid-cols-3">
+        <div data-reveal-group className="grid grid-cols-1 gap-space-lg lg:grid-cols-3">
           {CARDS.map((c) => (
             <div
+              data-reveal
               key={c.title}
               className="flex flex-col justify-between rounded-2xl bg-slate-900/60 p-space-xl shadow-xl backdrop-blur-md"
             >
@@ -63,7 +64,7 @@ export default function AiFeaturesSection() {
           ))}
 
           {/* Human-in-the-loop safety card */}
-          <div className="flex flex-col justify-between rounded-2xl bg-slate-900/60 p-space-xl shadow-xl backdrop-blur-md">
+          <div data-reveal className="flex flex-col justify-between rounded-2xl bg-slate-900/60 p-space-xl shadow-xl backdrop-blur-md">
             <div>
               <div className="mb-space-lg flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20 text-amber-300">
                 <span className="material-symbols-outlined text-[28px]">verified_user</span>

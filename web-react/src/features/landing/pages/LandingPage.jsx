@@ -1,3 +1,6 @@
+import { useRef } from 'react'
+import useLandingAnimations from '../hooks/useLandingAnimations'
+import '../landing.css'
 import LandingNavbar from '../components/LandingNavbar'
 import HeroSection from '../components/HeroSection'
 import StatsBar from '../components/StatsBar'
@@ -13,10 +16,13 @@ import LandingFooter from '../components/LandingFooter'
  * All CTAs route to /login, which then forwards to the role dashboard.
  */
 export default function LandingPage() {
+  const pageRef = useRef(null)
+  useLandingAnimations(pageRef)
+
   return (
-    <div className="min-h-screen bg-surface font-sans text-on-surface antialiased">
+    <div ref={pageRef} className="landing-page min-h-screen bg-surface font-sans text-on-surface antialiased">
       <LandingNavbar />
-      <main className="w-full pt-16">
+      <main className="w-full pt-20">
         <HeroSection />
         <StatsBar />
         <DriverStepsSection />
