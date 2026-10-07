@@ -18,7 +18,7 @@ export async function verifySupportWorkflow() {
       completedSteps: [{ agent: 'ValidationSupportAgent', step: 'Load invoice', tool: 'get_invoice', outcome: 'Authorized record loaded.', startedAt: '2026-10-01T08:01:00Z', completedAt: '2026-10-01T08:01:01Z' }],
       toolResults: [{ tool: 'get_invoice', outcome: 'Paid invoice found.' }],
     },
-    audit: [{ at: '2026-10-01T09:00:00Z', event: 'AnalysisCompleted', detail: 'Awaiting staff approval.' }],
+    audit: [{ at: '2026-10-01T09:00:00Z', revision: 1, event: 'AnalysisCompleted', detail: 'Awaiting staff approval.' }],
   }
   const initialSnapshot = useAuthStore.getInitialState()
   const previousInitialUser = initialSnapshot.user
@@ -46,6 +46,9 @@ export async function verifySupportWorkflow() {
     assert.match(render('Admin', { ...workflow, status: 'Completed', decision: null }), /Analysis complete/)
     const failed = render('Admin', { ...workflow, status: 'Failed', analysis: null, error: 'Analysis unavailable.' })
     assert.ok(failed.includes('Request Revision') && failed.includes('Analysis unavailable.'))
+    const retrying = render('Admin', { ...workflow, status: 'Running', revision: 2, analysis: null, error: 'Agent unavailable.' })
+    assert.ok(retrying.includes('Retrying automatically'))
+    assert.ok(retrying.includes('Revision 1') && retrying.includes('Analysis Completed'))
     const requests = []
     apiClient.defaults.adapter = async (config) => {
       requests.push({ url: config.url, method: config.method, data: config.data })
