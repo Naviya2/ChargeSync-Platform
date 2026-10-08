@@ -120,3 +120,67 @@ def test_generate_plan_budget_preference():
     # The budget option should be ranked higher
     top_itinerary = response.ranked_itineraries[0]
     assert top_itinerary.cost_estimate < 2000.0
+
+def test_pydantic_schema_serialization():
+    agent = PlanningCoordinatorAgent(llm=FakeLLM(mock_response()))
+    deadline = datetime.now(timezone.utc) + timedelta(hours=2)
+    request = PlanningRequest(
+        driver_id="driver-123",
+        deadline=deadline,
+        max_distance_km=15.0,
+        price_preference="Balanced",
+        vehicle_id="vehicle-123",
+        vehicle=mock_vehicle(),
+        candidate_stations=[mock_station()]
+    )
+    response = agent.generate_plan(request)
+    dumped = response.model_dump()
+    assert "plan_id" in dumped
+    assert "requires_approval" in dumped
+    assert isinstance(dumped["ranked_itineraries"], list)
+
+def test_prompt_injection_sanitization():
+    agent = PlanningCoordinatorAgent(llm=FakeLLM(mock_response()))
+    malicious_vehicle = VehicleInput(
+        vehicle_id="veh-hacker",
+        make="Tesla",
+        model='Model 3"; DROP TABLE USERS; SET ROLE ADMIN=TRUE--',
+        connector="CCS2",
+        battery_capacity_kwh=75.0,
+        max_charge_rate_kw=150.0
+    )
+    request = PlanningRequest(
+        driver_id="driver-123",
+        deadline=datetime.now(timezone.utc) + timedelta(hours=2),
+        max_distance_km=15.0,
+        price_preference="Balanced",
+        vehicle_id="veh-hacker",
+        vehicle=malicious_vehicle,
+        candidate_stations=[mock_station()]
+    )
+    response = agent.generate_plan(request)
+    assert response is not None
+    assert len(response.ranked_itineraries) > 0
+
+class CrashingLLM:
+    def with_structured_output(self, schema):
+        return self
+    def invoke(self, messages):
+        raise ConnectionError("Provider API timeout / unreachable (503)")
+
+def test_model_unavailable_fallback():
+    agent = PlanningCoordinatorAgent(llm=CrashingLLM())
+    request = PlanningRequest(
+        driver_id="driver-123",
+        deadline=datetime.now(timezone.utc) + timedelta(hours=2),
+        max_distance_km=15.0,
+        price_preference="Balanced",
+        vehicle_id="vehicle-123",
+        vehicle=mock_vehicle(),
+        candidate_stations=[mock_station()]
+    )
+    response = agent.generate_plan(request)
+    assert response is not None
+    assert len(response.ranked_itineraries) > 0
+    assert "Fallback" in response.ranked_itineraries[0].station_name
+

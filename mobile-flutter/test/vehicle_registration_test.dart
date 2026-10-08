@@ -120,5 +120,29 @@ void main() {
       expect(find.text('Make is required'), findsOneWidget);
       expect(find.text('Model is required'), findsOneWidget);
     });
+
+    testWidgets('Battery capacity numeric input keyboard restricts invalid decimal strings', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: AddEditVehicleScreen(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Enter invalid battery capacity
+      final capacityField = find.widgetWithText(TextFormField, 'Capacity in kWh');
+      if (capacityField.evaluate().isNotEmpty) {
+        await tester.enterText(capacityField, '-10');
+      }
+
+      final registerButton = find.widgetWithText(ElevatedButton, 'Register Vehicle');
+      await tester.ensureVisible(registerButton);
+      await tester.pumpAndSettle();
+      await tester.tap(registerButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Must be > 0'), findsOneWidget);
+    });
   });
 }

@@ -1,3 +1,5 @@
+import os
+os.environ.setdefault("GROQ_API_KEY", "mock_integration_key")
 import pytest
 from fastapi.testclient import TestClient
 from main import app
