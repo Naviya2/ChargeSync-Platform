@@ -1,0 +1,536 @@
+{
+  "tool": "Playwright Cross-Browser & Viewport Compatibility Suite",
+  "version": "1.49.0",
+  "generatedAt": "2026-10-08T05:39:32.510Z",
+  "targetWeb": "http://localhost:5173",
+  "targetApi": "http://localhost:5035",
+  "summary": {
+    "totalTests": 51,
+    "passed": 50,
+    "failed": 1,
+    "passRate": "98.0%",
+    "durationSeconds": "167.50",
+    "browsersTested": [
+      "Chromium (Chrome)",
+      "Mozilla Firefox",
+      "Apple WebKit (Safari)"
+    ],
+    "viewportsTested": [
+      "Desktop HD",
+      "Tablet (iPad)",
+      "Mobile (iPhone 14)"
+    ]
+  },
+  "results": [
+    {
+      "testId": "COMP-LAND-CHROME-DESKTOP",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Landing Page (Public)",
+      "feature": "Layout Integrity & Zero Horizontal Scrollbar Overflow",
+      "status": "Passed",
+      "evidence": "NoOverflow: true, Headings: true, CTAPresent: true",
+      "screenshot": "chrome_desktop_1_landing.png"
+    },
+    {
+      "testId": "COMP-AUTH-CHROME-DESKTOP",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Authentication Page",
+      "feature": "Form Input Elements, Submit CTA, and Responsive Centering",
+      "status": "Passed",
+      "evidence": "EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true",
+      "screenshot": "chrome_desktop_2_login.png"
+    },
+    {
+      "testId": "COMP-DASH-CHROME-DESKTOP",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Operator Dashboard",
+      "feature": "Executive KPI Cards Grid Reflow & Topbar Layout",
+      "status": "Passed",
+      "evidence": "TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true",
+      "screenshot": "chrome_desktop_3_dashboard.png"
+    },
+    {
+      "testId": "COMP-STAT-CHROME-DESKTOP",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Stations Infrastructure",
+      "feature": "Station KPI Strip, Filter Pills, and Grid Card Reflow",
+      "status": "Passed",
+      "evidence": "FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true",
+      "screenshot": "chrome_desktop_4_stations.png"
+    },
+    {
+      "testId": "COMP-RES-CHROME-DESKTOP",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Reservation Planning Workspace",
+      "feature": "Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking",
+      "status": "Passed",
+      "evidence": "StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true",
+      "screenshot": "chrome_desktop_5_reservations.png"
+    },
+    {
+      "testId": "COMP-LAND-CHROME-TABLET",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Landing Page (Public)",
+      "feature": "Layout Integrity & Zero Horizontal Scrollbar Overflow",
+      "status": "Passed",
+      "evidence": "NoOverflow: true, Headings: true, CTAPresent: true",
+      "screenshot": "chrome_tablet_1_landing.png"
+    },
+    {
+      "testId": "COMP-AUTH-CHROME-TABLET",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Authentication Page",
+      "feature": "Form Input Elements, Submit CTA, and Responsive Centering",
+      "status": "Passed",
+      "evidence": "EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true",
+      "screenshot": "chrome_tablet_2_login.png"
+    },
+    {
+      "testId": "COMP-DASH-CHROME-TABLET",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Operator Dashboard",
+      "feature": "Executive KPI Cards Grid Reflow & Topbar Layout",
+      "status": "Passed",
+      "evidence": "TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true",
+      "screenshot": "chrome_tablet_3_dashboard.png"
+    },
+    {
+      "testId": "COMP-STAT-CHROME-TABLET",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Stations Infrastructure",
+      "feature": "Station KPI Strip, Filter Pills, and Grid Card Reflow",
+      "status": "Passed",
+      "evidence": "FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true",
+      "screenshot": "chrome_tablet_4_stations.png"
+    },
+    {
+      "testId": "COMP-RES-CHROME-TABLET",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Reservation Planning Workspace",
+      "feature": "Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking",
+      "status": "Passed",
+      "evidence": "StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true",
+      "screenshot": "chrome_tablet_5_reservations.png"
+    },
+    {
+      "testId": "COMP-DRAWER-CHROME-TABLET",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Mobile Navigation Drawer",
+      "feature": "Touch Hamburger Trigger & Slide-out Sidebar Reflow",
+      "status": "Passed",
+      "evidence": "HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true",
+      "screenshot": "chrome_tablet_6_drawer.png"
+    },
+    {
+      "testId": "COMP-LAND-CHROME-MOBILE",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Landing Page (Public)",
+      "feature": "Layout Integrity & Zero Horizontal Scrollbar Overflow",
+      "status": "Passed",
+      "evidence": "NoOverflow: true, Headings: true, CTAPresent: true",
+      "screenshot": "chrome_mobile_1_landing.png"
+    },
+    {
+      "testId": "COMP-AUTH-CHROME-MOBILE",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Authentication Page",
+      "feature": "Form Input Elements, Submit CTA, and Responsive Centering",
+      "status": "Passed",
+      "evidence": "EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true",
+      "screenshot": "chrome_mobile_2_login.png"
+    },
+    {
+      "testId": "COMP-DASH-CHROME-MOBILE",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Operator Dashboard",
+      "feature": "Executive KPI Cards Grid Reflow & Topbar Layout",
+      "status": "Passed",
+      "evidence": "TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true",
+      "screenshot": "chrome_mobile_3_dashboard.png"
+    },
+    {
+      "testId": "COMP-STAT-CHROME-MOBILE",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Stations Infrastructure",
+      "feature": "Station KPI Strip, Filter Pills, and Grid Card Reflow",
+      "status": "Passed",
+      "evidence": "FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true",
+      "screenshot": "chrome_mobile_4_stations.png"
+    },
+    {
+      "testId": "COMP-RES-CHROME-MOBILE",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Reservation Planning Workspace",
+      "feature": "Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking",
+      "status": "Passed",
+      "evidence": "StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true",
+      "screenshot": "chrome_mobile_5_reservations.png"
+    },
+    {
+      "testId": "COMP-DRAWER-CHROME-MOBILE",
+      "browser": "Chromium (Chrome)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Mobile Navigation Drawer",
+      "feature": "Touch Hamburger Trigger & Slide-out Sidebar Reflow",
+      "status": "Passed",
+      "evidence": "HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true",
+      "screenshot": "chrome_mobile_6_drawer.png"
+    },
+    {
+      "testId": "COMP-LAND-FIREFOX-DESKTOP",
+      "browser": "Mozilla Firefox",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Landing Page (Public)",
+      "feature": "Layout Integrity & Zero Horizontal Scrollbar Overflow",
+      "status": "Passed",
+      "evidence": "NoOverflow: true, Headings: true, CTAPresent: true",
+      "screenshot": "firefox_desktop_1_landing.png"
+    },
+    {
+      "testId": "COMP-AUTH-FIREFOX-DESKTOP",
+      "browser": "Mozilla Firefox",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Authentication Page",
+      "feature": "Form Input Elements, Submit CTA, and Responsive Centering",
+      "status": "Passed",
+      "evidence": "EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true",
+      "screenshot": "firefox_desktop_2_login.png"
+    },
+    {
+      "testId": "COMP-DASH-FIREFOX-DESKTOP",
+      "browser": "Mozilla Firefox",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Operator Dashboard",
+      "feature": "Executive KPI Cards Grid Reflow & Topbar Layout",
+      "status": "Passed",
+      "evidence": "TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true",
+      "screenshot": "firefox_desktop_3_dashboard.png"
+    },
+    {
+      "testId": "COMP-STAT-FIREFOX-DESKTOP",
+      "browser": "Mozilla Firefox",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Stations Infrastructure",
+      "feature": "Station KPI Strip, Filter Pills, and Grid Card Reflow",
+      "status": "Passed",
+      "evidence": "FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true",
+      "screenshot": "firefox_desktop_4_stations.png"
+    },
+    {
+      "testId": "COMP-RES-FIREFOX-DESKTOP",
+      "browser": "Mozilla Firefox",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Reservation Planning Workspace",
+      "feature": "Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking",
+      "status": "Passed",
+      "evidence": "StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true",
+      "screenshot": "firefox_desktop_5_reservations.png"
+    },
+    {
+      "testId": "COMP-LAND-FIREFOX-TABLET",
+      "browser": "Mozilla Firefox",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Landing Page (Public)",
+      "feature": "Layout Integrity & Zero Horizontal Scrollbar Overflow",
+      "status": "Passed",
+      "evidence": "NoOverflow: true, Headings: true, CTAPresent: true",
+      "screenshot": "firefox_tablet_1_landing.png"
+    },
+    {
+      "testId": "COMP-AUTH-FIREFOX-TABLET",
+      "browser": "Mozilla Firefox",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Authentication Page",
+      "feature": "Form Input Elements, Submit CTA, and Responsive Centering",
+      "status": "Passed",
+      "evidence": "EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true",
+      "screenshot": "firefox_tablet_2_login.png"
+    },
+    {
+      "testId": "COMP-DASH-FIREFOX-TABLET",
+      "browser": "Mozilla Firefox",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Operator Dashboard",
+      "feature": "Executive KPI Cards Grid Reflow & Topbar Layout",
+      "status": "Passed",
+      "evidence": "TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true",
+      "screenshot": "firefox_tablet_3_dashboard.png"
+    },
+    {
+      "testId": "COMP-STAT-FIREFOX-TABLET",
+      "browser": "Mozilla Firefox",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Stations Infrastructure",
+      "feature": "Station KPI Strip, Filter Pills, and Grid Card Reflow",
+      "status": "Passed",
+      "evidence": "FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true",
+      "screenshot": "firefox_tablet_4_stations.png"
+    },
+    {
+      "testId": "COMP-RES-FIREFOX-TABLET",
+      "browser": "Mozilla Firefox",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Reservation Planning Workspace",
+      "feature": "Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking",
+      "status": "Passed",
+      "evidence": "StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true",
+      "screenshot": "firefox_tablet_5_reservations.png"
+    },
+    {
+      "testId": "COMP-DRAWER-FIREFOX-TABLET",
+      "browser": "Mozilla Firefox",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Mobile Navigation Drawer",
+      "feature": "Touch Hamburger Trigger & Slide-out Sidebar Reflow",
+      "status": "Passed",
+      "evidence": "HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true",
+      "screenshot": "firefox_tablet_6_drawer.png"
+    },
+    {
+      "testId": "COMP-LAND-FIREFOX-MOBILE",
+      "browser": "Mozilla Firefox",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Landing Page (Public)",
+      "feature": "Layout Integrity & Zero Horizontal Scrollbar Overflow",
+      "status": "Passed",
+      "evidence": "NoOverflow: true, Headings: true, CTAPresent: true",
+      "screenshot": "firefox_mobile_1_landing.png"
+    },
+    {
+      "testId": "COMP-AUTH-FIREFOX-MOBILE",
+      "browser": "Mozilla Firefox",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Authentication Page",
+      "feature": "Form Input Elements, Submit CTA, and Responsive Centering",
+      "status": "Passed",
+      "evidence": "EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true",
+      "screenshot": "firefox_mobile_2_login.png"
+    },
+    {
+      "testId": "COMP-DASH-FIREFOX-MOBILE",
+      "browser": "Mozilla Firefox",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Operator Dashboard",
+      "feature": "Executive KPI Cards Grid Reflow & Topbar Layout",
+      "status": "Passed",
+      "evidence": "TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true",
+      "screenshot": "firefox_mobile_3_dashboard.png"
+    },
+    {
+      "testId": "COMP-STAT-FIREFOX-MOBILE",
+      "browser": "Mozilla Firefox",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Stations Infrastructure",
+      "feature": "Station KPI Strip, Filter Pills, and Grid Card Reflow",
+      "status": "Passed",
+      "evidence": "FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true",
+      "screenshot": "firefox_mobile_4_stations.png"
+    },
+    {
+      "testId": "COMP-RES-FIREFOX-MOBILE",
+      "browser": "Mozilla Firefox",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Reservation Planning Workspace",
+      "feature": "Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking",
+      "status": "Passed",
+      "evidence": "StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true",
+      "screenshot": "firefox_mobile_5_reservations.png"
+    },
+    {
+      "testId": "COMP-DRAWER-FIREFOX-MOBILE",
+      "browser": "Mozilla Firefox",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Mobile Navigation Drawer",
+      "feature": "Touch Hamburger Trigger & Slide-out Sidebar Reflow",
+      "status": "Passed",
+      "evidence": "HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true",
+      "screenshot": "firefox_mobile_6_drawer.png"
+    },
+    {
+      "testId": "COMP-LAND-WEBKIT-DESKTOP",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Landing Page (Public)",
+      "feature": "Layout Integrity & Zero Horizontal Scrollbar Overflow",
+      "status": "Passed",
+      "evidence": "NoOverflow: true, Headings: true, CTAPresent: true",
+      "screenshot": "webkit_desktop_1_landing.png"
+    },
+    {
+      "testId": "COMP-AUTH-WEBKIT-DESKTOP",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Authentication Page",
+      "feature": "Form Input Elements, Submit CTA, and Responsive Centering",
+      "status": "Passed",
+      "evidence": "EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true",
+      "screenshot": "webkit_desktop_2_login.png"
+    },
+    {
+      "testId": "COMP-DASH-WEBKIT-DESKTOP",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Operator Dashboard",
+      "feature": "Executive KPI Cards Grid Reflow & Topbar Layout",
+      "status": "Passed",
+      "evidence": "TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true",
+      "screenshot": "webkit_desktop_3_dashboard.png"
+    },
+    {
+      "testId": "COMP-STAT-WEBKIT-DESKTOP",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Stations Infrastructure",
+      "feature": "Station KPI Strip, Filter Pills, and Grid Card Reflow",
+      "status": "Passed",
+      "evidence": "FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true",
+      "screenshot": "webkit_desktop_4_stations.png"
+    },
+    {
+      "testId": "COMP-RES-WEBKIT-DESKTOP",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Desktop HD (1920x1080)",
+      "page": "Reservation Planning Workspace",
+      "feature": "Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking",
+      "status": "Passed",
+      "evidence": "StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true",
+      "screenshot": "webkit_desktop_5_reservations.png"
+    },
+    {
+      "testId": "COMP-LAND-WEBKIT-TABLET",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Landing Page (Public)",
+      "feature": "Layout Integrity & Zero Horizontal Scrollbar Overflow",
+      "status": "Passed",
+      "evidence": "NoOverflow: true, Headings: true, CTAPresent: true",
+      "screenshot": "webkit_tablet_1_landing.png"
+    },
+    {
+      "testId": "COMP-AUTH-WEBKIT-TABLET",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Authentication Page",
+      "feature": "Form Input Elements, Submit CTA, and Responsive Centering",
+      "status": "Passed",
+      "evidence": "EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true",
+      "screenshot": "webkit_tablet_2_login.png"
+    },
+    {
+      "testId": "COMP-DASH-WEBKIT-TABLET",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Operator Dashboard",
+      "feature": "Executive KPI Cards Grid Reflow & Topbar Layout",
+      "status": "Passed",
+      "evidence": "TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true",
+      "screenshot": "webkit_tablet_3_dashboard.png"
+    },
+    {
+      "testId": "COMP-STAT-WEBKIT-TABLET",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Stations Infrastructure",
+      "feature": "Station KPI Strip, Filter Pills, and Grid Card Reflow",
+      "status": "Passed",
+      "evidence": "FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true",
+      "screenshot": "webkit_tablet_4_stations.png"
+    },
+    {
+      "testId": "COMP-RES-WEBKIT-TABLET",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Reservation Planning Workspace",
+      "feature": "Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking",
+      "status": "Passed",
+      "evidence": "StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true",
+      "screenshot": "webkit_tablet_5_reservations.png"
+    },
+    {
+      "testId": "COMP-DRAWER-WEBKIT-TABLET",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Tablet (iPad) (768x1024)",
+      "page": "Mobile Navigation Drawer",
+      "feature": "Touch Hamburger Trigger & Slide-out Sidebar Reflow",
+      "status": "Passed",
+      "evidence": "HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true",
+      "screenshot": "webkit_tablet_6_drawer.png"
+    },
+    {
+      "testId": "COMP-LAND-WEBKIT-MOBILE",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Landing Page (Public)",
+      "feature": "Layout Integrity & Zero Horizontal Scrollbar Overflow",
+      "status": "Passed",
+      "evidence": "NoOverflow: true, Headings: true, CTAPresent: true",
+      "screenshot": "webkit_mobile_1_landing.png"
+    },
+    {
+      "testId": "COMP-AUTH-WEBKIT-MOBILE",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Authentication Page",
+      "feature": "Form Input Elements, Submit CTA, and Responsive Centering",
+      "status": "Passed",
+      "evidence": "EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true",
+      "screenshot": "webkit_mobile_2_login.png"
+    },
+    {
+      "testId": "COMP-DASH-WEBKIT-MOBILE",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Operator Dashboard",
+      "feature": "Executive KPI Cards Grid Reflow & Topbar Layout",
+      "status": "Passed",
+      "evidence": "TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true",
+      "screenshot": "webkit_mobile_3_dashboard.png"
+    },
+    {
+      "testId": "COMP-STAT-WEBKIT-MOBILE",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Stations Infrastructure",
+      "feature": "Station KPI Strip, Filter Pills, and Grid Card Reflow",
+      "status": "Passed",
+      "evidence": "FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true",
+      "screenshot": "webkit_mobile_4_stations.png"
+    },
+    {
+      "testId": "COMP-RES-WEBKIT-MOBILE",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Reservation Planning Workspace",
+      "feature": "Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking",
+      "status": "Failed",
+      "evidence": "StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: false",
+      "screenshot": "webkit_mobile_5_reservations.png"
+    },
+    {
+      "testId": "COMP-DRAWER-WEBKIT-MOBILE",
+      "browser": "Apple WebKit (Safari)",
+      "viewport": "Mobile (iPhone 14) (375x812)",
+      "page": "Mobile Navigation Drawer",
+      "feature": "Touch Hamburger Trigger & Slide-out Sidebar Reflow",
+      "status": "Passed",
+      "evidence": "HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true",
+      "screenshot": "webkit_mobile_6_drawer.png"
+    }
+  ]
+}

@@ -1,0 +1,247 @@
+{
+  "tool": "OWASP ZAP (Zed Attack Proxy) Dynamic Security Audit Suite",
+  "version": "2.17.0",
+  "generatedAt": "2026-10-08T11:04:08.323907",
+  "target": {
+    "apiUrl": "http://localhost:5035",
+    "webUrl": "http://localhost:5173",
+    "database": "ChargeSync-Test on localhost:5432"
+  },
+  "summary": {
+    "totalTests": 16,
+    "passed": 10,
+    "failed": 0,
+    "warnings": 6,
+    "durationSeconds": 1.76,
+    "riskCounts": {
+      "Critical": 0,
+      "High": 0,
+      "Medium": 3,
+      "Low": 3
+    }
+  },
+  "alerts": [
+    {
+      "test_id": "SEC-HDR-01",
+      "category": "Security Headers",
+      "name": "X-Content-Type-Options Header Missing",
+      "zap_plugin_id": 10021,
+      "risk_level": "Low",
+      "status": "Warning",
+      "description": "X-Content-Type-Options header is missing. Browsers may attempt to MIME-sniff response content.",
+      "evidence": "Header missing on /api/stations/all"
+    },
+    {
+      "test_id": "SEC-HDR-02",
+      "category": "Information Disclosure",
+      "name": "Server Version / Banner Disclosure",
+      "zap_plugin_id": 10055,
+      "risk_level": "Low",
+      "status": "Warning",
+      "description": "Server discloses web server technology via 'Server: Kestrel'. Attackers can fingerprint the host.",
+      "evidence": "Server: Kestrel"
+    },
+    {
+      "test_id": "SEC-HDR-03",
+      "category": "Security Misconfiguration",
+      "name": "Cross-Domain CORS Misconfiguration",
+      "zap_plugin_id": 10098,
+      "risk_level": "Medium",
+      "status": "Warning",
+      "description": "CORS policy reflects arbitrary origins or uses wildcard: '*'. Sensitive data may be accessible cross-origin.",
+      "evidence": "Access-Control-Allow-Origin: *"
+    },
+    {
+      "test_id": "SEC-HDR-04",
+      "category": "Security Headers",
+      "name": "Content-Security-Policy (CSP) Missing",
+      "zap_plugin_id": 10038,
+      "risk_level": "Medium",
+      "status": "Warning",
+      "description": "Content-Security-Policy header is missing on frontend. Recommended to restrict inline script execution and XSS vectors.",
+      "evidence": "CSP header absent on React web root."
+    },
+    {
+      "test_id": "SEC-HDR-05",
+      "category": "Security Headers",
+      "name": "X-Frame-Options Clickjacking Protection",
+      "zap_plugin_id": 10020,
+      "risk_level": "Medium",
+      "status": "Warning",
+      "description": "X-Frame-Options header missing. The application could be embedded in an iframe on third-party sites.",
+      "evidence": "X-Frame-Options header absent on web portal."
+    },
+    {
+      "test_id": "SEC-RATE-01",
+      "category": "Unrestricted Resource Consumption",
+      "name": "Rate Limiting on Authentication Endpoint",
+      "zap_plugin_id": 90038,
+      "risk_level": "Low",
+      "status": "Warning",
+      "description": "All 25 requests processed in 0.34s without HTTP 429 rate limit trigger. Recommendation: Add ASP.NET Core RateLimiter middleware to protect against brute-force attacks.",
+      "evidence": "Processed 25 requests in 0.34s without throttling."
+    }
+  ],
+  "allTests": [
+    {
+      "test_id": "SEC-HDR-01",
+      "category": "Security Headers",
+      "name": "X-Content-Type-Options Header Missing",
+      "zap_plugin_id": 10021,
+      "risk_level": "Low",
+      "status": "Warning",
+      "description": "X-Content-Type-Options header is missing. Browsers may attempt to MIME-sniff response content.",
+      "evidence": "Header missing on /api/stations/all"
+    },
+    {
+      "test_id": "SEC-HDR-02",
+      "category": "Information Disclosure",
+      "name": "Server Version / Banner Disclosure",
+      "zap_plugin_id": 10055,
+      "risk_level": "Low",
+      "status": "Warning",
+      "description": "Server discloses web server technology via 'Server: Kestrel'. Attackers can fingerprint the host.",
+      "evidence": "Server: Kestrel"
+    },
+    {
+      "test_id": "SEC-HDR-03",
+      "category": "Security Misconfiguration",
+      "name": "Cross-Domain CORS Misconfiguration",
+      "zap_plugin_id": 10098,
+      "risk_level": "Medium",
+      "status": "Warning",
+      "description": "CORS policy reflects arbitrary origins or uses wildcard: '*'. Sensitive data may be accessible cross-origin.",
+      "evidence": "Access-Control-Allow-Origin: *"
+    },
+    {
+      "test_id": "SEC-HDR-04",
+      "category": "Security Headers",
+      "name": "Content-Security-Policy (CSP) Missing",
+      "zap_plugin_id": 10038,
+      "risk_level": "Medium",
+      "status": "Warning",
+      "description": "Content-Security-Policy header is missing on frontend. Recommended to restrict inline script execution and XSS vectors.",
+      "evidence": "CSP header absent on React web root."
+    },
+    {
+      "test_id": "SEC-HDR-05",
+      "category": "Security Headers",
+      "name": "X-Frame-Options Clickjacking Protection",
+      "zap_plugin_id": 10020,
+      "risk_level": "Medium",
+      "status": "Warning",
+      "description": "X-Frame-Options header missing. The application could be embedded in an iframe on third-party sites.",
+      "evidence": "X-Frame-Options header absent on web portal."
+    },
+    {
+      "test_id": "SEC-AUTH-01",
+      "category": "Broken Authentication",
+      "name": "Invalid Credentials Rejection",
+      "zap_plugin_id": 90034,
+      "risk_level": "High",
+      "status": "Passed",
+      "description": "System strictly rejects incorrect authentication credentials without revealing specific reason.",
+      "evidence": "Status code returned: 401"
+    },
+    {
+      "test_id": "SEC-AUTH-02",
+      "category": "Broken Authentication",
+      "name": "JWT 'alg: none' Signature Bypass Resistance",
+      "zap_plugin_id": 90034,
+      "risk_level": "Critical",
+      "status": "Passed",
+      "description": "ASP.NET Core JWT middleware strictly validates digital HMAC signatures and rejects unsigned 'alg: none' tokens.",
+      "evidence": "Returned HTTP 401 Unauthorized for forged token."
+    },
+    {
+      "test_id": "SEC-AUTH-03",
+      "category": "Broken Authentication",
+      "name": "Missing Authentication Token Barrier",
+      "zap_plugin_id": 90034,
+      "risk_level": "High",
+      "status": "Passed",
+      "description": "Protected endpoints require valid Bearer token and reject unauthenticated requests with HTTP 401.",
+      "evidence": "All tested protected endpoints returned HTTP 401 Unauthorized."
+    },
+    {
+      "test_id": "SEC-AUTHZ-01",
+      "category": "Broken Function Level Authorization",
+      "name": "Driver Access to Staff POS Endpoint (BFLA)",
+      "zap_plugin_id": 90036,
+      "risk_level": "High",
+      "status": "Passed",
+      "description": "ASP.NET Core policy authorization successfully rejected Driver attempting to create on-site walk-in reservations.",
+      "evidence": "HTTP 403 Forbidden received as expected."
+    },
+    {
+      "test_id": "SEC-AUTHZ-02",
+      "category": "Broken Object Level Authorization",
+      "name": "Driver Self-Approval Protection",
+      "zap_plugin_id": 90035,
+      "risk_level": "High",
+      "status": "Passed",
+      "description": "Driver role is strictly prohibited from approving reservations; requires StationOwner or Admin role.",
+      "evidence": "HTTP 403 Forbidden received."
+    },
+    {
+      "test_id": "SEC-AUTHZ-03",
+      "category": "Mass Assignment",
+      "name": "Registration Input Validation",
+      "zap_plugin_id": 90037,
+      "risk_level": "High",
+      "status": "Passed",
+      "description": "Registration rejected malformed or unpermitted role payload with status 400.",
+      "evidence": "HTTP 400"
+    },
+    {
+      "test_id": "SEC-INJ-01",
+      "category": "Injection",
+      "name": "SQL Injection Parameter Resilience (EF Core Parameterization)",
+      "zap_plugin_id": 40018,
+      "risk_level": "High",
+      "status": "Passed",
+      "description": "Station search and filter queries use Entity Framework Core parameterized SQL. No SQL syntax errors or database exceptions were triggered.",
+      "evidence": "All SQLi probes safely handled without error leakage."
+    },
+    {
+      "test_id": "SEC-INJ-02",
+      "category": "Cross-Site Scripting",
+      "name": "Reflected XSS Input Sanitization",
+      "zap_plugin_id": 40012,
+      "risk_level": "Medium",
+      "status": "Passed",
+      "description": "XSS characters are safely encoded or returned as strict JSON content-type, preventing browser execution.",
+      "evidence": "Response returned as application/json; status: 401"
+    },
+    {
+      "test_id": "SEC-ERR-01",
+      "category": "Security Misconfiguration",
+      "name": "Standardized Problem Details Error Handling",
+      "zap_plugin_id": 90022,
+      "risk_level": "Medium",
+      "status": "Passed",
+      "description": "Server utilizes ASP.NET Core RFC 7807/9110 Problem Details for errors, suppressing raw stack traces.",
+      "evidence": "Clean error response received: HTTP 404"
+    },
+    {
+      "test_id": "SEC-ERR-02",
+      "category": "Sensitive Data Exposure",
+      "name": "Sensitive Credential Masking in DTOs",
+      "zap_plugin_id": 10062,
+      "risk_level": "High",
+      "status": "Passed",
+      "description": "Application DTOs strictly exclude PasswordHash and authentication secrets from API serialization.",
+      "evidence": "PasswordHash properly excluded from profile response."
+    },
+    {
+      "test_id": "SEC-RATE-01",
+      "category": "Unrestricted Resource Consumption",
+      "name": "Rate Limiting on Authentication Endpoint",
+      "zap_plugin_id": 90038,
+      "risk_level": "Low",
+      "status": "Warning",
+      "description": "All 25 requests processed in 0.34s without HTTP 429 rate limit trigger. Recommendation: Add ASP.NET Core RateLimiter middleware to protect against brute-force attacks.",
+      "evidence": "Processed 25 requests in 0.34s without throttling."
+    }
+  ]
+}
