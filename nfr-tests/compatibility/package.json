@@ -1,0 +1,12 @@
+{
+  "name": "chargesync-compatibility-testing",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node run_compatibility_tests.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}

@@ -8,6 +8,9 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url))
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    include: ['gsap', 'gsap/dist/ScrollTrigger'],
+  },
   resolve: {
     alias: {
       '@': path.resolve(rootDir, './src'),

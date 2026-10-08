@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChargeSync - Cross-Browser & Viewport Compatibility Report</title>
+  <style>
+    :root {
+      --bg: #0b1120; --card: #1e293b; --card-header: #131d31; --border: #334155;
+      --text: #f8fafc; --muted: #94a3b8; --accent: #38bdf8; --pass: #10b981; --fail: #ef4444;
+      --primary: #06b6d4;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); padding: 2rem; margin: 0; line-height: 1.5; }
+    .container { max-width: 1300px; margin: 0 auto; }
+    .header { border-bottom: 2px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    h1 { margin: 0; color: var(--accent); font-size: 1.8rem; font-weight: 850; letter-spacing: -0.025em; }
+    .badge { padding: 0.3rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 0.35rem; }
+    .badge-pass { background: rgba(16, 185, 129, 0.15); color: var(--pass); border: 1px solid var(--pass); }
+    .badge-fail { background: rgba(239, 68, 68, 0.15); color: var(--fail); border: 1px solid var(--fail); }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+    .card-val { font-size: 2.2rem; font-weight: 800; color: var(--accent); margin-top: 0.3rem; }
+    .table-container { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+    table { width: 100%; border-collapse: collapse; background: var(--card); }
+    th, td { padding: 0.85rem 1.1rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+    th { background: var(--card-header); color: var(--muted); text-transform: uppercase; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    .evidence { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.78rem; color: #cbd5e1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>🌐 Cross-Browser & Viewport Compatibility Report</h1>
+        <p style="margin: 0.35rem 0 0; color: var(--muted); font-size: 0.95rem;">
+          ChargeSync Platform | Playwright Multi-Engine Harness | 10/8/2026, 11:09:32 AM
+        </p>
+      </div>
+      <div>
+        <span class="badge badge-pass" style="font-size: 1rem; padding: 0.5rem 1rem;">
+          ✔ 98.0% Compatible (50/51 Passed)
+        </span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="card">
+        <div style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Total Evaluated Scenarios</div>
+        <div class="card-val">51</div>
+      </div>
+      <div class="card">
+        <div style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Passing Scenarios</div>
+        <div class="card-val" style="color: var(--pass);">50</div>
+      </div>
+      <div class="card">
+        <div style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Failing Scenarios</div>
+        <div class="card-val" style="color: var(--fail);">1</div>
+      </div>
+      <div class="card">
+        <div style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Browser Engines</div>
+        <div class="card-val" style="font-size: 1.3rem; padding-top: 0.5rem; color: #38bdf8;">Chrome, Firefox, Safari</div>
+      </div>
+      <div class="card">
+        <div style="color: var(--muted); font-size: 0.85rem; font-weight: 600;">Form Factors</div>
+        <div class="card-val" style="font-size: 1.3rem; padding-top: 0.5rem; color: #a78bfa;">Desktop, Tablet, Mobile</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Scenario ID</th>
+            <th>Browser</th>
+            <th>Viewport</th>
+            <th>Page View</th>
+            <th>Compatibility Feature</th>
+            <th>Status</th>
+            <th>Observation & Evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>COMP-LAND-CHROME-DESKTOP</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Landing Page (Public)</td>
+            <td>Layout Integrity & Zero Horizontal Scrollbar Overflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">NoOverflow: true, Headings: true, CTAPresent: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-AUTH-CHROME-DESKTOP</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Authentication Page</td>
+            <td>Form Input Elements, Submit CTA, and Responsive Centering</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DASH-CHROME-DESKTOP</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Operator Dashboard</td>
+            <td>Executive KPI Cards Grid Reflow & Topbar Layout</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-STAT-CHROME-DESKTOP</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Stations Infrastructure</td>
+            <td>Station KPI Strip, Filter Pills, and Grid Card Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-RES-CHROME-DESKTOP</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Reservation Planning Workspace</td>
+            <td>Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-LAND-CHROME-TABLET</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Landing Page (Public)</td>
+            <td>Layout Integrity & Zero Horizontal Scrollbar Overflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">NoOverflow: true, Headings: true, CTAPresent: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-AUTH-CHROME-TABLET</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Authentication Page</td>
+            <td>Form Input Elements, Submit CTA, and Responsive Centering</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DASH-CHROME-TABLET</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Operator Dashboard</td>
+            <td>Executive KPI Cards Grid Reflow & Topbar Layout</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-STAT-CHROME-TABLET</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Stations Infrastructure</td>
+            <td>Station KPI Strip, Filter Pills, and Grid Card Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-RES-CHROME-TABLET</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Reservation Planning Workspace</td>
+            <td>Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DRAWER-CHROME-TABLET</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Mobile Navigation Drawer</td>
+            <td>Touch Hamburger Trigger & Slide-out Sidebar Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-LAND-CHROME-MOBILE</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Landing Page (Public)</td>
+            <td>Layout Integrity & Zero Horizontal Scrollbar Overflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">NoOverflow: true, Headings: true, CTAPresent: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-AUTH-CHROME-MOBILE</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Authentication Page</td>
+            <td>Form Input Elements, Submit CTA, and Responsive Centering</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DASH-CHROME-MOBILE</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Operator Dashboard</td>
+            <td>Executive KPI Cards Grid Reflow & Topbar Layout</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-STAT-CHROME-MOBILE</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Stations Infrastructure</td>
+            <td>Station KPI Strip, Filter Pills, and Grid Card Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-RES-CHROME-MOBILE</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Reservation Planning Workspace</td>
+            <td>Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DRAWER-CHROME-MOBILE</strong></td>
+            <td>Chromium (Chrome)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Mobile Navigation Drawer</td>
+            <td>Touch Hamburger Trigger & Slide-out Sidebar Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-LAND-FIREFOX-DESKTOP</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Landing Page (Public)</td>
+            <td>Layout Integrity & Zero Horizontal Scrollbar Overflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">NoOverflow: true, Headings: true, CTAPresent: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-AUTH-FIREFOX-DESKTOP</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Authentication Page</td>
+            <td>Form Input Elements, Submit CTA, and Responsive Centering</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DASH-FIREFOX-DESKTOP</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Operator Dashboard</td>
+            <td>Executive KPI Cards Grid Reflow & Topbar Layout</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-STAT-FIREFOX-DESKTOP</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Stations Infrastructure</td>
+            <td>Station KPI Strip, Filter Pills, and Grid Card Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-RES-FIREFOX-DESKTOP</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Reservation Planning Workspace</td>
+            <td>Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-LAND-FIREFOX-TABLET</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Landing Page (Public)</td>
+            <td>Layout Integrity & Zero Horizontal Scrollbar Overflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">NoOverflow: true, Headings: true, CTAPresent: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-AUTH-FIREFOX-TABLET</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Authentication Page</td>
+            <td>Form Input Elements, Submit CTA, and Responsive Centering</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DASH-FIREFOX-TABLET</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Operator Dashboard</td>
+            <td>Executive KPI Cards Grid Reflow & Topbar Layout</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-STAT-FIREFOX-TABLET</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Stations Infrastructure</td>
+            <td>Station KPI Strip, Filter Pills, and Grid Card Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-RES-FIREFOX-TABLET</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Reservation Planning Workspace</td>
+            <td>Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DRAWER-FIREFOX-TABLET</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Mobile Navigation Drawer</td>
+            <td>Touch Hamburger Trigger & Slide-out Sidebar Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-LAND-FIREFOX-MOBILE</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Landing Page (Public)</td>
+            <td>Layout Integrity & Zero Horizontal Scrollbar Overflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">NoOverflow: true, Headings: true, CTAPresent: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-AUTH-FIREFOX-MOBILE</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Authentication Page</td>
+            <td>Form Input Elements, Submit CTA, and Responsive Centering</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DASH-FIREFOX-MOBILE</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Operator Dashboard</td>
+            <td>Executive KPI Cards Grid Reflow & Topbar Layout</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-STAT-FIREFOX-MOBILE</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Stations Infrastructure</td>
+            <td>Station KPI Strip, Filter Pills, and Grid Card Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-RES-FIREFOX-MOBILE</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Reservation Planning Workspace</td>
+            <td>Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DRAWER-FIREFOX-MOBILE</strong></td>
+            <td>Mozilla Firefox</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Mobile Navigation Drawer</td>
+            <td>Touch Hamburger Trigger & Slide-out Sidebar Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-LAND-WEBKIT-DESKTOP</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Landing Page (Public)</td>
+            <td>Layout Integrity & Zero Horizontal Scrollbar Overflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">NoOverflow: true, Headings: true, CTAPresent: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-AUTH-WEBKIT-DESKTOP</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Authentication Page</td>
+            <td>Form Input Elements, Submit CTA, and Responsive Centering</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DASH-WEBKIT-DESKTOP</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Operator Dashboard</td>
+            <td>Executive KPI Cards Grid Reflow & Topbar Layout</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-STAT-WEBKIT-DESKTOP</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Stations Infrastructure</td>
+            <td>Station KPI Strip, Filter Pills, and Grid Card Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-RES-WEBKIT-DESKTOP</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Desktop HD (1920x1080)</td>
+            <td>Reservation Planning Workspace</td>
+            <td>Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-LAND-WEBKIT-TABLET</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Landing Page (Public)</td>
+            <td>Layout Integrity & Zero Horizontal Scrollbar Overflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">NoOverflow: true, Headings: true, CTAPresent: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-AUTH-WEBKIT-TABLET</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Authentication Page</td>
+            <td>Form Input Elements, Submit CTA, and Responsive Centering</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DASH-WEBKIT-TABLET</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Operator Dashboard</td>
+            <td>Executive KPI Cards Grid Reflow & Topbar Layout</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-STAT-WEBKIT-TABLET</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Stations Infrastructure</td>
+            <td>Station KPI Strip, Filter Pills, and Grid Card Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-RES-WEBKIT-TABLET</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Reservation Planning Workspace</td>
+            <td>Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DRAWER-WEBKIT-TABLET</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Tablet (iPad) (768x1024)</td>
+            <td>Mobile Navigation Drawer</td>
+            <td>Touch Hamburger Trigger & Slide-out Sidebar Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-LAND-WEBKIT-MOBILE</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Landing Page (Public)</td>
+            <td>Layout Integrity & Zero Horizontal Scrollbar Overflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">NoOverflow: true, Headings: true, CTAPresent: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-AUTH-WEBKIT-MOBILE</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Authentication Page</td>
+            <td>Form Input Elements, Submit CTA, and Responsive Centering</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">EmailInput: true, PasswordInput: true, SubmitBtn: true, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DASH-WEBKIT-MOBILE</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Operator Dashboard</td>
+            <td>Executive KPI Cards Grid Reflow & Topbar Layout</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">TopbarPresent: true, KpiCardsCount: 4, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-STAT-WEBKIT-MOBILE</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Stations Infrastructure</td>
+            <td>Station KPI Strip, Filter Pills, and Grid Card Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">FilterPillsCount: 3, SearchBox: true, StationCards: 2, NoOverflow: true</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-RES-WEBKIT-MOBILE</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Reservation Planning Workspace</td>
+            <td>Status Filter Tabs, Booking Records Table, and Advance Deposit Tracking</td>
+            <td><span class="badge badge-fail">Failed</span></td>
+            <td class="evidence">StatusTabsCount: 6, SearchInput: true, RecordsContainer: true, NoOverflow: false</td>
+          </tr>
+          <tr>
+            <td><strong>COMP-DRAWER-WEBKIT-MOBILE</strong></td>
+            <td>Apple WebKit (Safari)</td>
+            <td>Mobile (iPhone 14) (375x812)</td>
+            <td>Mobile Navigation Drawer</td>
+            <td>Touch Hamburger Trigger & Slide-out Sidebar Reflow</td>
+            <td><span class="badge badge-pass">Passed</span></td>
+            <td class="evidence">HamburgerButton: true, DrawerExpanded: true, TouchEmulated: true</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
