@@ -18,11 +18,11 @@ function DayRow({ row, onChange }) {
   return (
     <div className="flex flex-col justify-between gap-space-sm rounded-xl bg-surface-container-low p-space-md sm:flex-row sm:items-center">
       <div className="flex w-36 items-center gap-space-md">
-        <input 
-          type="checkbox" 
-          checked={row.enabled} 
+        <input
+          type="checkbox"
+          checked={row.enabled}
           onChange={(e) => onChange(row.day, 'enabled', e.target.checked)}
-          className="h-4 w-4 rounded accent-primary" 
+          className="h-4 w-4 rounded accent-primary"
         />
         <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">{row.day}</span>
       </div>
@@ -67,7 +67,6 @@ function createSchedule(hours) {
 }
 
 export default function OperatingHoursTab({ stationId, hours = [] }) {
-  // Reset the draft when saved hours change, while retaining edits across identical refetches.
   return <OperatingHoursEditor key={JSON.stringify([stationId, hours])} stationId={stationId} hours={hours} />
 }
 
@@ -76,7 +75,7 @@ function OperatingHoursEditor({ stationId, hours }) {
   const updateHoursMutation = useUpdateOperatingHours()
 
   const handleChange = (day, field, value) => {
-    setSchedule(prev => prev.map(row => 
+    setSchedule(prev => prev.map(row =>
       row.day === day ? { ...row, [field]: value } : row
     ))
   }
@@ -84,7 +83,7 @@ function OperatingHoursEditor({ stationId, hours }) {
   const handleCopyMonday = () => {
     const monday = schedule.find(r => r.day === 'Monday')
     if (!monday) return
-    setSchedule(prev => prev.map(row => 
+    setSchedule(prev => prev.map(row =>
       ['Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(row.day)
         ? { ...row, enabled: monday.enabled, open: monday.open, close: monday.close }
         : row
@@ -92,7 +91,6 @@ function OperatingHoursEditor({ stationId, hours }) {
   }
 
   const handleSave = () => {
-    // Format to match requested backend structure
     const data = schedule.map(row => ({
       stationId,
       dayOfWeek: DAY_TO_INT[row.day],
@@ -100,7 +98,7 @@ function OperatingHoursEditor({ stationId, hours }) {
       closeTime: row.close.length === 5 ? `${row.close}:00` : row.close,
       isEnabled: row.enabled
     }))
-    
+
     updateHoursMutation.mutate({ stationId, data }, {
       onSuccess: () => useDialogStore.getState().alert({ title: 'Saved', message: 'Operating schedule saved successfully.', variant: 'success' }),
       onError: () => useDialogStore.getState().alert({ title: 'Error', message: 'Failed to save schedule.', variant: 'danger' })
