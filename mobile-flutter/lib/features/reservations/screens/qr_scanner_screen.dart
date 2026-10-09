@@ -1,30 +1,108 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/api/reservation_api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class QrScannerScreen extends StatefulWidget {
-  const QrScannerScreen({super.key});
+  final bool active;
+  const QrScannerScreen({super.key, this.active = true});
 
   @override
   State<QrScannerScreen> createState() => _QrScannerScreenState();
 }
 
-class _QrScannerScreenState extends State<QrScannerScreen> {
+class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingObserver {
   final _qrController = TextEditingController();
-  final MobileScannerController _scannerController = MobileScannerController();
+  final MobileScannerController _scannerController = MobileScannerController(
+    autoStart: false,
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    formats: const [BarcodeFormat.qrCode],
+  );
   
   bool _isLoading = false;
   String? _message;
   bool _isSuccess = false;
+  bool _isFailed = false;
   bool _hasScanned = false; // Prevent multiple scans at once
+
+  bool _hasPermission = false;
+  bool _checkingPermission = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    if (widget.active) {
+      _checkPermission();
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
+  }
+
+  @override
+  void didUpdateWidget(covariant QrScannerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) {
+      _checkPermission();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
+    }
+  }
+
+  Future<void> _startScanner() async {
+    try {
+      await _scannerController.start();
+    } catch (e) {
+      debugPrint('Error starting scanner: $e');
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      _scannerController.stop();
+    } else if (state == AppLifecycleState.resumed) {
+      if (!_isSuccess && !_isFailed) {
+        _startScanner();
+      }
+    }
+  }
+
+  Future<void> _checkPermission() async {
+    setState(() => _checkingPermission = true);
+    try {
+      var status = await Permission.camera.status;
+      if (!status.isGranted) {
+        status = await Permission.camera.request();
+      }
+      if (mounted) {
+        setState(() {
+          _hasPermission = status.isGranted;
+          _checkingPermission = false;
+        });
+        if (status.isGranted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _hasPermission = false;
+          _checkingPermission = false;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
-    _qrController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     _scannerController.dispose();
+    _qrController.dispose();
     super.dispose();
   }
 
@@ -56,9 +134,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         _message = 'Check-in successful! Session started.';
         _isLoading = false;
       });
-      
-      // Stop scanning on success
-      _scannerController.stop();
 
       // Show success popup
       if (mounted) {
@@ -101,35 +176,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       }
       
     } catch (e) {
+      String errorMessage = e.toString().replaceAll(RegExp(r'Exception:\s*'), '');
+      
       setState(() {
         _isSuccess = false;
+        _isFailed = true;
         _isLoading = false;
+        _message = errorMessage;
       });
-
-      String errorMessage = e.toString();
-      errorMessage = errorMessage.replaceAll(RegExp(r'Exception:\s*'), '');
-
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Check-in Failed'),
-            content: Text(errorMessage),
-            actions: [
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        ).then((_) {
-          if (mounted) {
-            setState(() {
-              _hasScanned = false;
-            });
-          }
-        });
-      }
     }
   }
 
@@ -172,11 +226,12 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                         onPressed: () {
                           setState(() {
                             _isSuccess = false;
+                            _isFailed = false;
                             _message = null;
                             _hasScanned = false;
                             _qrController.clear();
                           });
-                          _scannerController.start();
+                          WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -186,12 +241,126 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                       )
                     ],
                   )
+                : _isFailed
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline_rounded, size: 80, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Check-in Failed',
+                        style: GoogleFonts.inter(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _isSuccess = false;
+                            _isFailed = false;
+                            _message = null;
+                            _hasScanned = false;
+                            _qrController.clear();
+                          });
+                          WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
+                        ),
+                        child: const Text('Try Again'),
+                      )
+                    ],
+                  )
+                : !widget.active
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.qr_code_scanner_rounded, size: 64, color: AppColors.onSurfaceVariant),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Switch to this tab to scan QR code',
+                          style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  )
+                : _checkingPermission
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  )
+                : !_hasPermission
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.videocam_off_rounded, size: 56, color: Colors.orangeAccent),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Camera Permission Required',
+                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Camera access is needed to scan customer QR codes.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(fontSize: 13, color: AppColors.onSurfaceVariant),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _checkPermission,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.onPrimary,
+                            ),
+                            child: const Text('Grant Camera Access'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
                 : Stack(
                     fit: StackFit.expand,
                     children: [
                       MobileScanner(
                         controller: _scannerController,
                         onDetect: _onDetect,
+                        errorBuilder: (context, error, child) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Camera Error: $error',
+                                  style: const TextStyle(color: Colors.red, fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _hasPermission = false;
+                                    });
+                                    _checkPermission();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: AppColors.onPrimary,
+                                  ),
+                                  child: const Text('Retry Camera'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                       // Scanner overlay reticle
                       Center(

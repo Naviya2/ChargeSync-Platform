@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class SplashScreen extends StatefulWidget {
   final Widget nextScreen;
@@ -16,6 +17,11 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    
+    // Pre-warm the Python AI Agent on Render (wakes it from sleep if idle)
+    // This is fire-and-forget; we don't await it so the splash isn't blocked.
+    http.get(Uri.parse('https://chargesync-platform-agentic-ai.onrender.com/docs'))
+        .catchError((_) => http.Response('', 500));
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),

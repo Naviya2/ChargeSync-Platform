@@ -409,13 +409,12 @@ class _SignUpScreenState extends State<SignUpScreen>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.bolt_rounded,
-                  size: 22,
-                  color: AppColors.onPrimaryContainer,
+                clipBehavior: Clip.hardEdge,
+                child: Image.asset(
+                  'assets/images/app_icon.png',
+                  fit: BoxFit.cover,
                 ),
               ),
               const SizedBox(width: 12),
