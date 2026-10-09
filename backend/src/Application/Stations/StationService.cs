@@ -21,6 +21,7 @@ public class StationService : IStationService
             .Include(s => s.Chargers)
                 .ThenInclude(c => c.MaintenanceWindows)
             .Include(s => s.OperatingHours)
+            .Include(s => s.Bays)
             .Where(s => s.OwnerId == ownerId)
             .ToListAsync(cancellationToken);
 
@@ -33,6 +34,7 @@ public class StationService : IStationService
             .Include(s => s.Chargers)
                 .ThenInclude(c => c.MaintenanceWindows)
             .Include(s => s.OperatingHours)
+            .Include(s => s.Bays)
             .OrderBy(s => s.Id)
             .ToListAsync(cancellationToken);
 
@@ -45,6 +47,7 @@ public class StationService : IStationService
             .Include(s => s.Chargers)
                 .ThenInclude(c => c.MaintenanceWindows)
             .Include(s => s.OperatingHours)
+            .Include(s => s.Bays)
             .Where(s => s.Status == StationStatus.Active);
 
         if (!string.IsNullOrWhiteSpace(query))
@@ -87,6 +90,7 @@ public class StationService : IStationService
             .Include(s => s.Chargers)
                 .ThenInclude(c => c.MaintenanceWindows)
             .Include(s => s.OperatingHours)
+            .Include(s => s.Bays)
             .FirstOrDefaultAsync(s => s.Id == stationId && s.OwnerId == ownerId, cancellationToken);
 
         if (station == null) return null;
@@ -251,6 +255,60 @@ public class StationService : IStationService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<List<BayDto>> GetBaysAsync(Guid stationId, Guid ownerId, CancellationToken cancellationToken = default)
+    {
+        var station = await _context.Stations
+            .Include(s => s.Bays)
+            .FirstOrDefaultAsync(s => s.Id == stationId && s.OwnerId == ownerId, cancellationToken);
+
+        if (station == null) return new List<BayDto>();
+
+        return station.Bays.Select(b => new BayDto { Id = b.Id, Name = b.Name }).ToList();
+    }
+
+    public async Task<BayDto> AddBayAsync(Guid stationId, Guid ownerId, AddBayRequest request, CancellationToken cancellationToken = default)
+    {
+        var station = await _context.Stations
+            .FirstOrDefaultAsync(s => s.Id == stationId && s.OwnerId == ownerId, cancellationToken);
+
+        if (station == null)
+            throw new UnauthorizedAccessException("Station not found or you are not the owner.");
+
+        var bay = new Bay(station.Id, request.Name);
+        station.AddBay(bay);
+        
+        await _context.SaveChangesAsync(cancellationToken);
+        return new BayDto { Id = bay.Id, Name = bay.Name };
+    }
+
+    public async Task<BayDto> UpdateBayAsync(Guid stationId, Guid bayId, Guid ownerId, UpdateBayRequest request, CancellationToken cancellationToken = default)
+    {
+        var bay = await _context.Bays
+            .Include(b => b.Station)
+            .FirstOrDefaultAsync(b => b.Id == bayId && b.StationId == stationId && b.Station.OwnerId == ownerId, cancellationToken);
+
+        if (bay == null)
+            throw new UnauthorizedAccessException("Bay not found or you are not the owner.");
+
+        bay.UpdateName(request.Name);
+        await _context.SaveChangesAsync(cancellationToken);
+        
+        return new BayDto { Id = bay.Id, Name = bay.Name };
+    }
+
+    public async Task DeleteBayAsync(Guid stationId, Guid bayId, Guid ownerId, CancellationToken cancellationToken = default)
+    {
+        var bay = await _context.Bays
+            .Include(b => b.Station)
+            .FirstOrDefaultAsync(b => b.Id == bayId && b.StationId == stationId && b.Station.OwnerId == ownerId, cancellationToken);
+
+        if (bay == null)
+            throw new UnauthorizedAccessException("Bay not found or you are not the owner.");
+
+        _context.Bays.Remove(bay);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     private static StationDto MapToDto(Station station)
     {
         return new StationDto
@@ -273,7 +331,8 @@ public class StationService : IStationService
                 IsEnabled = h.IsEnabled,
                 OpenTime = h.OpenTime,
                 CloseTime = h.CloseTime
-            }).ToList() ?? new List<OperatingHourDto>()
+            }).ToList() ?? new List<OperatingHourDto>(),
+            Bays = station.Bays?.Select(b => new BayDto { Id = b.Id, Name = b.Name }).ToList() ?? new List<BayDto>()
         };
     }
 

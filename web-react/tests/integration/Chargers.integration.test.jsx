@@ -17,6 +17,9 @@ vi.mock('../../src/features/stations/hooks/useStations', () => ({
   useDeleteCharger: () => ({
     mutate: vi.fn(),
     isPending: false
+  }),
+  useBays: () => ({
+    data: [{ id: 'bay-1', name: 'Bay 1' }, { id: 'bay-2', name: 'Bay 2' }]
   })
 }));
 
@@ -55,7 +58,7 @@ test('opens add charger form and submits', async () => {
   await userEvent.type(idInput, 'CH-02');
 
   const bayInput = screen.getByLabelText(/Bay Label/i);
-  await userEvent.type(bayInput, 'Bay 2');
+  await userEvent.selectOptions(bayInput, 'Bay 2');
 
   const saveButton = screen.getByText('Save Charger');
   await userEvent.click(saveButton);

@@ -17,4 +17,8 @@ public interface IStationService
     Task<MaintenanceWindowDto> AddMaintenanceWindowAsync(Guid chargerId, Guid ownerId, MaintenanceWindowDto request, CancellationToken cancellationToken = default);
     Task<MaintenanceWindowDto> UpdateMaintenanceWindowAsync(Guid maintenanceId, Guid ownerId, MaintenanceWindowDto request, CancellationToken cancellationToken = default);
     Task DeleteMaintenanceWindowAsync(Guid maintenanceId, Guid ownerId, CancellationToken cancellationToken = default);
+    Task<List<BayDto>> GetBaysAsync(Guid stationId, Guid ownerId, CancellationToken cancellationToken = default);
+    Task<BayDto> AddBayAsync(Guid stationId, Guid ownerId, AddBayRequest request, CancellationToken cancellationToken = default);
+    Task<BayDto> UpdateBayAsync(Guid stationId, Guid bayId, Guid ownerId, UpdateBayRequest request, CancellationToken cancellationToken = default);
+    Task DeleteBayAsync(Guid stationId, Guid bayId, Guid ownerId, CancellationToken cancellationToken = default);
 }

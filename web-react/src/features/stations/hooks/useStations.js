@@ -4,6 +4,7 @@ import { stationsApi } from '../../../api/endpoints'
 export const STATIONS_KEYS = {
     all: ['my-stations'],
     detail: (id) => ['station', id],
+    bays: (id) => ['station', id, 'bays'],
 }
 
 export const useMyStations = () => {
@@ -119,6 +120,44 @@ export const useDeleteMaintenanceWindow = () => {
         onSuccess: (_, { stationId }) => {
             if (stationId) queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.detail(stationId) })
             queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.all })
+        },
+    })
+}
+
+export const useBays = (stationId) => {
+    return useQuery({
+        queryKey: STATIONS_KEYS.bays(stationId),
+        queryFn: () => stationsApi.getBays(stationId),
+        enabled: !!stationId,
+    })
+}
+
+export const useAddBay = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ stationId, data }) => stationsApi.addBay(stationId, data),
+        onSuccess: (_, { stationId }) => {
+            queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.bays(stationId) })
+        },
+    })
+}
+
+export const useUpdateBay = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ stationId, bayId, data }) => stationsApi.updateBay(stationId, bayId, data),
+        onSuccess: (_, { stationId }) => {
+            queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.bays(stationId) })
+        },
+    })
+}
+
+export const useDeleteBay = () => {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ stationId, bayId }) => stationsApi.deleteBay(stationId, bayId),
+        onSuccess: (_, { stationId }) => {
+            queryClient.invalidateQueries({ queryKey: STATIONS_KEYS.bays(stationId) })
         },
     })
 }

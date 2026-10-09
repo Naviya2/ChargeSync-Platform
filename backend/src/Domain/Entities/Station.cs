@@ -19,6 +19,7 @@ public class Station : AuditableEntity
         DocumentUrls = documentUrls ?? new List<string>();
         Chargers = new List<Charger>();
         OperatingHours = new List<OperatingHour>();
+        Bays = new List<Bay>();
     }
 
     public Guid Id { get; private set; }
@@ -34,6 +35,7 @@ public class Station : AuditableEntity
 
     public ICollection<Charger> Chargers { get; private set; } = new List<Charger>();
     public ICollection<OperatingHour> OperatingHours { get; private set; } = new List<OperatingHour>();
+    public ICollection<Bay> Bays { get; private set; } = new List<Bay>();
 
     public User Owner { get; private set; } = null!;
 
@@ -83,6 +85,11 @@ public class Station : AuditableEntity
     public void AddCharger(Charger charger)
     {
         Chargers.Add(charger);
+    }
+
+    public void AddBay(Bay bay)
+    {
+        Bays.Add(bay);
     }
     
     public void UpdateOperatingHours(List<OperatingHour> newHours)

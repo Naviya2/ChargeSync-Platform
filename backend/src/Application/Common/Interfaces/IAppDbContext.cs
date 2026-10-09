@@ -30,6 +30,8 @@ public interface IAppDbContext
 
     DbSet<OperatingHour> OperatingHours { get; }
 
+    DbSet<Bay> Bays { get; }
+
     DbSet<MaintenanceWindow> MaintenanceWindows { get; }
 
     DbSet<Vehicle> Vehicles { get; }

@@ -264,6 +264,7 @@ export const STATION_DETAILS = {
 
 export const DETAIL_TABS = [
   { key: 'overview', label: 'Overview' },
+  { key: 'bays', label: 'Bays' },
   { key: 'chargers', label: 'Chargers' },
   { key: 'operating-hours', label: 'Operating Hours' },
   { key: 'maintenance', label: 'Maintenance' },

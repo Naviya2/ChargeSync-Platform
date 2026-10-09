@@ -18,6 +18,13 @@ public class StationDto
     
     public List<ChargerDto> Chargers { get; set; } = new();
     public List<OperatingHourDto> OperatingHours { get; set; } = new();
+    public List<BayDto> Bays { get; set; } = new();
+}
+
+public class BayDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = null!;
 }
 
 public class OperatingHourDto
@@ -44,6 +51,16 @@ public class RegisterStationRequest
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public List<string>? DocumentUrls { get; set; }
+}
+
+public class AddBayRequest
+{
+    public string Name { get; set; } = null!;
+}
+
+public class UpdateBayRequest
+{
+    public string Name { get; set; } = null!;
 }
 
 public class UpdateStationRequest
