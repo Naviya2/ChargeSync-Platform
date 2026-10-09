@@ -4,6 +4,9 @@
 backend/**/bin/
 backend/**/obj/
 
+# Temporary PayHere verification build
+tmp/payhere-build/
+
 # Local development configuration / secrets
 backend/**/appsettings.Development.json
 
