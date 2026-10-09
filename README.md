@@ -7,7 +7,7 @@
 [![Agentic AI](https://img.shields.io/badge/Agentic%20AI-Render-46E3B7?logo=render)](https://chargesync-platform-agentic-ai.onrender.com)
 [![Backend](https://img.shields.io/badge/.NET-8.0%20LTS-purple?logo=dotnet)](https://dotnet.microsoft.com/)
 [![Database](https://img.shields.io/badge/PostgreSQL-15%20%7C%20Supabase-336791?logo=postgresql)](https://www.postgresql.org/)
-[![Mobile App](https://img.shields.io/badge/Mobile%20App-Flutter%203%20(v1.0.1)-02569B?logo=flutter)](https://flutter.dev/)
+[![Mobile App](https://img.shields.io/badge/Mobile%20App-Flutter%203%20(v1.0.1)-02569B?logo=flutter)](https://github.com/Naviya2/ChargeSync-Platform/releases/download/v1.0.1/ChargeSync_v1.0.1.apk)
 [![Tests](https://img.shields.io/badge/Automated%20Tests-438%20Passing-brightgreen?logo=checkmarx)](#10-testing)
 
 > **SE3090 – Software Engineering Frameworks** · BSc (Hons) in Software Engineering · SLIIT · Year 3, Semester 1, 2026
@@ -21,7 +21,7 @@
 | **Frontend Web Portal** | Vercel | [https://chargesync-platform.vercel.app/](https://chargesync-platform.vercel.app/) | Production React 18 Admin, Station Owner & Support Dashboard |
 | **Backend REST API** | Render | [https://chargesync-platform-backend.onrender.com](https://chargesync-platform-backend.onrender.com) | [Swagger UI Documentation](https://chargesync-platform-backend.onrender.com/swagger) |
 | **Agentic AI Microservice** | Render | [https://chargesync-platform-agentic-ai.onrender.com](https://chargesync-platform-agentic-ai.onrender.com) | [Health Check Endpoint](https://chargesync-platform-agentic-ai.onrender.com/health) |
-| **Driver / POS Mobile App** | Android APK | [`mobile-flutter/ChargeSync_v1.0.1.apk`](mobile-flutter/ChargeSync_v1.0.1.apk) | Standalone pre-built release artifact (v1.0.1) |
+| **Driver / Station Owner Mobile App** | Android APK | [Download ChargeSync_v1.0.1.apk](https://github.com/Naviya2/ChargeSync-Platform/releases/download/v1.0.1/ChargeSync_v1.0.1.apk) | Standalone pre-built release artifact (v1.0.1) · [Local mirror](mobile-flutter/ChargeSync_v1.0.1.apk) |
 
 ---
 
@@ -86,23 +86,23 @@ graph TB
     subgraph AI["Agentic AI Subservice (Python / FastAPI)"]
         CompatAgent["Compatibility Agent"]
         StationAgent["Station Analysis Agent"]
-        PlanAgent["Planning Coordinator Agent<br/>(LangGraph)"]
-        SupportAgent["Validation & Support Agent<br/>(LangGraph)"]
+        PlanAgent["Planning Coordinator Agent (LangGraph)"]
+        SupportAgent["Validation & Support Agent (LangGraph)"]
     end
 
     subgraph Data["Persistence & External Services"]
-        PG[(PostgreSQL 15 / Supabase)]
-        Cloudinary[("Cloudinary CDN<br/>(Meter Photos)")]
-        PayHere[("PayHere Gateway<br/>(IPN Webhooks)")]
-        ORS[("OpenRouteService<br/>(Routing Matrix)")]
+        PG[("PostgreSQL 15 / Supabase")]
+        Cloudinary[("Cloudinary CDN - Meter Photos")]
+        PayHere[("PayHere Gateway - IPN Webhooks")]
+        ORS[("OpenRouteService - Routing Matrix")]
     end
 
-    Mobile -->|HTTPS / REST| Backend
-    Web -->|HTTPS / REST| Backend
-    Backend -->|Internal REST (X-Agent-Service-Key)| AI
-    Backend -->|EF Core (Npgsql)| PG
+    Mobile -->|HTTPS REST| Backend
+    Web -->|HTTPS REST| Backend
+    Backend -->|Internal REST API| AI
+    Backend -->|EF Core Npgsql| PG
     Backend -->|Asset Storage| Cloudinary
-    Backend -->|Webhooks & Checkout| PayHere
+    Backend -->|Webhooks and Checkout| PayHere
     Backend -->|Geo Matrix| ORS
 ```
 
@@ -286,7 +286,7 @@ To generate the release APK directly:
 flutter build apk --release
 # Output: build/app/outputs/flutter-apk/app-release.apk
 ```
-*Note: A verified pre-built release artifact is exported at `mobile-flutter/ChargeSync_v1.0.1.apk`.*
+*Note: A verified pre-built release artifact is available for download at [GitHub Release Download (ChargeSync_v1.0.1.apk)](https://github.com/Naviya2/ChargeSync-Platform/releases/download/v1.0.1/ChargeSync_v1.0.1.apk) (local repository mirror: [`mobile-flutter/ChargeSync_v1.0.1.apk`](mobile-flutter/ChargeSync_v1.0.1.apk)).*
 
 ---
 
@@ -646,7 +646,7 @@ The ChargeSync platform is fully containerized and continuously deployed across 
 | **Backend REST API** | **Render** | [https://chargesync-platform-backend.onrender.com](https://chargesync-platform-backend.onrender.com) | Managed Web Service hosting ASP.NET Core 8 Web API. Interactive OpenAPI documentation is accessible at [`/swagger`](https://chargesync-platform-backend.onrender.com/swagger) |
 | **Agentic AI Microservice** | **Render** | [https://chargesync-platform-agentic-ai.onrender.com](https://chargesync-platform-agentic-ai.onrender.com) | Python FastAPI service hosting LangGraph agent graph coordinator. Liveness verification available at [`/health`](https://chargesync-platform-agentic-ai.onrender.com/health) |
 | **Database** | **Supabase (PostgreSQL 15)** | Hosted PostgreSQL | Managed PostgreSQL instance with session pooling and automated backup policies |
-| **Mobile Application** | **Android APK Distribution** | [`mobile-flutter/ChargeSync_v1.0.1.apk`](mobile-flutter/ChargeSync_v1.0.1.apk) | Production release build artifact (v1.0.1) incorporating driver self-service edits and on-site staff POS |
+| **Mobile Application** | **Android APK Distribution** | [Download ChargeSync_v1.0.1.apk](https://github.com/Naviya2/ChargeSync-Platform/releases/download/v1.0.1/ChargeSync_v1.0.1.apk) | Production release build artifact (v1.0.1) incorporating driver self-service edits and on-site staff POS (mirrored at [`mobile-flutter/ChargeSync_v1.0.1.apk`](mobile-flutter/ChargeSync_v1.0.1.apk)) |
 
 ---
 
