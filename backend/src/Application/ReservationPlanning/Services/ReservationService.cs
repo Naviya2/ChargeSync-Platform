@@ -390,9 +390,14 @@ public sealed class ReservationService : IReservationService
             ?? throw new NotFoundException("Reservation with QR code", request.QrCode);
 
         var now = DateTimeOffset.UtcNow;
-        if (now < reservation.StartTime || now > reservation.EndTime)
+        var earlyCheckInBuffer = TimeSpan.FromMinutes(15);
+        
+        if (now < reservation.StartTime.Subtract(earlyCheckInBuffer) || now > reservation.EndTime)
         {
-            throw new InvalidOperationException($"Check-in is only allowed during the scheduled reservation window: {reservation.StartTime:t} - {reservation.EndTime:t}.");
+            var slTimeZone = TimeSpan.FromHours(5.5);
+            var localStart = reservation.StartTime.ToOffset(slTimeZone);
+            var localEnd = reservation.EndTime.ToOffset(slTimeZone);
+            throw new InvalidOperationException($"Check-in is only allowed during the scheduled reservation window: {localStart:t} - {localEnd:t}. (You can check-in up to 15 mins early)");
         }
 
         var oldStatus = reservation.Status;
@@ -450,10 +455,18 @@ public sealed class ReservationService : IReservationService
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
             ?? throw new NotFoundException(nameof(Reservation), id);
 
-        // Only admins or station owners can update this.
         if (requesterRole == UserRole.Driver.ToString())
-            throw new ForbiddenAccessException();
-            
+        {
+            if (reservation.DriverId != requesterId)
+                throw new ForbiddenAccessException();
+
+            if (reservation.Status == ReservationStatus.CheckedIn || reservation.Status == ReservationStatus.Completed || reservation.Status == ReservationStatus.Cancelled)
+                throw new InvalidOperationException($"Cannot edit a reservation that is {reservation.Status}.");
+
+            var now = DateTimeOffset.UtcNow;
+            if (now > reservation.StartTime.AddHours(-2))
+                throw new InvalidOperationException("Changes are not permitted within 2 hours of the original reservation time.");
+        }
         // Station Owners can only update reservations for their stations.
         if (requesterRole == UserRole.StationOwner.ToString())
         {

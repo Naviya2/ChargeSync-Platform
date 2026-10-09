@@ -103,6 +103,21 @@ class CreateReservationRequest {
   };
 }
 
+class UpdateReservationRequest {
+  final DateTime startTime;
+  final DateTime endTime;
+
+  UpdateReservationRequest({
+    required this.startTime,
+    required this.endTime,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'startTime': startTime.toUtc().toIso8601String(),
+    'endTime': endTime.toUtc().toIso8601String(),
+  };
+}
+
 class BookingCharges {
   final double walletBalance;
   final double pendingCancellationFees;

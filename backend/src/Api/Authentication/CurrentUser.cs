@@ -23,7 +23,7 @@ public sealed class CurrentUser : ICurrentUser
             : null;
 
     public UserRole? Role =>
-        Enum.TryParse<UserRole>(_principal?.FindFirstValue(ClaimTypes.Role), ignoreCase: false, out var role)
+        Enum.TryParse<UserRole>(_principal?.FindFirstValue("role"), ignoreCase: false, out var role)
             ? role
             : null;
 

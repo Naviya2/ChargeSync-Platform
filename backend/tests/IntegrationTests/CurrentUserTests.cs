@@ -25,7 +25,7 @@ public class CurrentUserTests
 
         var user = For(
             new Claim(JwtRegisteredClaimNames.Sub, id.ToString()),
-            new Claim(ClaimTypes.Role, nameof(UserRole.StationOwner)));
+            new Claim("role", nameof(UserRole.StationOwner)));
 
         Assert.Equal(id, user.Id);
         Assert.Equal(UserRole.StationOwner, user.Role);
@@ -38,7 +38,7 @@ public class CurrentUserTests
     {
         var user = For(
             new Claim(JwtRegisteredClaimNames.Sub, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.Role, nameof(UserRole.Admin)));
+            new Claim("role", nameof(UserRole.Admin)));
 
         Assert.True(user.IsAdmin);
     }
