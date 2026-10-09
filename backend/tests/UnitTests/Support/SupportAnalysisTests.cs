@@ -6,6 +6,7 @@ using Domain.Support;
 using Domain.Users;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace UnitTests.Support;
 
@@ -30,6 +31,41 @@ public sealed class SupportAnalysisTests
         Assert.Equal("Open", ticket.Status);
         await Assert.ThrowsAsync<ForbiddenAccessException>(() => service.AnalyzeAsync(ticket.Id, UserRole.Driver, default));
         await Assert.ThrowsAsync<NotFoundException>(() => service.AnalyzeAsync(Guid.NewGuid(), UserRole.Admin, default));
+    }
+
+    [Fact]
+    public async Task MissingInvoiceFinding_IsPassedToAgentWithoutChangingTicket()
+    {
+        using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+        var ticket = new SupportTicket
+        {
+            DriverId = Guid.NewGuid(),
+            Subject = "Invoice review",
+            Description = "Please refund this charge",
+            InvoiceId = Guid.NewGuid()
+        };
+        db.SupportTickets.Add(ticket);
+        await db.SaveChangesAsync();
+
+        var agent = new Mock<ISupportAgentClient>(MockBehavior.Strict);
+        agent.Setup(a => a.AnalyzeAsync(
+                It.IsAny<SupportAnalysisInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new SupportSuggestion("Refund", "High", "Review the invoice", "We will investigate."));
+
+        var result = await new SupportAnalysisService(db, agent.Object)
+            .AnalyzeAsync(ticket.Id, UserRole.SupportManager, default);
+
+        Assert.True(result.AiAvailable);
+        Assert.Contains(result.Findings, f => f.Contains("Linked invoice is missing"));
+        Assert.Equal("Open", ticket.Status);
+        Assert.Empty(db.SupportMessages);
+        agent.Verify(a => a.AnalyzeAsync(
+            It.Is<SupportAnalysisInput>(input =>
+                input.Description == ticket.Description &&
+                input.Findings.Any(f => f.Contains("Linked invoice is missing"))),
+            It.IsAny<CancellationToken>()), Times.Once);
+        agent.VerifyNoOtherCalls();
     }
 
     private static PaymentInvoice Invoice(decimal meter = 11.5m, bool walkIn = false)
