@@ -1,3 +1,4 @@
+param([switch]$QuietLogs)
 $ErrorActionPreference = 'Stop'
 $repoPath = Split-Path -Parent $PSScriptRoot
 $settingsPath = Join-Path $PSScriptRoot 'settings.local.json'
@@ -27,6 +28,11 @@ $overrides = @{
     Seed__SupportManagerPassword = $runtime.admin.password
     ASPNETCORE_ENVIRONMENT = 'Development'
     ASPNETCORE_URLS = 'http://127.0.0.1:5036'
+}
+if ($QuietLogs) {
+    $overrides['Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command'] = 'Warning'
+    $overrides['Logging__LogLevel__Microsoft.EntityFrameworkCore'] = 'Warning'
+    $overrides['Logging__LogLevel__Microsoft.AspNetCore'] = 'Warning'
 }
 $original = @{}
 foreach ($key in $overrides.Keys) {
