@@ -78,7 +78,9 @@ public sealed class WalletController(WalletService wallet, IWalletGateway gatewa
     private ContentResult Page(string title, string body)
     {
         Response.Headers.CacheControl = "no-store";
-        Response.Headers["Referrer-Policy"] = "no-referrer";
+        // PayHere validates the registered checkout origin. Send the origin only
+        // across domains so the encrypted checkout ticket stays out of Referer.
+        Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         Response.Headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; form-action https://sandbox.payhere.lk https://www.payhere.lk; frame-ancestors 'none'; base-uri 'none'";
         return Content($"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>{title}</title><style>body{{font:17px system-ui;background:#10181c;color:#eef5f4;margin:0;padding:24px}}main{{max-width:440px;margin:8vh auto;padding:28px;border:1px solid #31504b;border-radius:20px}}p{{line-height:1.6;color:#b6cbc5}}button{{background:#45d2a1;color:#08271e;border:0;border-radius:10px;padding:16px 24px;font:inherit;cursor:pointer;width:100%}}</style></head><body><main><h1>{title}</h1>{body}</main></body></html>", "text/html");

@@ -23,6 +23,32 @@ namespace Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Domain.Entities.Bay", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("StationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StationId");
+
+                    b.ToTable("Bays");
+                });
+
             modelBuilder.Entity("Domain.Entities.Charger", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1278,6 +1304,17 @@ namespace Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Domain.Entities.Bay", b =>
+                {
+                    b.HasOne("Domain.Entities.Station", "Station")
+                        .WithMany("Bays")
+                        .HasForeignKey("StationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Station");
+                });
+
             modelBuilder.Entity("Domain.Entities.Charger", b =>
                 {
                     b.HasOne("Domain.Entities.Station", "Station")
@@ -1578,6 +1615,8 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Entities.Station", b =>
                 {
+                    b.Navigation("Bays");
+
                     b.Navigation("Chargers");
 
                     b.Navigation("OperatingHours");

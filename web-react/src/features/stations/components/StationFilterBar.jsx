@@ -5,7 +5,7 @@ export default function StationFilterBar({ active, onChange, search, onSearchCha
     { key: 'all', label: 'All Stations', count: counts.all || 0 },
     { key: 'active', label: 'Active', count: counts.active || 0 },
     { key: 'pending', label: 'Pending Approval', count: counts.pending || 0 },
-    { key: 'maintenance', label: 'Maintenance', count: counts.maintenance || 0 },
+    { key: 'rejected', label: 'Rejected', count: counts.rejected || 0 },
   ];
 
   return (

@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="5cc285cf-cf11-40ff-bba5-ff02a9dd24cd" name="ASUS@DESKTOP-PE4OJIB 2026-10-07 21:42:38" runUser="DESKTOP-PE4OJIB\ASUS" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-07T21:42:38.1511618+05:30" queuing="2026-10-07T21:42:38.1511619+05:30" start="2026-10-07T21:42:36.8471559+05:30" finish="2026-10-07T21:42:38.1553617+05:30" />
+  <TestSettings name="default" id="45bea4bf-5096-4d6f-b7c3-3c971a74542e">
+    <Deployment runDeploymentRoot="ASUS_DESKTOP-PE4OJIB_2026-10-07_21_42_38" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="645ccfd1-7f27-4c20-95fa-96559ee75449" testId="01dd9af4-348a-892c-5cf0-f0a0d0d7bddd" testName="UnitTests.Support.SupportAnalysisTests.MissingInvoiceFinding_IsPassedToAgentWithoutChangingTicket" computerName="DESKTOP-PE4OJIB" duration="00:00:00.6765965" startTime="2026-10-07T21:42:38.0694865+05:30" endTime="2026-10-07T21:42:38.0694866+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="645ccfd1-7f27-4c20-95fa-96559ee75449" />
+    <UnitTestResult executionId="f634670a-e09a-4aec-9038-52db96141678" testId="a58a95f6-9b21-73b1-17ba-5f2e9b1c4844" testName="UnitTests.Sessions.ChargingSessionTests.FlaggedMeterOverride_IsUsedForInvoiceWhileAutomaticEnergyIsPreserved" computerName="DESKTOP-PE4OJIB" duration="00:00:00.0155368" startTime="2026-10-07T21:42:37.4105701+05:30" endTime="2026-10-07T21:42:37.4105947+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f634670a-e09a-4aec-9038-52db96141678" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="UnitTests.Sessions.ChargingSessionTests.FlaggedMeterOverride_IsUsedForInvoiceWhileAutomaticEnergyIsPreserved" storage="g:\projects\chargesync-platform\chargesync-platform\backend\tests\unittests\bin\debug\net8.0\unittests.dll" id="a58a95f6-9b21-73b1-17ba-5f2e9b1c4844">
+      <Execution id="f634670a-e09a-4aec-9038-52db96141678" />
+      <TestMethod codeBase="G:\projects\chargesync-platform\ChargeSync-Platform\backend\tests\UnitTests\bin\Debug\net8.0\UnitTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="UnitTests.Sessions.ChargingSessionTests" name="FlaggedMeterOverride_IsUsedForInvoiceWhileAutomaticEnergyIsPreserved" />
+    </UnitTest>
+    <UnitTest name="UnitTests.Support.SupportAnalysisTests.MissingInvoiceFinding_IsPassedToAgentWithoutChangingTicket" storage="g:\projects\chargesync-platform\chargesync-platform\backend\tests\unittests\bin\debug\net8.0\unittests.dll" id="01dd9af4-348a-892c-5cf0-f0a0d0d7bddd">
+      <Execution id="645ccfd1-7f27-4c20-95fa-96559ee75449" />
+      <TestMethod codeBase="G:\projects\chargesync-platform\ChargeSync-Platform\backend\tests\UnitTests\bin\Debug\net8.0\UnitTests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="UnitTests.Support.SupportAnalysisTests" name="MissingInvoiceFinding_IsPassedToAgentWithoutChangingTicket" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="01dd9af4-348a-892c-5cf0-f0a0d0d7bddd" executionId="645ccfd1-7f27-4c20-95fa-96559ee75449" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a58a95f6-9b21-73b1-17ba-5f2e9b1c4844" executionId="f634670a-e09a-4aec-9038-52db96141678" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="2" executed="2" passed="2" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.3.1+6b60a9e56a (64-bit .NET 8.0.29)&#xD;
+[xUnit.net 00:00:00.05]   Discovering: UnitTests&#xD;
+[xUnit.net 00:00:00.10]   Discovered:  UnitTests&#xD;
+[xUnit.net 00:00:00.10]   Starting:    UnitTests&#xD;
+[xUnit.net 00:00:00.81]   Finished:    UnitTests&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

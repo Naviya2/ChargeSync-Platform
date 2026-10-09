@@ -360,16 +360,13 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
                         Row(
                           children: [
                             Container(
-                              width: 32,
-                              height: 32,
+                              width: 32, height: 32,
                               decoration: BoxDecoration(
+                                color: AppColors.primaryContainer,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              clipBehavior: Clip.hardEdge,
-                              child: Image.asset(
-                                'assets/images/app_icon.png',
-                                fit: BoxFit.cover,
-                              ),
+                              child: const Icon(Icons.bolt_rounded, size: 20,
+                                  color: AppColors.onPrimaryContainer),
                             ),
                             const SizedBox(width: 10),
                             Column(

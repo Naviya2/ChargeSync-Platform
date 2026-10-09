@@ -182,4 +182,53 @@ public class StationsController : ControllerBase
             return Forbid();
         }
     }
+
+    [HttpGet("{id:guid}/bays")]
+    public async Task<IActionResult> GetBays(Guid id, CancellationToken cancellationToken)
+    {
+        var bays = await _stationService.GetBaysAsync(id, OwnerId, cancellationToken);
+        return Ok(bays);
+    }
+
+    [HttpPost("{id:guid}/bays")]
+    public async Task<IActionResult> AddBay(Guid id, [FromBody] AddBayRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var bay = await _stationService.AddBayAsync(id, OwnerId, request, cancellationToken);
+            return Ok(bay);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpPut("{id:guid}/bays/{bayId:guid}")]
+    public async Task<IActionResult> UpdateBay(Guid id, Guid bayId, [FromBody] UpdateBayRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var bay = await _stationService.UpdateBayAsync(id, bayId, OwnerId, request, cancellationToken);
+            return Ok(bay);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpDelete("{id:guid}/bays/{bayId:guid}")]
+    public async Task<IActionResult> DeleteBay(Guid id, Guid bayId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _stationService.DeleteBayAsync(id, bayId, OwnerId, cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
 }

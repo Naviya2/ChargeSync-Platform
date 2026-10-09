@@ -59,3 +59,38 @@ def test_api_model_failure_returns_service_unavailable(monkeypatch):
     response = TestClient(main.app).post("/api/support/analyze", headers={"X-Agent-Service-Key": "test-internal-key"}, json={"subject": "Help", "description": "Missing invoice"})
     assert response.status_code == 503
     assert "private" not in response.text
+
+
+def test_support_api_provider_failure_is_sanitized_and_next_request_recovers(monkeypatch):
+    from fastapi.testclient import TestClient
+    import main
+
+    monkeypatch.setattr(main.settings, "AGENT_SERVICE_API_KEY", "student4-test-key")
+    calls = 0
+
+    def fail_once_then_succeed(_request):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise RuntimeError("secret provider token: test-only-value")
+        return SupportSuggestion.model_validate(suggestion())
+
+    monkeypatch.setattr(main.support_agent, "analyze", fail_once_then_succeed)
+    client = TestClient(main.app)
+    body = {"subject": "Invoice question", "description": "Please review my charging invoice"}
+
+    unauthorized = client.post("/api/support/analyze", json=body)
+    assert unauthorized.status_code == 401
+    assert calls == 0
+
+    headers = {"X-Agent-Service-Key": "student4-test-key"}
+    failed = client.post("/api/support/analyze", headers=headers, json=body)
+    assert failed.status_code == 503
+    assert failed.json()["detail"] == "Support analysis is temporarily unavailable."
+    assert "secret provider token" not in failed.text
+
+    recovered = client.post("/api/support/analyze", headers=headers, json=body)
+    assert recovered.status_code == 200
+    assert recovered.json()["category"] == "Payment"
+    assert set(recovered.json()) == {"category", "priority", "explanation", "draftReply"}
+    assert calls == 2
