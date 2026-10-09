@@ -123,9 +123,19 @@ public sealed class StationEndpointsTests : IClassFixture<ChargeSyncApiFactory>
     }
 
     [Fact]
-    public async Task SearchStations_Returns200_Anonymous()
+    public async Task SearchStations_Returns200_WithGeoCoordinates_Anonymous()
     {
-        var response = await _client.GetAsync("/api/stations/search?radiusKm=25&query=test");
+        var response = await _client.GetAsync("/api/stations/search?latitude=6.9271&longitude=79.8612&radiusKm=10");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task NF_TC_03_UpdateOperatingHours_WithoutAuth_Returns401Unauthorized()
+    {
+        _client.DefaultRequestHeaders.Authorization = null;
+        
+        var response = await _client.PutAsJsonAsync($"/api/stations/{Guid.NewGuid()}/operating-hours", new[] { new { dayOfWeek = 1, isEnabled = true } });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

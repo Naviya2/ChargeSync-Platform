@@ -50,6 +50,7 @@ export default function ChargersTab({ stationId, chargers }) {
       Connector: form.connectorTypeId,
       PowerKw: form.maxOutputKw,
       Tariff: form.pricePerKwh,
+      Status: form.status,
     }
     
     if (editingChargerId) {
