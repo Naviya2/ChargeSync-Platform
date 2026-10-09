@@ -17,6 +17,10 @@ export const stationsApi = {
   addMaintenanceWindow: (chargerId, data) => unwrap(apiClient.post(`${base}/chargers/${chargerId}/maintenance`, data)),
   updateMaintenanceWindow: (maintenanceId, data) => unwrap(apiClient.put(`${base}/maintenance/${maintenanceId}`, data)),
   deleteMaintenanceWindow: (maintenanceId) => unwrap(apiClient.delete(`${base}/maintenance/${maintenanceId}`)),
+  getBays: (stationId) => unwrap(apiClient.get(`${base}/${stationId}/bays`)),
+  addBay: (stationId, data) => unwrap(apiClient.post(`${base}/${stationId}/bays`, data)),
+  updateBay: (stationId, bayId, data) => unwrap(apiClient.put(`${base}/${stationId}/bays/${bayId}`, data)),
+  deleteBay: (stationId, bayId) => unwrap(apiClient.delete(`${base}/${stationId}/bays/${bayId}`)),
 }
 
 export default stationsApi

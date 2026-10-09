@@ -4,6 +4,7 @@ import OverviewTab from './tabs/OverviewTab'
 import ChargersTab from './tabs/ChargersTab'
 import OperatingHoursTab from './tabs/OperatingHoursTab'
 import MaintenanceTab from './tabs/MaintenanceTab'
+import BaysTab from './tabs/BaysTab'
 import { cn } from '../../../lib/cn'
 import { useUpdateStation } from '../hooks/useStations'
 import MapLocationPicker from '../../../components/shared/MapLocationPicker'
@@ -190,6 +191,7 @@ export default function StationDetailConsole({ station }) {
       {/* Panel */}
       <div className="p-space-lg">
         {activeTab === 'overview' && <OverviewTab chargers={chargers} stationName={station.name} />}
+        {activeTab === 'bays' && <BaysTab stationId={station.id} />}
         {activeTab === 'chargers' && <ChargersTab stationId={station.id} chargers={chargers} />}
         {activeTab === 'operating-hours' && <OperatingHoursTab stationId={station.id} hours={operatingHours} />}
         {activeTab === 'maintenance' && <MaintenanceTab stationId={station.id} maintenance={maintenance} chargers={chargers} />}

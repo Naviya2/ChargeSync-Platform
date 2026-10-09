@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { cn } from '../../../../lib/cn'
 import { CONNECTOR_TYPES, CONNECTOR_TYPE_OPTIONS } from '../../../../lib/constants'
-import { useAddCharger, useUpdateCharger, useDeleteCharger } from '../../hooks/useStations'
+import { useAddCharger, useUpdateCharger, useDeleteCharger, useBays } from '../../hooks/useStations'
 import useDialogStore from '../../../../store/dialogStore'
 
 const STATE_STYLE = {
@@ -32,6 +32,7 @@ export default function ChargersTab({ stationId, chargers }) {
   const addCharger = useAddCharger()
   const updateCharger = useUpdateCharger()
   const deleteCharger = useDeleteCharger()
+  const { data: bays = [] } = useBays(stationId)
 
   const [form, setForm] = useState({
     identifier: '',
@@ -134,7 +135,7 @@ export default function ChargersTab({ stationId, chargers }) {
             } else {
               setForm({
                 identifier: '',
-                bayLabel: '',
+                bayLabel: bays.length > 0 ? bays[0].name : '',
                 connectorTypeId: CONNECTOR_TYPES.CCS2,
                 maxOutputKw: 150,
                 pricePerKwh: 0.50,
@@ -169,15 +170,19 @@ export default function ChargersTab({ stationId, chargers }) {
               />
             </div>
             <div className="flex flex-col gap-space-2xs">
-              <label htmlFor="bayLabelInput" className="font-label-sm text-label-sm text-on-surface">Bay Label (e.g. Bay 1)</label>
-              <input
+              <label htmlFor="bayLabelInput" className="font-label-sm text-label-sm text-on-surface">Bay Label</label>
+              <select
                 id="bayLabelInput"
-                type="text"
                 required
                 className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
                 value={form.bayLabel}
                 onChange={(e) => setForm({ ...form, bayLabel: e.target.value })}
-              />
+              >
+                <option value="" disabled>Select a bay</option>
+                {bays.map((b) => (
+                  <option key={b.id} value={b.name}>{b.name}</option>
+                ))}
+              </select>
             </div>
             <div className="flex flex-col gap-space-2xs">
               <label className="font-label-sm text-label-sm text-on-surface">Connector Type</label>
