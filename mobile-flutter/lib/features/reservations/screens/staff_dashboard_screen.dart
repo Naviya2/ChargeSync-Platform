@@ -360,13 +360,16 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
                         Row(
                           children: [
                             Container(
-                              width: 32, height: 32,
+                              width: 32,
+                              height: 32,
                               decoration: BoxDecoration(
-                                color: AppColors.primaryContainer,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.bolt_rounded, size: 20,
-                                  color: AppColors.onPrimaryContainer),
+                              clipBehavior: Clip.hardEdge,
+                              child: Image.asset(
+                                'assets/images/app_icon.png',
+                                fit: BoxFit.cover,
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Column(
@@ -416,42 +419,58 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
                                   Container(
                                     width: 36, height: 36,
                                     decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppColors.surfaceContainer),
+                                      shape: BoxShape.circle,
+                                      color: AppColors.surfaceContainer,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.15),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
                                     child: const Icon(
-                                        Icons.notifications_rounded,
-                                        size: 20,
+                                        Icons.notifications_outlined,
+                                        size: 18,
                                         color: AppColors.onSurface),
                                   ),
                                   if (unread > 0)
                                     Positioned(
                                       right: 0, top: 0,
                                       child: Container(
-                                        padding: const EdgeInsets.all(3),
-                                        decoration: const BoxDecoration(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
                                             color: Colors.red,
-                                            shape: BoxShape.circle),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(color: AppColors.surface, width: 2),
+                                        ),
                                         child: Text('$unread',
                                             style: GoogleFonts.inter(
                                                 color: Colors.white,
                                                 fontSize: 9,
-                                                fontWeight: FontWeight.w700)),
+                                                fontWeight: FontWeight.w800)),
                                       ),
                                     ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 12),
                             // Logout
                             GestureDetector(
                               onTap: _logout,
                               child: Container(
-                                width: 32, height: 32,
+                                width: 36, height: 36,
                                 decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: AppColors.surfaceContainer),
+                                    color: Colors.red.withValues(alpha: 0.1),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.red.withValues(alpha: 0.15),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                ),
                                 child: const Icon(Icons.logout_rounded,
-                                    size: 16, color: AppColors.onSurface),
+                                    size: 18, color: Colors.red),
                               ),
                             ),
                           ],

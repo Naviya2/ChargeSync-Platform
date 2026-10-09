@@ -141,6 +141,27 @@ class ReservationApiClient {
     return ReservationDto.fromJson(result);
   }
 
+  Future<ReservationDto> updateReservation(String id, UpdateReservationRequest request) async {
+    final token = await _getAccessToken();
+    final url = Uri.parse('${ApiConfig.baseUrl}/api/reservations/$id');
+    final response = await _client.put(
+      url,
+      headers: _headers(token),
+      body: jsonEncode(request.toJson()),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return ReservationDto.fromJson(jsonDecode(response.body));
+    } else {
+      String errorMessage = 'HTTP ${response.statusCode}: ${response.body}';
+      try {
+        final jsonError = jsonDecode(response.body);
+        errorMessage = jsonError['detail'] ?? jsonError['message'] ?? jsonError['title'] ?? errorMessage;
+      } catch (_) {}
+      throw Exception(errorMessage);
+    }
+  }
+
   Future<void> rejectReservation(String id) async {
     await _post('/api/reservations/$id/reject', null);
   }

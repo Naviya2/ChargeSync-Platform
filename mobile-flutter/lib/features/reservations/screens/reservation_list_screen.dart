@@ -9,6 +9,7 @@ import '../../../../core/api/reservation_models.dart';
 import '../../../../core/api/session_api_client.dart';
 import '../../payments/models/payment_models.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'edit_reservation_time_screen.dart';
 import 'dart:async';
 
 class ReservationListScreen extends StatefulWidget {
@@ -444,157 +445,199 @@ class _ReservationListScreenState extends State<ReservationListScreen>
                   ],
                   if (isActive) ...[
                     const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
+                    SizedBox(
+                      width: double.infinity,
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            final now = DateTime.now();
+                            if (res.startTime.difference(now).inHours < 2) {
                               showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
-                                  title: const Text('Cancel Reservation'),
-                                  scrollable: true,
-                                  content: Text(
-                                    'Your LKR ${res.advanceDepositAmount.toStringAsFixed(2)} advance will be refunded.\n\n'
-                                    'If you cancel less than 2 hours before the booked start (including after it), '
-                                    'a LKR 500 cancellation fee will be collected with your next booking. '
-                                    'Cancellation 2 hours or more before start is free.\n\n'
-                                    'Previously paid cancellation fees are not refunded.',
+                                  title: const Text('Edit Not Allowed'),
+                                  content: const Text(
+                                    'Editing the time slot is only possible 2 hours or more before the reservation start time.',
                                   ),
                                   actions: [
                                     TextButton(
                                       onPressed: () => Navigator.pop(context),
-                                      child: const Text('No'),
+                                      child: const Text('OK'),
                                     ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        _cancelReservation(res.id);
-                                      },
-                                      child: const Text(
-                                        'Yes, Cancel',
-                                        style: TextStyle(color: Colors.red),
+                                  ],
+                                ),
+                              );
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => EditReservationTimeScreen(
+                                    reservation: res,
+                                  ),
+                                ),
+                              ).then((changed) {
+                                if (changed == true) {
+                                  setState(() => _isLoading = true);
+                                  _fetchReservations();
+                                }
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.edit_calendar, size: 16),
+                          label: const Text(
+                            'Edit',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Cancel Reservation'),
+                                scrollable: true,
+                                content: Text(
+                                  'Your LKR ${res.advanceDepositAmount.toStringAsFixed(2)} advance will be refunded.\n\n'
+                                  'If you cancel less than 2 hours before the booked start (including after it), '
+                                  'a LKR 500 cancellation fee will be collected with your next booking. '
+                                  'Cancellation 2 hours or more before start is free.\n\n'
+                                  'Previously paid cancellation fees are not refunded.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('No'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      _cancelReservation(res.id);
+                                    },
+                                    child: const Text(
+                                      'Yes, Cancel',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.cancel_outlined, size: 16),
+                          label: const Text(
+                            'Cancel',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            textStyle: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (res.reservationQRCode != null &&
+                            res.reservationQRCode!.isNotEmpty)
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Reservation QR Code'),
+                                  content: SizedBox(
+                                    width: 200,
+                                    height: 200,
+                                    child: Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: QrImageView(
+                                          data: res.reservationQRCode!,
+                                          version: QrVersions.auto,
+                                          size: 200.0,
+                                          backgroundColor: Colors.white,
+                                        ),
                                       ),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Close'),
                                     ),
                                   ],
                                 ),
                               );
                             },
-                            icon: const Icon(Icons.cancel_outlined, size: 16),
+                            icon: const Icon(Icons.qr_code, size: 16),
                             label: const Text(
-                              'Cancel',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red,
-                              side: const BorderSide(color: Colors.red),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 8,
-                              ),
-                              textStyle: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        if (res.reservationQRCode != null &&
-                            res.reservationQRCode!.isNotEmpty) ...[
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Reservation QR Code'),
-                                    content: SizedBox(
-                                      width: 200,
-                                      height: 200,
-                                      child: Center(
-                                        child: Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: QrImageView(
-                                            data: res.reservationQRCode!,
-                                            version: QrVersions.auto,
-                                            size: 200.0,
-                                            backgroundColor: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text('Close'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.qr_code, size: 16),
-                              label: const Text(
-                                'View QR',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                foregroundColor: AppColors.onPrimary,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 8,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              final query =
-                                  '${res.stationLatitude},${res.stationLongitude}';
-                              final url = Uri.parse(
-                                'https://www.google.com/maps/search/?api=1&query=$query',
-                              );
-                              if (await canLaunchUrl(url)) {
-                                await launchUrl(
-                                  url,
-                                  mode: LaunchMode.externalApplication,
-                                );
-                              } else {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Could not launch maps'),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                            icon: const Icon(Icons.directions, size: 16),
-                            label: const Text(
-                              'Directions',
+                              'View QR',
                               style: TextStyle(fontSize: 12),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.secondary,
-                              foregroundColor: AppColors.onSecondary,
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.onPrimary,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
+                                horizontal: 12,
                                 vertical: 8,
                               ),
+                            ),
+                          ),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            final query =
+                                '${res.stationLatitude},${res.stationLongitude}';
+                            final url = Uri.parse(
+                              'https://www.google.com/maps/search/?api=1&query=$query',
+                            );
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(
+                                url,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            } else {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Could not launch maps'),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.directions, size: 16),
+                          label: const Text(
+                            'Directions',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondary,
+                            foregroundColor: AppColors.onSecondary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
                             ),
                           ),
                         ),
                       ],
+                    ),
                     ),
                   ],
                 ],

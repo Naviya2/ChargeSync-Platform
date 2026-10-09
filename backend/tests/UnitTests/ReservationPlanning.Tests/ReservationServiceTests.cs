@@ -948,7 +948,7 @@ public sealed class ReservationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateAsync_AsDriver_ThrowsForbiddenAccessException()
+    public async Task UpdateAsync_AsDriver_UpdatesSuccessfully()
     {
         var driver = await CreateDriverAsync();
         var charger = await CreateChargerAsync();
@@ -962,12 +962,14 @@ public sealed class ReservationServiceTests : IDisposable
             AdvanceDepositAmount = 100m
         });
 
-        await Assert.ThrowsAsync<ForbiddenAccessException>(() =>
-            _service.UpdateAsync(driver.Id, UserRole.Driver.ToString(), res.Id, new UpdateReservationRequest
-            {
-                StartTime = start.AddHours(2),
-                EndTime = end.AddHours(2)
-            }));
+        var updatedRes = await _service.UpdateAsync(driver.Id, UserRole.Driver.ToString(), res.Id, new UpdateReservationRequest
+        {
+            StartTime = start.AddHours(2),
+            EndTime = end.AddHours(2)
+        });
+
+        Assert.Equal(start.AddHours(2), updatedRes.StartTime);
+        Assert.Equal(end.AddHours(2), updatedRes.EndTime);
     }
 
     [Fact]

@@ -73,6 +73,6 @@ public sealed class AuthController : ControllerBase
             userId,
             User.FindFirstValue(JwtRegisteredClaimNames.Name) ?? string.Empty,
             User.FindFirstValue(JwtRegisteredClaimNames.Email) ?? string.Empty,
-            User.FindFirstValue(ClaimTypes.Role) ?? string.Empty));
+            User.FindFirstValue("role") ?? string.Empty));
     }
 }
