@@ -17,8 +17,7 @@ class QrScannerScreen extends StatefulWidget {
 class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingObserver {
   final _qrController = TextEditingController();
   final MobileScannerController _scannerController = MobileScannerController(
-    autoStart: false,
-    detectionSpeed: DetectionSpeed.noDuplicates,
+    detectionSpeed: DetectionSpeed.normal,
     formats: const [BarcodeFormat.qrCode],
   );
   
@@ -30,6 +29,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
 
   bool _hasPermission = false;
   bool _checkingPermission = false;
+  bool _isStartingScanner = false;
 
   @override
   void initState() {
@@ -38,23 +38,41 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
     if (widget.active) {
       _checkPermission();
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
   }
 
   @override
   void didUpdateWidget(covariant QrScannerScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.active && !oldWidget.active) {
-      _checkPermission();
-      WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
+    if (widget.active != oldWidget.active) {
+      if (widget.active) {
+        if (!_hasPermission) {
+          _checkPermission();
+        } else {
+          _startScanner();
+        }
+      } else {
+        _scannerController.stop();
+      }
     }
   }
 
   Future<void> _startScanner() async {
+    if (!mounted || !widget.active || !_hasPermission || _isSuccess || _isFailed || _isStartingScanner) {
+      return;
+    }
+
+    _isStartingScanner = true;
     try {
+      // Delay starting slightly so the MobileScanner widget can mount first
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted || !widget.active) return;
       await _scannerController.start();
     } catch (e) {
       debugPrint('Error starting scanner: $e');
+    } finally {
+      if (mounted) {
+        _isStartingScanner = false;
+      }
     }
   }
 
@@ -66,13 +84,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
         state == AppLifecycleState.hidden) {
       _scannerController.stop();
     } else if (state == AppLifecycleState.resumed) {
-      if (!_isSuccess && !_isFailed) {
+      if (widget.active) {
         _startScanner();
       }
     }
   }
 
   Future<void> _checkPermission() async {
+    if (!mounted) return;
     setState(() => _checkingPermission = true);
     try {
       var status = await Permission.camera.status;
@@ -85,7 +104,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
           _checkingPermission = false;
         });
         if (status.isGranted) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
+          _startScanner();
         }
       }
     } catch (_) {
@@ -129,6 +148,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
     try {
       await ReservationApiClient.instance.staffCheckin(qr);
       
+      if (!mounted) return;
       setState(() {
         _isSuccess = true;
         _message = 'Check-in successful! Session started.';
@@ -176,6 +196,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
       }
       
     } catch (e) {
+      if (!mounted) return;
       String errorMessage = e.toString().replaceAll(RegExp(r'Exception:\s*'), '');
       
       setState(() {
@@ -184,6 +205,30 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
         _isLoading = false;
         _message = errorMessage;
       });
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Check-in Failed'),
+          content: Text(errorMessage),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  _isSuccess = false;
+                  _isFailed = false;
+                  _message = null;
+                  _hasScanned = false;
+                  _qrController.clear();
+                });
+                _startScanner();
+              },
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -231,7 +276,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
                             _hasScanned = false;
                             _qrController.clear();
                           });
-                          WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
+                          _startScanner();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -265,7 +310,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
                             _hasScanned = false;
                             _qrController.clear();
                           });
-                          WidgetsBinding.instance.addPostFrameCallback((_) => _startScanner());
+                          _startScanner();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -346,10 +391,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
                                 const SizedBox(height: 12),
                                 ElevatedButton(
                                   onPressed: () {
-                                    setState(() {
-                                      _hasPermission = false;
-                                    });
-                                    _checkPermission();
+                                    if (!_hasPermission) {
+                                      _checkPermission();
+                                    } else {
+                                      _startScanner();
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primary,

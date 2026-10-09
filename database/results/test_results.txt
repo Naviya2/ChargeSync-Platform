@@ -1,12 +1,12 @@
 ================================================================================
 CHARGESYNC PLATFORM - DATABASE TEST RESULTS
 Database: ChargeSync-Test | Host: localhost:5432
-Date: 2026-10-08 11:36:41
+Date: 2026-10-09 14:03:35
 Status: 6/6 Passed (100%)
 ================================================================================
 
 --------------------------------------------------------------------------------
-SUITE: 01_schema_and_seed.sql [PASSED] (355 ms)
+SUITE: 01_schema_and_seed.sql [PASSED] (324 ms)
 --------------------------------------------------------------------------------
 TRUNCATE TABLE
 INSERT 0 3
@@ -18,7 +18,7 @@ DO
 psql:D:/Github Projects/ChargeSync-Platform/database/tests/01_schema_and_seed.sql:58: NOTICE:  CASE 1.1 PASSED: Baseline environment cleaned and seed entities populated successfully.
 
 --------------------------------------------------------------------------------
-SUITE: 02_unique_constraints.sql [PASSED] (182 ms)
+SUITE: 02_unique_constraints.sql [PASSED] (176 ms)
 --------------------------------------------------------------------------------
 DO
 DO
@@ -29,7 +29,7 @@ psql:D:/Github Projects/ChargeSync-Platform/database/tests/02_unique_constraints
 psql:D:/Github Projects/ChargeSync-Platform/database/tests/02_unique_constraints.sql:51: NOTICE:  CASE 2.3 PASSED: Unique constraint "IX_WalletTopUps_PaymentId" rejected duplicate payment ID.
 
 --------------------------------------------------------------------------------
-SUITE: 03_foreign_keys.sql [PASSED] (74 ms)
+SUITE: 03_foreign_keys.sql [PASSED] (76 ms)
 --------------------------------------------------------------------------------
 DO
 DO
@@ -40,7 +40,7 @@ psql:D:/Github Projects/ChargeSync-Platform/database/tests/03_foreign_keys.sql:3
 psql:D:/Github Projects/ChargeSync-Platform/database/tests/03_foreign_keys.sql:49: NOTICE:  CASE 3.3 PASSED: DeleteBehavior.Restrict prevented deletion of User with active records.
 
 --------------------------------------------------------------------------------
-SUITE: 04_workflow_integrity.sql [PASSED] (183 ms)
+SUITE: 04_workflow_integrity.sql [PASSED] (74 ms)
 --------------------------------------------------------------------------------
 INSERT 0 1
 DO
@@ -63,7 +63,7 @@ psql:D:/Github Projects/ChargeSync-Platform/database/tests/05_wallet_and_invoici
 psql:D:/Github Projects/ChargeSync-Platform/database/tests/05_wallet_and_invoicing.sql:53: NOTICE:  CASE 5.3 PASSED: Unique composite index on (DriverId, RequestId) enforced payment idempotency.
 
 --------------------------------------------------------------------------------
-SUITE: 06_indexes_and_performance.sql [PASSED] (189 ms)
+SUITE: 06_indexes_and_performance.sql [PASSED] (91 ms)
 --------------------------------------------------------------------------------
 DO
                            QUERY PLAN                           
