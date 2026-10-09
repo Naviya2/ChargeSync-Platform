@@ -68,36 +68,9 @@ class _SplashScreenState extends State<SplashScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/images/chargesync_icon.png',
+                'assets/images/app_icon.png',
                 width: 150,
                 height: 150,
-                fit: BoxFit.contain,
-                semanticLabel: 'ChargeSync logo',
-              ),
-              const SizedBox(height: 20),
-              const Text.rich(
-                TextSpan(children: [
-                  TextSpan(text: 'CHARGE'),
-                  TextSpan(
-                    text: 'SYNC',
-                    style: TextStyle(color: Color(0xFF5EEAD4)),
-                  ),
-                ]),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'POWERING TOMORROW',
-                style: TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 10,
-                  letterSpacing: 2.4,
-                ),
               ),
               const SizedBox(height: 24),
               const CircularProgressIndicator(

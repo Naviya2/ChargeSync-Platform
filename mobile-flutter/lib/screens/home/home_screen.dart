@@ -192,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen>
                 children: [
                   Row(
                     children: [
-                      // Shared ChargeSync web and mobile emblem.
+                      // Logo placeholder (lightning bolt icon)
                       Container(
                         width: 32,
                         height: 32,
@@ -201,9 +201,8 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                         clipBehavior: Clip.hardEdge,
                         child: Image.asset(
-                          'assets/images/chargesync_icon.png',
-                          fit: BoxFit.contain,
-                          semanticLabel: 'ChargeSync logo',
+                          'assets/images/app_icon.png',
+                          fit: BoxFit.cover,
                         ),
                       ),
                       const SizedBox(width: 10),

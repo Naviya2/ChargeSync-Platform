@@ -398,9 +398,8 @@ class _SignInScreenState extends State<SignInScreen>
               ),
               clipBehavior: Clip.hardEdge,
               child: Image.asset(
-                'assets/images/chargesync_icon.png',
-                fit: BoxFit.contain,
-                semanticLabel: 'ChargeSync logo',
+                'assets/images/app_icon.png',
+                fit: BoxFit.cover,
               ),
             ),
           ],
