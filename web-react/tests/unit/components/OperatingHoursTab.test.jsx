@@ -29,3 +29,21 @@ test('retains draft edits across identical refetches and resets when saved hours
   rerender(<OperatingHoursTab stationId="station-2" hours={[]} />)
   expect(openingInput()).toHaveValue('06:00')
 })
+
+test('NF-TC-05 Usability: Owner can easily configure 7-day operating hours', () => {
+  render(<OperatingHoursTab stationId="station-usability-1" hours={[]} />)
+  
+  const switches = screen.getAllByRole('checkbox')
+  expect(switches).toHaveLength(7)
+
+  if(switches[0].checked) {
+    fireEvent.click(switches[0])
+  }
+  expect(switches[0]).not.toBeChecked()
+
+  const saveButton = screen.getByRole('button', { name: /save access schedule/i })
+  expect(saveButton).not.toBeDisabled()
+  fireEvent.click(saveButton)
+
+  expect(mutate).toHaveBeenCalled()
+})

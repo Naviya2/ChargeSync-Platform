@@ -1,0 +1,149 @@
+{
+  "tool": "ChargeSync Availability & Reliability Testing Suite",
+  "version": "1.0.0",
+  "timestamp": "2026-10-08T05:40:30.781Z",
+  "targetBackend": "http://localhost:5035",
+  "targetWeb": "http://localhost:5173",
+  "database": "Local PostgreSQL (ChargeSync-Test)",
+  "summary": {
+    "totalScenarios": 8,
+    "passedScenarios": 8,
+    "overallScore": "100.0%",
+    "serviceUptimePercent": "100.00%",
+    "syntheticRequestsCount": 120,
+    "throughputRps": "398.1",
+    "mttrMs": 0.63,
+    "durationSeconds": "18.28",
+    "latencyPercentiles": {
+      "min": 0.32,
+      "max": 17.37,
+      "avg": 2.51,
+      "p50": 2.5,
+      "p90": 4.56,
+      "p95": 5.54,
+      "p99": 10.39
+    }
+  },
+  "scenarios": [
+    {
+      "id": "AVAIL-HA-01",
+      "tier": "High Availability & Uptime",
+      "name": "Synthetic Service Availability & Uptime Ratio",
+      "target": "http://localhost:5035 (/health & core API endpoints)",
+      "metric": "100.00% Availability (120/120 probes)",
+      "benchmark": "≥ 99.9% Uptime SLA",
+      "status": "Passed",
+      "latencySummary": {
+        "min": 0.32,
+        "max": 17.37,
+        "avg": 2.51,
+        "p50": 2.5,
+        "p90": 4.56,
+        "p95": 5.54,
+        "p99": 10.39
+      },
+      "throughputRps": "398.1",
+      "evidence": "Total: 120, Successful: 120, RPS: 398.1, p50: 2.5ms, p95: 5.54ms, p99: 10.39ms"
+    },
+    {
+      "id": "AVAIL-POOL-02",
+      "tier": "Database Availability",
+      "name": "PostgreSQL Connection Pool Resilience Under Burst",
+      "target": "Local PostgreSQL ChargeSync-Test (Pool Limit Stress)",
+      "metric": "100.0% Success (40/40 burst)",
+      "benchmark": "100% Concurrency Completion, 0 Pool Exhaustion",
+      "status": "Passed",
+      "latencySummary": {
+        "min": 15.66,
+        "max": 300.92,
+        "avg": 173.41,
+        "p50": 187.09,
+        "p90": 286.32,
+        "p95": 294.22,
+        "p99": 300.92
+      },
+      "throughputRps": "130.7",
+      "evidence": "Batch: 40 parallel connections, Pool Latency: avg=173.41ms, max=300.92ms, Duration: 0.306s"
+    },
+    {
+      "id": "AVAIL-ALGO-01",
+      "tier": "Domain Availability Algorithm",
+      "name": "Operating Hours Boundary Reconciliation",
+      "target": "GET /api/reservations/availability (Bay 1 - DC60, 60m duration)",
+      "metric": "65 Valid Time Slots Computed",
+      "benchmark": "Slots span exactly 06:00:00 to 23:00:00 in 15-min increments",
+      "status": "Passed",
+      "latencySummary": null,
+      "throughputRps": null,
+      "evidence": "Total Slots: 65, First: \"2026-10-15T06:00:00+05:30\", Last: \"2026-10-15T23:00:00+05:30\""
+    },
+    {
+      "id": "AVAIL-ALGO-02",
+      "tier": "Domain Availability Algorithm",
+      "name": "Scheduled Maintenance Window Exclusion",
+      "target": "GET /api/reservations/availability (Bay 2 - AC22, Maintenance: 10:00-14:00)",
+      "metric": "46 Slots (19 Maintenance Slots Excluded)",
+      "benchmark": "Zero overlapping slots during 10:00 to 14:00 maintenance window",
+      "status": "Passed",
+      "latencySummary": null,
+      "throughputRps": null,
+      "evidence": "Slots: 46 (Normal 65 - 19 Excluded), Overlap Detected: false"
+    },
+    {
+      "id": "AVAIL-ALGO-03",
+      "tier": "Domain Availability Algorithm",
+      "name": "Variable Session Duration Slot Slicing",
+      "target": "GET /api/reservations/availability (15m, 30m, 60m, 120m durations)",
+      "metric": "15m: 68 slots | 30m: 67 slots | 60m: 65 slots | 120m: 61 slots",
+      "benchmark": "Slot count scales inversely with booking duration",
+      "status": "Passed",
+      "latencySummary": null,
+      "throughputRps": null,
+      "evidence": "Scaling monotonicity confirmed: 15m(68) > 30m(67) > 60m(65) > 120m(61)"
+    },
+    {
+      "id": "AVAIL-FAULT-01",
+      "tier": "Fault Tolerance & Resilience",
+      "name": "RFC 7807 Error Sanitization & Non-Crashing Boundaries",
+      "target": "Exception Middleware & Input Validation Filter",
+      "metric": "100% Graceful Rejections (400/404), 0 Uncaught 500 Crashes",
+      "benchmark": "Returns standard ProblemDetails without thread termination",
+      "status": "Passed",
+      "latencySummary": {
+        "min": 1.45,
+        "max": 4.45,
+        "avg": 2.45,
+        "p50": 1.46,
+        "p90": 4.45,
+        "p95": 4.45,
+        "p99": 4.45
+      },
+      "throughputRps": null,
+      "evidence": "3 Faults Evaluated: Invalid GUID, Non-Existent ID, Malformed Date; All returned compliant client error codes"
+    },
+    {
+      "id": "AVAIL-MTTR-02",
+      "tier": "Fault Tolerance & Resilience",
+      "name": "Mean Time To Recovery (MTTR) Post-Fault",
+      "target": "Health Liveness Probe Post-Exception Burst",
+      "metric": "MTTR = 0.63 ms",
+      "benchmark": "MTTR < 1000 ms (Instantaneous Failover Recovery)",
+      "status": "Passed",
+      "latencySummary": null,
+      "throughputRps": null,
+      "evidence": "Service recovered immediately after malformed payload injection: Health probe returned 200 OK in 0.63ms"
+    },
+    {
+      "id": "AVAIL-CLIENT-01",
+      "tier": "Client-Side Availability",
+      "name": "Graceful Degradation Under Transient Network Failure",
+      "target": "http://localhost:5173/reservations (Simulated Network Disconnect)",
+      "metric": "UI Remains Rendered & Responsive (No Uncaught Screen Crash)",
+      "benchmark": "Error boundary / fallback state rendered with retry controls",
+      "status": "Passed",
+      "latencySummary": null,
+      "throughputRps": null,
+      "evidence": "Aborted /api/reservations network route: UI rendered graceful fallback alert with retry controls, Screenshot: availability_degraded_network_resilience.png"
+    }
+  ]
+}

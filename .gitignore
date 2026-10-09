@@ -1,4 +1,4 @@
-﻿# =========================
+# =========================
 # .NET / ASP.NET Core
 # =========================
 backend/**/bin/
@@ -76,6 +76,8 @@ Thumbs.db
 # Isolated end-to-end testing: credentials and generated evidence
 e2e/*.local.json
 e2e/artifacts/
+e2e/reservation_e2e/artifacts/
+e2e/**/artifacts/
 e2e/node_modules/
 e2e/.browsers/
 

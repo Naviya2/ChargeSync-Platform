@@ -151,7 +151,7 @@
     <div class="header">
       <div>
         <h1>⚡ ChargeSync Database Test Report</h1>
-        <p>Database: <strong>ChargeSync-Test</strong> (PostgreSQL 18 on localhost:5432) &nbsp;|&nbsp; 2026-10-05 03:38:18</p>
+        <p>Database: <strong>ChargeSync-Test</strong> (PostgreSQL 18 on localhost:5432) &nbsp;|&nbsp; 2026-10-09 14:03:35</p>
       </div>
       <div>
         <span class="badge-pass">ALL TESTS PASSED (100%)</span>
@@ -172,7 +172,7 @@
         <div class="metric-lbl">Failed</div>
       </div>
       <div class="metric-card">
-        <div class="metric-val">477 ms</div>
+        <div class="metric-val">807 ms</div>
         <div class="metric-lbl">Execution Time</div>
       </div>
     </div>
@@ -193,42 +193,42 @@
           <td><code>01_schema_and_seed.sql</code></td>
           <td>Environment cleanup and seed entities initialization</td>
           <td><span class="status-tag">PASSED</span></td>
-          <td>158 ms</td>
+          <td>324 ms</td>
         </tr>
         <tr>
           <td><strong>2</strong></td>
           <td><code>02_unique_constraints.sql</code></td>
           <td>Unique constraint and primary key collision validation</td>
           <td><span class="status-tag">PASSED</span></td>
-          <td>60 ms</td>
+          <td>176 ms</td>
         </tr>
         <tr>
           <td><strong>3</strong></td>
           <td><code>03_foreign_keys.sql</code></td>
           <td>Foreign key referential integrity and DeleteBehavior rules</td>
           <td><span class="status-tag">PASSED</span></td>
-          <td>59 ms</td>
+          <td>76 ms</td>
         </tr>
         <tr>
           <td><strong>4</strong></td>
           <td><code>04_workflow_integrity.sql</code></td>
           <td>Domain check constraints and end-to-end lifecycle integrity</td>
           <td><span class="status-tag">PASSED</span></td>
-          <td>61 ms</td>
+          <td>74 ms</td>
         </tr>
         <tr>
           <td><strong>5</strong></td>
           <td><code>05_wallet_and_invoicing.sql</code></td>
           <td>Wallet top-up rules, currency validation and idempotency</td>
           <td><span class="status-tag">PASSED</span></td>
-          <td>56 ms</td>
+          <td>63 ms</td>
         </tr>
         <tr>
           <td><strong>6</strong></td>
           <td><code>06_indexes_and_performance.sql</code></td>
           <td>Catalog index presence and query performance (EXPLAIN plan)</td>
           <td><span class="status-tag">PASSED</span></td>
-          <td>80 ms</td>
+          <td>91 ms</td>
         </tr>
       </tbody>
     </table>

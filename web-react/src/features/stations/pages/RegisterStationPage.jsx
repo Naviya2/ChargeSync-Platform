@@ -87,8 +87,9 @@ export default function RegisterStationPage() {
                 )}
 
                 <div className="flex flex-col gap-space-2xs">
-                    <label className="font-label-md text-label-md text-on-surface">Station Name</label>
+                    <label htmlFor="stationName" className="font-label-md text-label-md text-on-surface">Station Name</label>
                     <input
+                        id="stationName"
                         type="text"
                         className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
                         placeholder="e.g. Downtown Fast Charging Hub"
@@ -99,8 +100,9 @@ export default function RegisterStationPage() {
                 </div>
 
                 <div className="flex flex-col gap-space-2xs">
-                    <label className="font-label-md text-label-md text-on-surface">Full Address</label>
+                    <label htmlFor="stationAddress" className="font-label-md text-label-md text-on-surface">Address</label>
                     <input
+                        id="stationAddress"
                         type="text"
                         className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
                         placeholder="123 Main St, City"

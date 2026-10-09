@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChargeSync - OWASP ZAP Security Evaluation Report</title>
+  <style>
+    :root {
+      --bg: #0f172a; --card: #1e293b; --border: #334155; --text: #f8fafc;
+      --muted: #94a3b8; --accent: #38bdf8; --pass: #10b981; --warn: #f59e0b; --fail: #ef4444;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 2rem; line-height: 1.5; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { border-bottom: 2px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+    h1 { margin: 0; font-size: 1.8rem; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; }
+    .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+    .badge-pass { background: rgba(16, 185, 129, 0.2); color: var(--pass); border: 1px solid var(--pass); }
+    .badge-warn { background: rgba(245, 158, 11, 0.2); color: var(--warn); border: 1px solid var(--warn); }
+    .badge-fail { background: rgba(239, 68, 68, 0.2); color: var(--fail); border: 1px solid var(--fail); }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+    .stat-val { font-size: 2rem; font-weight: 700; margin-top: 0.25rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; background: var(--card); border-radius: 8px; overflow: hidden; }
+    th, td { padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #131d31; font-weight: 600; color: var(--muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+    tr:last-child td { border-bottom: none; }
+    .evidence { font-family: monospace; font-size: 0.8rem; background: #0b1120; padding: 0.2rem 0.4rem; border-radius: 4px; color: #cbd5e1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>🛡️ OWASP ZAP Security Evaluation Report</h1>
+        <p style="margin: 0.25rem 0 0; color: var(--muted); font-size: 0.9rem;">
+          Target: http://localhost:5035 | Database: ChargeSync-Test on localhost:5432 | Date: 2026-10-08 11:04:08
+        </p>
+      </div>
+      <div>
+        <span class="badge badge-pass" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">100% Critical Clean</span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div style="color: var(--muted); font-size: 0.85rem;">Total Security Checks</div>
+        <div class="stat-val" style="color: var(--accent);">16</div>
+      </div>
+      <div class="stat-card">
+        <div style="color: var(--muted); font-size: 0.85rem;">Checks Passed</div>
+        <div class="stat-val" style="color: var(--pass);">10</div>
+      </div>
+      <div class="stat-card">
+        <div style="color: var(--muted); font-size: 0.85rem;">Active Vulnerabilities (High/Crit)</div>
+        <div class="stat-val" style="color: var(--pass);">0</div>
+      </div>
+      <div class="stat-card">
+        <div style="color: var(--muted); font-size: 0.85rem;">Advisories & Warnings</div>
+        <div class="stat-val" style="color: var(--warn);">6</div>
+      </div>
+    </div>
+
+    <h2 style="color: var(--accent); font-size: 1.3rem;">📋 Automated Security Test Matrix</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Test ID</th>
+          <th>Category</th>
+          <th>Test Name</th>
+          <th>ZAP Plugin</th>
+          <th>Risk</th>
+          <th>Status</th>
+          <th>Assessment Finding</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>SEC-HDR-01</strong></td>
+          <td>Security Headers</td>
+          <td>X-Content-Type-Options Header Missing</td>
+          <td><code>10021</code></td>
+          <td><strong>Low</strong></td>
+          <td><span class="badge badge-warn">Warning</span></td>
+          <td>X-Content-Type-Options header is missing. Browsers may attempt to MIME-sniff response content.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-HDR-02</strong></td>
+          <td>Information Disclosure</td>
+          <td>Server Version / Banner Disclosure</td>
+          <td><code>10055</code></td>
+          <td><strong>Low</strong></td>
+          <td><span class="badge badge-warn">Warning</span></td>
+          <td>Server discloses web server technology via 'Server: Kestrel'. Attackers can fingerprint the host.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-HDR-03</strong></td>
+          <td>Security Misconfiguration</td>
+          <td>Cross-Domain CORS Misconfiguration</td>
+          <td><code>10098</code></td>
+          <td><strong>Medium</strong></td>
+          <td><span class="badge badge-warn">Warning</span></td>
+          <td>CORS policy reflects arbitrary origins or uses wildcard: '*'. Sensitive data may be accessible cross-origin.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-HDR-04</strong></td>
+          <td>Security Headers</td>
+          <td>Content-Security-Policy (CSP) Missing</td>
+          <td><code>10038</code></td>
+          <td><strong>Medium</strong></td>
+          <td><span class="badge badge-warn">Warning</span></td>
+          <td>Content-Security-Policy header is missing on frontend. Recommended to restrict inline script execution and XSS vectors.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-HDR-05</strong></td>
+          <td>Security Headers</td>
+          <td>X-Frame-Options Clickjacking Protection</td>
+          <td><code>10020</code></td>
+          <td><strong>Medium</strong></td>
+          <td><span class="badge badge-warn">Warning</span></td>
+          <td>X-Frame-Options header missing. The application could be embedded in an iframe on third-party sites.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-AUTH-01</strong></td>
+          <td>Broken Authentication</td>
+          <td>Invalid Credentials Rejection</td>
+          <td><code>90034</code></td>
+          <td><strong>High</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>System strictly rejects incorrect authentication credentials without revealing specific reason.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-AUTH-02</strong></td>
+          <td>Broken Authentication</td>
+          <td>JWT 'alg: none' Signature Bypass Resistance</td>
+          <td><code>90034</code></td>
+          <td><strong>Critical</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>ASP.NET Core JWT middleware strictly validates digital HMAC signatures and rejects unsigned 'alg: none' tokens.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-AUTH-03</strong></td>
+          <td>Broken Authentication</td>
+          <td>Missing Authentication Token Barrier</td>
+          <td><code>90034</code></td>
+          <td><strong>High</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>Protected endpoints require valid Bearer token and reject unauthenticated requests with HTTP 401.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-AUTHZ-01</strong></td>
+          <td>Broken Function Level Authorization</td>
+          <td>Driver Access to Staff POS Endpoint (BFLA)</td>
+          <td><code>90036</code></td>
+          <td><strong>High</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>ASP.NET Core policy authorization successfully rejected Driver attempting to create on-site walk-in reservations.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-AUTHZ-02</strong></td>
+          <td>Broken Object Level Authorization</td>
+          <td>Driver Self-Approval Protection</td>
+          <td><code>90035</code></td>
+          <td><strong>High</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>Driver role is strictly prohibited from approving reservations; requires StationOwner or Admin role.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-AUTHZ-03</strong></td>
+          <td>Mass Assignment</td>
+          <td>Registration Input Validation</td>
+          <td><code>90037</code></td>
+          <td><strong>High</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>Registration rejected malformed or unpermitted role payload with status 400.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-INJ-01</strong></td>
+          <td>Injection</td>
+          <td>SQL Injection Parameter Resilience (EF Core Parameterization)</td>
+          <td><code>40018</code></td>
+          <td><strong>High</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>Station search and filter queries use Entity Framework Core parameterized SQL. No SQL syntax errors or database exceptions were triggered.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-INJ-02</strong></td>
+          <td>Cross-Site Scripting</td>
+          <td>Reflected XSS Input Sanitization</td>
+          <td><code>40012</code></td>
+          <td><strong>Medium</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>XSS characters are safely encoded or returned as strict JSON content-type, preventing browser execution.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-ERR-01</strong></td>
+          <td>Security Misconfiguration</td>
+          <td>Standardized Problem Details Error Handling</td>
+          <td><code>90022</code></td>
+          <td><strong>Medium</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>Server utilizes ASP.NET Core RFC 7807/9110 Problem Details for errors, suppressing raw stack traces.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-ERR-02</strong></td>
+          <td>Sensitive Data Exposure</td>
+          <td>Sensitive Credential Masking in DTOs</td>
+          <td><code>10062</code></td>
+          <td><strong>High</strong></td>
+          <td><span class="badge badge-pass">Passed</span></td>
+          <td>Application DTOs strictly exclude PasswordHash and authentication secrets from API serialization.</td>
+        </tr>
+        <tr>
+          <td><strong>SEC-RATE-01</strong></td>
+          <td>Unrestricted Resource Consumption</td>
+          <td>Rate Limiting on Authentication Endpoint</td>
+          <td><code>90038</code></td>
+          <td><strong>Low</strong></td>
+          <td><span class="badge badge-warn">Warning</span></td>
+          <td>All 25 requests processed in 0.34s without HTTP 429 rate limit trigger. Recommendation: Add ASP.NET Core RateLimiter middleware to protect against brute-force attacks.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

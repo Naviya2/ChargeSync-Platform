@@ -30,6 +30,7 @@ public class AddChargerRequest
     public ConnectorType Connector { get; set; }
     public decimal PowerKw { get; set; }
     public decimal Tariff { get; set; }
+    public ChargerStatus? Status { get; set; }
 }
 
 public class UpdateChargerRequest
@@ -39,4 +40,5 @@ public class UpdateChargerRequest
     public ConnectorType Connector { get; set; }
     public decimal PowerKw { get; set; }
     public decimal Tariff { get; set; }
+    public ChargerStatus? Status { get; set; }
 }
