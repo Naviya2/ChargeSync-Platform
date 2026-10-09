@@ -12,10 +12,10 @@ export default function MyStationsPage({ isAdmin = false }) {
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('name_asc')
-  
+
   const myStationsQuery = useMyStations()
   const allStationsQuery = useStations()
-  
+
   const { data: stationsDto = [], isLoading } = isAdmin ? allStationsQuery : myStationsQuery
 
   const stations = useMemo(() => {
@@ -48,7 +48,7 @@ export default function MyStationsPage({ isAdmin = false }) {
       all: stations.length,
       active: stations.filter(s => s.status.key === 'active').length,
       pending: stations.filter(s => s.status.key === 'pending').length,
-      maintenance: stations.filter(s => s.status.key === 'maintenance').length,
+      rejected: stations.filter(s => s.status.key === 'rejected').length,
     }
   }, [stations]);
 
@@ -56,12 +56,12 @@ export default function MyStationsPage({ isAdmin = false }) {
     const total = stationsDto.length;
     const active = counts.active;
     const pending = counts.pending;
-    const maint = counts.maintenance;
-    
+    const rejected = counts.rejected;
+
     const allChargers = stationsDto.flatMap(s => s.chargers || []);
     const totalPorts = allChargers.length;
     const livePorts = allChargers.filter(c => c.status === 'Available' || c.status === 'Occupied').length;
-    
+
     return [
       {
         key: 'total',
@@ -69,14 +69,14 @@ export default function MyStationsPage({ isAdmin = false }) {
         icon: 'domain',
         value: total.toString(),
         highlight: `${active} Active`,
-        sub: `${pending} Pending · ${maint} Maint.`,
+        sub: `${pending} Pending · ${rejected} Rejected`,
       },
       {
         key: 'ports',
         label: 'Operational Ports',
         icon: 'power',
         value: `${livePorts} / ${totalPorts}`,
-        highlight: totalPorts > 0 ? `${Math.round((livePorts/totalPorts)*100)}% Live` : '0% Live',
+        highlight: totalPorts > 0 ? `${Math.round((livePorts / totalPorts) * 100)}% Live` : '0% Live',
         sub: `${totalPorts - livePorts} bays unavailable`,
       },
       {
@@ -91,9 +91,9 @@ export default function MyStationsPage({ isAdmin = false }) {
         key: 'utilization',
         label: 'Fleet Utilization',
         icon: 'speed',
-        value: totalPorts > 0 ? `${Math.round((livePorts/totalPorts)*100)}%` : '0%',
+        value: totalPorts > 0 ? `${Math.round((livePorts / totalPorts) * 100)}%` : '0%',
         highlight: 'Target: >75%',
-        progress: totalPorts > 0 ? Math.round((livePorts/totalPorts)*100) : 0,
+        progress: totalPorts > 0 ? Math.round((livePorts / totalPorts) * 100) : 0,
       }
     ];
   }, [stationsDto, counts]);
@@ -134,9 +134,9 @@ export default function MyStationsPage({ isAdmin = false }) {
     <div className="flex w-full flex-col gap-space-xl">
       <StationsHeader stations={stations} hideAddStation={isAdmin} />
       <StationKpiStrip kpis={kpis} />
-      <StationFilterBar 
-        active={activeFilter} 
-        onChange={setActiveFilter} 
+      <StationFilterBar
+        active={activeFilter}
+        onChange={setActiveFilter}
         search={searchQuery}
         onSearchChange={setSearchQuery}
         sort={sortOrder}

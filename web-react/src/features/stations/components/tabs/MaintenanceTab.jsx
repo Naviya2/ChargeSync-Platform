@@ -11,7 +11,7 @@ const toLocalDatetimeString = (dateStr) => {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 };
 
-function MaintenanceItem({ item, stationId }) {
+function MaintenanceItem({ item, stationId, isHistory = false }) {
   const [isEditing, setIsEditing] = useState(false)
   const updateMaintenance = useUpdateMaintenanceWindow()
   const deleteMaintenance = useDeleteMaintenanceWindow()
@@ -24,6 +24,10 @@ function MaintenanceItem({ item, stationId }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (new Date(form.endTime) <= new Date(form.startTime)) {
+      useDialogStore.getState().alert({ title: 'Invalid Dates', message: 'End time must be after start time.', variant: 'danger' })
+      return
+    }
     updateMaintenance.mutate(
       { 
         maintenanceId: item.id,
@@ -75,6 +79,7 @@ function MaintenanceItem({ item, stationId }) {
             <input
               type="datetime-local"
               required
+              min={form.startTime}
               className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
               value={form.endTime}
               onChange={(e) => setForm({ ...form, endTime: e.target.value })}
@@ -135,55 +140,63 @@ function MaintenanceItem({ item, stationId }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-space-md self-end md:self-center">
-        <button
-          type="button"
-          onClick={() => setIsEditing(true)}
-          className="rounded p-space-2xs text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors"
-          title="Edit Maintenance"
-        >
-          <span className="material-symbols-outlined text-xl">edit</span>
-        </button>
-        <button
-          type="button"
-          onClick={async () => {
-            const ok = await useDialogStore.getState().confirm({
-              title: 'Delete Maintenance Window',
-              message: 'Are you sure you want to delete this maintenance window?',
-              confirmLabel: 'Delete',
-              cancelLabel: 'Cancel',
-              variant: 'danger',
-            })
-            if (ok) {
-              deleteMaintenance.mutate(
-                { maintenanceId: item.id, stationId },
-                { onError: () => useDialogStore.getState().alert({ title: 'Error', message: 'Failed to delete maintenance window.', variant: 'danger' }) }
-              )
-            }
-          }}
-          disabled={deleteMaintenance?.isPending}
-          className="rounded p-space-2xs text-on-surface-variant hover:bg-error-container hover:text-error transition-colors disabled:opacity-50"
-          title="Delete Maintenance"
-        >
-          <span className="material-symbols-outlined text-xl">delete</span>
-        </button>
-        {(item.actions || []).map((action) => (
+      {!isHistory && (
+        <div className="flex items-center gap-space-md self-end md:self-center">
           <button
-            key={action}
             type="button"
-            className="rounded-lg bg-surface-container-lowest px-space-sm py-space-xs font-label-md text-label-md text-on-surface shadow-sm hover:bg-surface-container"
+            onClick={() => setIsEditing(true)}
+            className="rounded p-space-2xs text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors"
+            title="Edit Maintenance"
           >
-            {action}
+            <span className="material-symbols-outlined text-xl">edit</span>
           </button>
-        ))}
-      </div>
+          <button
+            type="button"
+            onClick={async () => {
+              const ok = await useDialogStore.getState().confirm({
+                title: 'Delete Maintenance Window',
+                message: 'Are you sure you want to delete this maintenance window?',
+                confirmLabel: 'Delete',
+                cancelLabel: 'Cancel',
+                variant: 'danger',
+              })
+              if (ok) {
+                deleteMaintenance.mutate(
+                  { maintenanceId: item.id, stationId },
+                  { onError: () => useDialogStore.getState().alert({ title: 'Error', message: 'Failed to delete maintenance window.', variant: 'danger' }) }
+                )
+              }
+            }}
+            disabled={deleteMaintenance?.isPending}
+            className="rounded p-space-2xs text-on-surface-variant hover:bg-error-container hover:text-error transition-colors disabled:opacity-50"
+            title="Delete Maintenance"
+          >
+            <span className="material-symbols-outlined text-xl">delete</span>
+          </button>
+          {(item.actions || []).map((action) => (
+            <button
+              key={action}
+              type="button"
+              className="rounded-lg bg-surface-container-lowest px-space-sm py-space-xs font-label-md text-label-md text-on-surface shadow-sm hover:bg-surface-container"
+            >
+              {action}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
 export default function MaintenanceTab({ stationId, maintenance = [], chargers = [] }) {
   const [showAddForm, setShowAddForm] = useState(false)
+  const [activeSubTab, setActiveSubTab] = useState('upcoming')
   const addMaintenance = useAddMaintenanceWindow()
+
+  const now = new Date()
+  const upcomingMaintenance = maintenance.filter(m => new Date(m.endTime) >= now)
+  const historyMaintenance = maintenance.filter(m => new Date(m.endTime) < now)
+  const displayedMaintenance = activeSubTab === 'upcoming' ? upcomingMaintenance : historyMaintenance
 
   const [form, setForm] = useState({
     chargerId: chargers[0]?.id || '',
@@ -194,6 +207,10 @@ export default function MaintenanceTab({ stationId, maintenance = [], chargers =
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (new Date(form.endTime) <= new Date(form.startTime)) {
+      useDialogStore.getState().alert({ title: 'Invalid Dates', message: 'End time must be after start time.', variant: 'danger' })
+      return
+    }
     addMaintenance.mutate(
       { chargerId: form.chargerId, stationId, data: { reason: form.reason, startTime: new Date(form.startTime).toISOString(), endTime: new Date(form.endTime).toISOString() } },
       {
@@ -220,17 +237,45 @@ export default function MaintenanceTab({ stationId, maintenance = [], chargers =
             Planned hardware recalibration, liquid coolant purges, and utility substation tests.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="inline-flex items-center gap-space-2xs rounded-lg bg-primary px-space-md py-space-2xs font-headline-sm text-headline-sm text-on-primary shadow-sm transition-all hover:bg-primary-container"
-        >
-          <span className="material-symbols-outlined text-sm">{showAddForm ? 'close' : 'calendar_month'}</span> 
-          {showAddForm ? 'Cancel' : 'Schedule Maintenance Window'}
-        </button>
+        <div className="flex gap-space-md">
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('upcoming')}
+            className={cn(
+              'px-space-sm py-space-xs font-headline-sm text-headline-sm transition-all',
+              activeSubTab === 'upcoming'
+                ? 'font-semibold text-primary shadow-[inset_0_-2px_0_0_currentColor]'
+                : 'text-on-surface-variant hover:text-on-surface'
+            )}
+          >
+            Upcoming
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('history')}
+            className={cn(
+              'px-space-sm py-space-xs font-headline-sm text-headline-sm transition-all',
+              activeSubTab === 'history'
+                ? 'font-semibold text-primary shadow-[inset_0_-2px_0_0_currentColor]'
+                : 'text-on-surface-variant hover:text-on-surface'
+            )}
+          >
+            History
+          </button>
+        </div>
+        {activeSubTab === 'upcoming' && (
+          <button
+            type="button"
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="inline-flex items-center gap-space-2xs rounded-lg bg-primary px-space-md py-space-2xs font-headline-sm text-headline-sm text-on-primary shadow-sm transition-all hover:bg-primary-container"
+          >
+            <span className="material-symbols-outlined text-sm">{showAddForm ? 'close' : 'calendar_month'}</span> 
+            {showAddForm ? 'Cancel' : 'Schedule Maintenance Window'}
+          </button>
+        )}
       </div>
 
-      {showAddForm && (
+      {showAddForm && activeSubTab === 'upcoming' && (
         <form onSubmit={handleSubmit} className="bg-surface-container-low p-space-lg rounded-xl shadow-sm mb-space-md">
           <h4 className="font-headline-sm text-headline-sm text-on-surface mb-space-md">Schedule New Window</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
@@ -274,6 +319,7 @@ export default function MaintenanceTab({ stationId, maintenance = [], chargers =
               <input
                 type="datetime-local"
                 required
+                min={form.startTime}
                 className="rounded border border-outline bg-surface px-space-md py-space-sm text-on-surface"
                 value={form.endTime}
                 onChange={(e) => setForm({ ...form, endTime: e.target.value })}
@@ -293,13 +339,13 @@ export default function MaintenanceTab({ stationId, maintenance = [], chargers =
       )}
 
       <div className="mt-space-2xs flex flex-col gap-space-md">
-        {maintenance.length === 0 ? (
+        {displayedMaintenance.length === 0 ? (
           <div className="p-space-xl text-center text-on-surface-variant bg-surface-container-low rounded-xl">
-            No maintenance windows scheduled.
+            {activeSubTab === 'upcoming' ? 'No upcoming maintenance windows scheduled.' : 'No maintenance history available.'}
           </div>
         ) : (
-          maintenance.map((item, idx) => (
-            <MaintenanceItem key={item.id || idx} item={item} stationId={stationId} />
+          displayedMaintenance.map((item, idx) => (
+            <MaintenanceItem key={item.id || idx} item={item} stationId={stationId} isHistory={activeSubTab === 'history'} />
           ))
         )}
       </div>
