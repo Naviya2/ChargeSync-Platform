@@ -1,20 +1,20 @@
 # ⚡ ChargeSync Platform - Database Test Report
 
 - **Target Database:** `ChargeSync-Test` (PostgreSQL 18 on `localhost:5432`)
-- **Test Execution Date:** 2026-10-08 11:36:41
+- **Test Execution Date:** 2026-10-09 14:03:35
 - **Overall Result:** **6 / 6 Suites Passed** (100% Success Rate)
-- **Total Time:** 1049 ms
+- **Total Time:** 807 ms
 
 ## 📋 Execution Matrix
 
 | # | Test Suite | Objective | Status | Duration |
 |---|---|---|---|---|
-| 1 | `01_schema_and_seed.sql` | Environment cleanup and seed entities initialization | ✅ **PASSED** | 355 ms |
-| 2 | `02_unique_constraints.sql` | Unique constraint and primary key collision validation | ✅ **PASSED** | 182 ms |
-| 3 | `03_foreign_keys.sql` | Foreign key referential integrity and DeleteBehavior rules | ✅ **PASSED** | 74 ms |
-| 4 | `04_workflow_integrity.sql` | Domain check constraints and end-to-end lifecycle integrity | ✅ **PASSED** | 183 ms |
+| 1 | `01_schema_and_seed.sql` | Environment cleanup and seed entities initialization | ✅ **PASSED** | 324 ms |
+| 2 | `02_unique_constraints.sql` | Unique constraint and primary key collision validation | ✅ **PASSED** | 176 ms |
+| 3 | `03_foreign_keys.sql` | Foreign key referential integrity and DeleteBehavior rules | ✅ **PASSED** | 76 ms |
+| 4 | `04_workflow_integrity.sql` | Domain check constraints and end-to-end lifecycle integrity | ✅ **PASSED** | 74 ms |
 | 5 | `05_wallet_and_invoicing.sql` | Wallet top-up rules, currency validation and idempotency | ✅ **PASSED** | 63 ms |
-| 6 | `06_indexes_and_performance.sql` | Catalog index presence and query performance (EXPLAIN plan) | ✅ **PASSED** | 189 ms |
+| 6 | `06_indexes_and_performance.sql` | Catalog index presence and query performance (EXPLAIN plan) | ✅ **PASSED** | 91 ms |
 
 ## 🔍 Suite Execution Logs
 
