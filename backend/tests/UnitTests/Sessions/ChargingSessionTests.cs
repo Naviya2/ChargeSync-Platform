@@ -31,6 +31,26 @@ public sealed class ChargingSessionTests
     }
 
     [Fact]
+    public void FlaggedMeterOverride_IsUsedForInvoiceWhileAutomaticEnergyIsPreserved()
+    {
+        var start = DateTimeOffset.UtcNow;
+        var driverId = Guid.NewGuid();
+        var session = ChargingSession.Start(CheckedInReservation(), Guid.NewGuid(), start);
+
+        session.Stop(start.AddHours(1), 50m, 57.51m);
+        var invoice = PaymentInvoice.Issue(session, driverId, 100m, 100m);
+
+        Assert.Equal(ChargingSessionStatus.DiscrepancyFlagged, session.Status);
+        Assert.Equal(50m, session.AutoCalculatedKwh);
+        Assert.Equal(57.51m, session.StaffOverriddenKwh);
+        Assert.Equal(57.51m, session.FinalEnergyDeliveredKwh);
+        Assert.Equal(5751m, invoice.GrossAmount);
+        Assert.Equal(100m, invoice.AdvanceDeducted);
+        Assert.Equal(5651m, invoice.NetAmountDue);
+        Assert.Equal(InvoiceStatus.Pending, invoice.Status);
+    }
+
+    [Fact]
     public void Stop_RejectsSecondStop()
     {
         var start = DateTimeOffset.UtcNow;
