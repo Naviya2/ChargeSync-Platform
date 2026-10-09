@@ -70,6 +70,94 @@ public sealed class WorkflowEndpointsTests(ChargeSyncApiFactory factory) : IClas
         Assert.Equal(20, (await finalDb.PaymentInvoices.SingleAsync(i => i.Id == invoiceId)).RefundedAmount);
     }
 
+    [Fact]
+    public async Task DriversCannotApprovePendingRefundOrChangeFinancialState()
+    {
+        async Task<(HttpClient Client, AuthResult Auth)> RegisterDriverAsync(string name)
+        {
+            var client = factory.CreateClient();
+            var response = await client.PostAsJsonAsync("/api/auth/register", new
+            {
+                fullName = name,
+                email = $"{Guid.NewGuid()}@test.com",
+                password = "password123",
+                role = "Driver"
+            });
+            response.EnsureSuccessStatusCode();
+            var auth = (await response.Content.ReadFromJsonAsync<AuthResult>())!;
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth.AccessToken);
+            return (client, auth);
+        }
+
+        var (owner, ownerAuth) = await RegisterDriverAsync("Refund owner");
+        using (owner)
+        {
+            var (otherDriver, _) = await RegisterDriverAsync("Other driver");
+            using (otherDriver)
+            {
+                Guid invoiceId;
+                using (var seed = factory.Services.CreateScope())
+                {
+                    var db = seed.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var reservation = Reservation.Create(ownerAuth.User.Id, Guid.NewGuid(),
+                        DateTimeOffset.UtcNow.AddMinutes(1), DateTimeOffset.UtcNow.AddHours(1), 0);
+                    reservation.ConfirmWithQrCode("refund-qr");
+                    reservation.CheckIn();
+                    var start = DateTimeOffset.UtcNow.AddHours(-1);
+                    var session = ChargingSession.Start(reservation, Guid.NewGuid(), start);
+                    session.Stop(start.AddHours(1), 10, null);
+                    var invoice = PaymentInvoice.Issue(session, ownerAuth.User.Id, 100, 0);
+                    invoice.Settle(PaymentMethod.Cash);
+                    db.PaymentInvoices.Add(invoice);
+                    await db.SaveChangesAsync();
+                    invoiceId = invoice.Id;
+                }
+
+                var created = await owner.PostAsJsonAsync("/api/support-tickets", new
+                {
+                    category = "Refund",
+                    subject = "Review paid invoice",
+                    description = "Please review my charging payment.",
+                    invoiceId,
+                    requestedRefundAmount = 20
+                });
+                created.EnsureSuccessStatusCode();
+                var ticket = (await created.Content.ReadFromJsonAsync<SupportTicketDto>())!;
+                var queued = (await owner.GetFromJsonAsync<WorkflowReviewDto>(
+                    $"/api/agent-workflows/support-ticket/{ticket.Id}"))!;
+
+                using (var process = factory.Services.CreateScope())
+                {
+                    var db = process.ServiceProvider.GetRequiredService<AppDbContext>();
+                    var service = new SupportWorkflowService(db, new FakeAgent(),
+                        process.ServiceProvider.GetRequiredService<SupportService>(), new());
+                    await service.ProcessAsync(queued.Workflow.Id, default);
+                }
+
+                var route = $"/api/agent-workflows/{queued.Workflow.Id}";
+                var pending = (await owner.GetFromJsonAsync<WorkflowReviewDto>(route))!;
+                Assert.Equal("PendingApproval", pending.Workflow.Status);
+                var decision = new { pending.Version, note = "Approve my refund" };
+
+                Assert.Equal(HttpStatusCode.Forbidden,
+                    (await owner.PostAsJsonAsync(route + "/approve", decision)).StatusCode);
+                Assert.Equal(HttpStatusCode.Forbidden,
+                    (await otherDriver.PostAsJsonAsync(route + "/approve", decision)).StatusCode);
+
+                using var verify = factory.Services.CreateScope();
+                var verifyDb = verify.ServiceProvider.GetRequiredService<AppDbContext>();
+                Assert.Equal("PendingApproval", (await verifyDb.AgentWorkflowRuns.SingleAsync(
+                    r => r.Id == queued.Workflow.Id)).Status.ToString());
+                Assert.Equal(0, (await verifyDb.Users.SingleAsync(
+                    u => u.Id == ownerAuth.User.Id)).WalletBalance);
+                Assert.Equal(0, (await verifyDb.PaymentInvoices.SingleAsync(
+                    i => i.Id == invoiceId)).RefundedAmount);
+                Assert.Equal("PendingReview", (await verifyDb.SupportTickets.SingleAsync(
+                    t => t.Id == ticket.Id)).RefundStatus);
+            }
+        }
+    }
+
     private sealed class FakeAgent : ISupportWorkflowClient
     {
         public Task<SupportWorkflowOutput?> RunAsync(SupportWorkflowInput input, CancellationToken ct) => Task.FromResult<SupportWorkflowOutput?>(new(input.WorkflowId, input.Revision,
