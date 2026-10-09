@@ -40,6 +40,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<OperatingHour> OperatingHours => Set<OperatingHour>();
 
+    public DbSet<Bay> Bays => Set<Bay>();
+
     public DbSet<MaintenanceWindow> MaintenanceWindows => Set<MaintenanceWindow>();
 
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
