@@ -365,8 +365,11 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen>
                                 color: AppColors.primaryContainer,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.bolt_rounded, size: 20,
-                                  color: AppColors.onPrimaryContainer),
+                              child: Image.asset(
+                                'assets/images/chargesync_icon.png',
+                                fit: BoxFit.contain,
+                                semanticLabel: 'ChargeSync logo',
+                              ),
                             ),
                             const SizedBox(width: 10),
                             Column(

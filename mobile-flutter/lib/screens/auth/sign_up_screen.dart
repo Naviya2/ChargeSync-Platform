@@ -413,8 +413,9 @@ class _SignUpScreenState extends State<SignUpScreen>
                 ),
                 clipBehavior: Clip.hardEdge,
                 child: Image.asset(
-                  'assets/images/app_icon.png',
-                  fit: BoxFit.cover,
+                  'assets/images/chargesync_icon.png',
+                  fit: BoxFit.contain,
+                  semanticLabel: 'ChargeSync logo',
                 ),
               ),
               const SizedBox(width: 12),
