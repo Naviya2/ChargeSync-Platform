@@ -134,7 +134,7 @@ public class StationService : IStationService
         if (station.Status != StationStatus.Active)
             throw new InvalidOperationException("Cannot add chargers to a station that is not active.");
 
-        var charger = Charger.Create(station.Id, request.Identifier, request.BayLabel, request.Connector, request.PowerKw, request.Tariff);
+        var charger = Charger.Create(station.Id, request.Identifier, request.BayLabel, request.Connector, request.PowerKw, request.Tariff, request.Status ?? Domain.Enums.ChargerStatus.Available);
         
         station.AddCharger(charger);
         await _context.SaveChangesAsync(cancellationToken);
@@ -152,6 +152,11 @@ public class StationService : IStationService
             throw new UnauthorizedAccessException("Charger not found or you are not the owner.");
 
         charger.UpdateDetails(request.Identifier, request.BayLabel, request.Connector, request.PowerKw, request.Tariff);
+        
+        if (request.Status.HasValue)
+        {
+            charger.SetStatus(request.Status.Value);
+        }
         
         await _context.SaveChangesAsync(cancellationToken);
 
